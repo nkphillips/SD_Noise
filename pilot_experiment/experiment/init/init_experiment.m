@@ -21,27 +21,50 @@ make_textures
 
 make_patches
 
+%% Define timing and generate frame presentation
+
+init_timing
+
+frames = init_frames(t,p);
+
+p.trials_per_block = round(t.block_dur/t.trial_dur_est);
+
 %% Define number and sequence of events
 
-% Giving conditions a str and an index that can be leveraged
-p.adapt_cond_names = {};
-p.num_conds = numel(p.cond_names);
+p.block_cond_names = {'contrast', 'filter'};
+p.num_block_conds = numel(p.block_cond_names);
 
-% The minimum number of blocks is determined by the number of adaptors and hemifields
-p.min_num_blocks = numel(p.adapt_cond_names) * numel(p.hemifields);
-p.num_blocks = p.min_num_blocks;
+p.num_blocks = 6;
+while mod(p.num_blocks, p.num_block_conds) ~= 0, p.num_blocks = input(['Error! Number of blocks must be a multiple of ' num2str(p.num_block_conds) '. Please enter a multiple of 2: ']); end
 
+p.num_blocks_per_cond = p.num_blocks/p.num_block_conds;
+p.block_order = repmat(1:p.num_block_conds,1,p.num_blocks_per_cond);
+p.block_order = Shuffle(p.block_order);
 
-%% Define trial events
+if p.training 
+    p.num_trials_per_cond = 2;  
+else
+    p.num_trials_per_cond = 30;
+end
+
+for n_block = 1:p.num_blocks
+   
+    if p.block_order(n_block) == 1
+        
+        trial_order = BalanceFactors(p.num_trials_per_cond/p.num_blocks_per_cond, 0, 1:length(stimuli.contrast));
+        
+    elseif p.block_order(n_block) == 2
+        
+    end
+    p.trial_events(:,n_block) = trial_order;
+
+end
+
+% Define block order contrast 
 
 
 %% Initialize behavioral data struct
 
 init_behavioral
 
-%% Define timing and generate frame presentation
-
-init_timing
-
-frames = init_frames(t,p);
 
