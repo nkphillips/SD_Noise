@@ -19,8 +19,8 @@ redo_trial = 0;
 while n_trial <= p.num_trials_per_block
 
     % Grab current trial info
-    curr_test_orient = p.trial_events(n_trial,1);
-    curr_probe_orient = p.trial_events(n_trial,2);
+    curr_test_orient = p.trial_events(n_trial,1,n_block);
+    curr_probe_orient = p.trial_events(n_trial,2,n_block);
     
     if p.demo_run
         disp(['Trial #' num2str(n_trial)])
@@ -28,7 +28,7 @@ while n_trial <= p.num_trials_per_block
         disp(['Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°']);
     end
 
-    %% Target
+    %% Test orientation
     
     for n_frame = 1:frames.target_frames_count
         
