@@ -20,8 +20,9 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.demo_run = 1;
+p.demo_run = 1; % halves the screen
 p.simulate_response = 1;
+p.training = 0;
 
 p.which_setup = 3; % 0 = MacBook, 1 = 3329D, 2 = Scanner, 3 = S32D850
 
@@ -69,7 +70,7 @@ dirs.save_filename_template = ['SD_Noise_Pilot_S' p.subj_ID '_Run*_' p.display_s
 while ~exit_session
 
     % Enter experiment
-    run_experiment(p, w, dirs);
+    run_info = run_experiment(p, w, dirs);
 
     % Rest between runs / All done screen
     if n_run ~= num_runs_to_complete
