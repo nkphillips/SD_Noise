@@ -16,6 +16,19 @@ stimuli.contrast = [1 0.5 0.25]; % full contrast, medium, low
 
 stimuli.bp_filter_width = [0.1 5 20]; % "0" noise, medium, high ;unit: °
 
+%% check num level
+
+if length(stimuli.bp_filter_width) == length(stimuli.contrast)
+    p.num_levels = length(stimuli.contrast);
+else
+    disp('Condition levels do not match in length!');
+end
+
+%% Define orientations
+
+stimuli.orientation_min = 0;
+stimuli.orientation_max = 359;
+
 %% Define size
 % 6° diameter
 
