@@ -23,16 +23,6 @@ stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
 
 %% Make noise stimuli
 
-% Adaptor stimuli
-stimuli.adaptor_sf_made = nan(sum(~isnan(p.adaptor_sfs)), p.num_adaptor_samples);
-
-for i = 1:size(stimuli.adaptor_sf_made,1)
-    for j = 1:size(stimuli.adaptor_sf_made,2)
-
-        stimuli.adaptor_sf_made(i,j) = Screen('MakeTexture', w.window, stimuli.adaptor_sf_textures(:,:,i,j));
-
-    end
-end
 
 % Reference stimuli
 stimuli.reference_sf_made = nan(p.num_reference_samples,1);
