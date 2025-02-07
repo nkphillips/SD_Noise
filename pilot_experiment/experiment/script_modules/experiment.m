@@ -22,6 +22,8 @@ for n_block = 1:p.num_blocks
 
     if p.demo_run, disp(['Block ' num2str(n_block)]); end
 
+    curr_cond = p.block_order(n_block);
+
     % Grab current block info
     n_trial = 1;
 
