@@ -23,27 +23,16 @@ stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
 
 %% Make noise stimuli
 
+stimuli.textures_made = nan(length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_noise_samples);
 
-% Reference stimuli
-stimuli.reference_sf_made = nan(p.num_reference_samples,1);
-
-for i = 1:p.num_reference_samples
-    
-    stimuli.reference_sf_made(i) = Screen('MakeTexture', w.window, stimuli.reference_sf_textures(:,:,i));
-
-end
-
-% Test stimuli
-stimuli.test_sf_made = nan(p.num_test_sfs, p.num_test_samples);
-
-for i = 1:size(stimuli.test_sf_made,1)
-    for j = 1:size(stimuli.test_sf_made,2)
+for i = 1:size(stimuli.textures_made,1)
+    for j = 1:size(stimuli.textures_made,2)
+        for k = 1:size(stimuli.textures_made,3)
         
-        stimuli.test_sf_made(i,j) = Screen('MakeTexture', w.window, stimuli.test_sf_textures(:,:,i,j));
-
+            stimuli.textures_made(i,j,k) = Screen('MakeTexture', w.window, stimuli.textures(:,:,i,j,k));
+       
+        end
     end
 end
-
-%% 
-
+ 
 disp(['Elapsed time: ' num2str(toc) ' s'])
