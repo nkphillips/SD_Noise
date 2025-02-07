@@ -61,7 +61,7 @@ for n_block = 1:p.num_blocks
     
     
     % Storing trial events
-    p.trial_events(:,:,n_block) = [test_orientation probe_orientation level_order];
+    p.trial_events(:,:,n_block) = [test_orientation, probe_orientation, level_order];
    
     
     % Storing correct response
