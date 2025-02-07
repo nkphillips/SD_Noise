@@ -19,8 +19,8 @@ redo_trial = 0;
 while n_trial <= p.num_trials_per_block
 
     % Grab current trial info
-    curr_test_orient = p.trial_events(n_trial,1,n_block);
-    curr_probe_orient = p.trial_events(n_trial,2,n_block);
+    curr_test_orient = p.trial_events(n_trial, 1, n_block);
+    curr_probe_orient = p.trial_events(n_trial, 2, n_block);
     
     if p.demo_run
         disp(['Trial #' num2str(n_trial)])
@@ -32,6 +32,29 @@ while n_trial <= p.num_trials_per_block
     
     for n_frame = 1:frames.target_frames_count
         
+        
+        % The following variables and functions must be used to display the test stimulus
+        %{
+
+        Variables:
+           
+            frames.test_noise_sample_update
+            frames.test_frame_deadlines
+            stimuli.
+
+stimuli.textures_made
+stimuli.aperture_made
+fixation_space_made
+            
+        Functions:
+            
+            Screen('DrawTexture', w.window, []);
+            Screen('Flip', w.window, []);
+
+        %}
+
+
+
         
     end
     
