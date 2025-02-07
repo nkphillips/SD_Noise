@@ -30,13 +30,14 @@ p.num_blocks = 6;
 while mod(p.num_blocks, p.num_conds) ~= 0, p.num_blocks = input(['Error! Number of blocks must be a multiple of ' num2str(p.num_conds) '. Please enter a multiple of 2: ']); end
 
 p.num_blocks_per_cond = p.num_blocks / p.num_conds;
+
 p.block_order = repmat(1:p.num_conds, 1, p.num_blocks_per_cond);
 p.block_order = Shuffle(p.block_order);
 
 if p.training 
-    p.num_trials_per_unique_cond = 2;  
+    p.num_trials_per_unique_cond = p.num_levels;  
 else
-    p.num_trials_per_unique_cond = 105; % default = 105
+    p.num_trials_per_unique_cond = 1005; % default = 105
 end
 
 p.num_trials_per_block = p.num_levels * p.num_trials_per_unique_cond/p.num_blocks_per_cond;
@@ -76,12 +77,12 @@ p.num_trials = p.num_trials_per_block * p.num_blocks;
 %% Check condition distribution
 
 % "scoreboard" for the # of level pairs
-pair_count = zeros(p.num_levels);
+pair_count = zeros(p.num_levels, p.num_levels, p.num_conds);
 
 % store the indices of the current trial if the current and previous trial
 % match the current level pair
 % note: you must use a cell array
-pair_indices = cell(p.num_levels);
+pair_indices = cell(p.num_levels, p.num_levels, p.num_blocks_per_cond, p.num_conds);
 
 for cond = 1:p.num_conds
     
@@ -103,8 +104,11 @@ for cond = 1:p.num_conds
                     
                     if prev_trial_lvl == level_a  && curr_trial_lvl == level_b
                         
-                        pair_count(level_a, level_b) = pair_count(level_a, level_b) + 1;
+                        pair_count(level_a, level_b, cond) = pair_count(level_a, level_b) + 1;
                         
+                        % store the indices of the current trial if the current and previous trial
+                        pair_indices{level_a, level_b, n_block, cond} = [pair_indices{level_a, level_b, n_block, cond}, n_trial];
+                   
                     end
                 end
             end            
@@ -112,6 +116,15 @@ for cond = 1:p.num_conds
     end
     
 end
+
+% test for diff in number of pairs between condition
+
+% x = pair_count(:,:,1);
+% y = pair_count(:,:,2);
+% 
+% [h, p_value] = ttest(x(:), y(:));
+% 
+% figure, histogram(x(:)), hold on;  histogram(y(:))
 
 %% Define timing and generate frame presentation
 
