@@ -33,10 +33,6 @@ for n_block = 1:p.num_blocks
     frames.test_noise_sample_update_seq{n_block} = gen_unique_seq([p.num_trials_per_block, num_sample_updates], 1:p.num_test_samples, p.num_test_samples/2);
 end
 
-frames.reference_noise_sample_update_seq = cell(1,p.num_blocks);
-for n_block = 1:p.num_blocks
-    frames.reference_noise_sample_update_seq{n_block} = gen_unique_seq([p.num_trials_per_block, num_sample_updates], 1:p.num_reference_samples, p.num_reference_samples/2);
-end
 
 %% Rest
 % Minimum rest period in between blocks
