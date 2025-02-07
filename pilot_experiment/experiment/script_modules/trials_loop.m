@@ -21,7 +21,19 @@ while n_trial <= p.num_trials_per_block
     % Grab current trial info
     curr_test_orient = p.trial_events(n_trial, 1, n_block);
     curr_probe_orient = p.trial_events(n_trial, 2, n_block);
-    
+
+    if curr_cond == 1
+
+        curr_contrast = p.trial_events(n_trial, 3, n_block);
+        curr_filter_width = 1;
+
+    elseif curr_cond == 2
+
+        curr_contrast = 1;
+        curr_filter_width = p.trial_events(n_trial, 3, n_block);
+
+    end
+
     if p.demo_run
         disp(['Trial #' num2str(n_trial)])
         disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°']);
@@ -30,32 +42,30 @@ while n_trial <= p.num_trials_per_block
 
     %% Test orientation
     
+    n_noise_sample = 0;
+
     for n_frame = 1:frames.target_frames_count
-        
-        
-        % The following variables and functions must be used to display the test stimulus
-        %{
 
-        Variables:
-           
-            frames.test_noise_sample_update
-            frames.test_frame_deadlines
-            stimuli.
+        if frames.test_noise_sample_update(n_frame)
+            n_noise_sample = n_noise_sample + 1;
+        end
 
-stimuli.textures_made
-stimuli.aperture_made
-fixation_space_made
-            
-        Functions:
-            
-            Screen('DrawTexture', w.window, []);
-            Screen('Flip', w.window, []);
+        % Draw Test
+        Screen('DrawTexture', w.window, stimuli.textures_made(curr_contrast, curr_filter_width, n_noise_sample), [], noise_patch, curr_test_orient);
 
-        %}
+        % Stimulus aperture
+        Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
 
+        % Draw fixation
+        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 
+        % Flip
+        if n_frame == 1
+           test_frames_onset = frames.test_frames_onset + GetSecs;
+        end
+        Screen('Flip', w.window, test_frames_onset(n_frame));
 
-        
     end
     
     %% Mask
@@ -69,7 +79,25 @@ fixation_space_made
     
     %% Probe
     
-    
+    for n_frame = 1:frames.probe_frames_count
+
+        % Draw Line
+       %Screen('DrawLines', w.window, cues.xy(:,1:2), cue_thickness, w.white);
+
+        % Stimulus aperture
+        Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
+
+        % Draw fixation
+        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+        % Flip
+        if n_frame == 1
+            test_frames_onset = frames.test_frames_onset + GetSecs;
+        end
+        Screen('Flip', w.window, test_frames_onset(n_frame));
+
+    end
 
     %% Response Period
 
@@ -149,7 +177,6 @@ fixation_space_made
         for n_frame = 1:frames.iti_frames_count
 
             % Draw fixation
-            Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
             Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 
             % Flip
@@ -160,7 +187,6 @@ fixation_space_made
         end
 
         % Draw fixation
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
         Screen('Flip', w.window);
 
