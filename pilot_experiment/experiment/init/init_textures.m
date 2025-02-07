@@ -96,7 +96,8 @@ aperture_texture(:,:,2) = aperture * 255;
 
 % figure, imshow(aperture_texture(:,:,2), [0 255])
 
-%% Generate textures if needed
+%% Generate textures 
+% if needed
 
 if generate_textures
 
@@ -104,7 +105,7 @@ if generate_textures
 
     noise_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_noise_samples);
 
-    for i = 1:size(noise_textures, 3) % contrasts
+    for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Filter widths
             for k = 1:size(noise_textures, 5) % Samples
                 
@@ -127,8 +128,6 @@ if generate_textures
             end
         end
     end
-
-
 
 end
 
