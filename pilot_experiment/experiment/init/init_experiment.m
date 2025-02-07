@@ -105,7 +105,6 @@ for cond = 1:p.num_conds
                         
                         pair_count(level_a, level_b) = pair_count(level_a, level_b) + 1;
                         
-                        
                     end
                 end
             end            
