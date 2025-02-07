@@ -11,10 +11,4 @@ aperture_patch = CenterRectOnPoint([0 0 stimuli.aperture_width_px stimuli.apertu
 
 %% Noise textures
 
-% noise_L_patch = CenterRectOnPoint([0 0 stimuli.noise_diameter_px stimuli.noise_diameter_px], w.centerX - w.screen_width_px/4, w.centerY);
-% noise_R_patch = CenterRectOnPoint([0 0 stimuli.noise_diameter_px stimuli.noise_diameter_px], w.centerX + w.screen_width_px/4, w.centerY);
-
-w.noise_patch_shift = 0; % px
-
-noise_L_patch = CenterRectOnPoint([0 0 stimuli.noise_width_px stimuli.noise_height_px], w.centerX - (w.screen_width_px/4), w.centerY);
-noise_R_patch = CenterRectOnPoint([0 0 stimuli.noise_width_px stimuli.noise_height_px], w.centerX + (w.screen_width_px/4), w.centerY);
+noise_patch = CenterRectOnPoint([0 0 stimuli.noise_width_px stimuli.noise_height_px], w.centerX, w.centerY);
