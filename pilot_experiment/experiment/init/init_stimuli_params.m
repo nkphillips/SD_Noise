@@ -8,6 +8,11 @@ lur003@ucsd.edu
 
 %}
 
+%% Define size
+
+stimuli.noise_height_px = w.screen_height_px / 2;
+stimuli.noise_width_px = w.screen_width_px / 2;
+
 %% Define contrasts
 
 stimuli.contrast = [1 0.5 0.25]; % full contrast, medium, low 
@@ -42,5 +47,5 @@ stimuli.height_px = stimuli.width_px;
 
 %% Define number of noise samples
 
-p.num_noise_samples = 20; % 
-
+p.num_test_samples = 20; % 
+p.num_mask_samples = 20;
