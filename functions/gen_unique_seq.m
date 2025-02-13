@@ -1,7 +1,7 @@
 %%% gen_unique_seq
-% Given a matrix size, seq_size
-% Populate each row with elements from values
-% These values do not repeat within a given window_size
+% Given a matrix size 'seq_size'
+% Populate each row with elements from 'values'
+% These values do not repeat within a given 'window_size
 
 function seq = gen_unique_seq(seq_size, values, window_size)
 
