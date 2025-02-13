@@ -23,13 +23,18 @@ stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
 
 %% Make noise stimuli
 
-stimuli.textures_made = nan(length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_noise_samples);
+stimuli.test_textures_made = nan(length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
+stimuli.mask_textures_made = nan(length(stimuli.contrast), p.num_mask_samples);
 
 for i = 1:size(stimuli.textures_made,1) % Contrasts
     for j = 1:size(stimuli.textures_made,2) % Filter width
         for k = 1:size(stimuli.textures_made,3) % noise sample
         
-            stimuli.textures_made(i, j, k) = Screen('MakeTexture', w.window, stimuli.textures(:,:,i,j,k));
+            stimuli.test_textures_made(i, j, k) = Screen('MakeTexture', w.window, stimuli.test_textures(:,:,i,j,k));
+
+            if j == 1
+                stimuli.mask_textures_made(i, k) = Screen('MakeTexture', w.window, stimuli.mask_textures(:,:,i,k));
+            end
        
         end
     end
