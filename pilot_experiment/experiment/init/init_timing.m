@@ -13,7 +13,7 @@ lur003@ucsd.edu
 t.test_dur = 0.5; % s;
 t.mask_dur = t.test_dur; % s
 t.delay_dur = t.test_dur;
-
+t.probe_dur = t.test_dur;
 t.response_dur_est = 2; % s
 
 t.trial_dur_est = sum([t.test_dur, t.mask_dur, t.delay_dur, t.response_dur_est]); % s
