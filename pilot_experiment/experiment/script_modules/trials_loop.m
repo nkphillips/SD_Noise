@@ -22,6 +22,7 @@ while n_trial <= p.num_trials_per_block
     curr_test_orient = p.trial_events(n_trial, 1, n_block);
     curr_probe_orient = p.trial_events(n_trial, 2, n_block);
 
+    % Get current contrast and filter width
     if curr_cond == 1
 
         curr_contrast = p.trial_events(n_trial, 3, n_block);
@@ -46,12 +47,14 @@ while n_trial <= p.num_trials_per_block
 
     for n_frame = 1:frames.target_frames_count
 
+        % Update noise sample when a new sample is needed
         if frames.test_noise_sample_update(n_frame)
             n_noise_sample = n_noise_sample + 1;
+            curr_noise_sample = frames.test_noise_sample_update_seq{n_block}(n_trial, n_noise_sample);
         end
 
         % Draw Test
-        Screen('DrawTexture', w.window, stimuli.textures_made(curr_contrast, curr_filter_width, n_noise_sample), [], noise_patch, curr_test_orient);
+        Screen('DrawTexture', w.window, stimuli.test_textures_made(curr_contrast, curr_filter_width, curr_noise_sample), [], noise_patch, curr_test_orient);
 
         % Stimulus aperture
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
@@ -71,18 +74,53 @@ while n_trial <= p.num_trials_per_block
     %% Mask
     % present rapidly updating white noise
     
+    for n_frame = 1:frames.mask_frames_count
+
+        % Update noise sample when a new sample is needed
+        if frames.mask_noise_sample_update(n_frame)
+            n_noise_sample = n_noise_sample + 1;
+            curr_noise_sample = frames.mask_noise_sample_update_seq{n_block}(n_trial, n_noise_sample);
+        end
+
+        % Draw mask
+        Screen('DrawTexture', w.window, stimuli.mask_textures_made(curr_contrast, curr_noise_sample), [], noise_patch);
+
+        % Draw fixation
+        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+        % Flip
+        if n_frame == 1
+            mask_frames_onset = frames.mask_frames_onset + GetSecs;
+        end
+        Screen('Flip', w.window, mask_frames_onset(n_frame)); % every frame has a deadline
+
+    end
     
     %% Delay
     % blank period of a specified duration
     % just draw fixation
 
+    for n_frame = 1:frames.delay_frames_count
+
+        % Draw fixation
+        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+        % Flip
+        if n_frame == 1
+            delay_frames_onset = frames.delay_frames_onset + GetSecs;
+        end
+        Screen('Flip', w.window, delay_frames_onset(n_frame)); % every frame has a deadline
+
+    end
     
     %% Probe
     
     for n_frame = 1:frames.probe_frames_count
 
         % Draw Line
-       %Screen('DrawLines', w.window, cues.xy(:,1:2), cue_thickness, w.white);
+       % Screen('DrawLines', w.window, cues.xy(:,1:2), cue_thickness, w.white);
 
         % Stimulus aperture
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
