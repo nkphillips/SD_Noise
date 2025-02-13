@@ -9,7 +9,7 @@ lur003@ucsd.edu
 %}
 
 
-function run_experiment(p,w,dirs)
+function run_info = run_experiment(p,w,dirs)
 
 %% Verify run number to make sure nothing gets overwritten
 % Check if subject folder exists;
