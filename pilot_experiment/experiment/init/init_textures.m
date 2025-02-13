@@ -103,32 +103,35 @@ if generate_textures
 
     disp('Generating stimuli...')
 
-    noise_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_noise_samples);
+    % Preallocate textures
+    noise_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
+    stimuli.test_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
+    stimuli.mask_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), p.num_mask_samples);
 
     for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Filter widths
             for k = 1:size(noise_textures, 5) % Samples
                 
+                % Create base noise
                 base_noise = create_noise_texture(stimuli.noise_height_px, stimuli.noise_width_px);
+               
+                % Store base noise as mask texture
+                if j == 1
+                    stimuli.mask_textures(:,:,i,k) = base_noise * stimuli.contrast(i) * 255;
+                end
                 
-                noise_texture = make_orientation_bp_filtered_img(base_noise, p.orientations(n), stimuli);
+                % Make orientation-bandpass filtered noise
+                noise_texture = make_orientation_bp_filtered_img(base_noise, 0, stimuli.bp_filter_width(j), w.ppd);
                 
-                noise_texture = normalize_array(noise_texture, 'z-score');
-                noise_texture(noise_texture < -2) = -2;
-                noise_texture(noise_texture > 2) = 2;
+                % Normalize noise texture
+                noise_texture = normalize_array(noise_texture, 'min-max');
                 
-                noise_textures(:,:,i,j,k) = noise_texture / std2(noise_texture);
-                
-                % Contrast normalization (jointly scale images linearly to visible range 0:255
-                z_min = min(noise_textures(:));
-                z_max = max(noise_textures(:));
-                
-                stimuli.textures(:,:,i,j,k) = ((noise_textures - z_min) / (z_max - z_min) ) * 255 * stimuli.test_sf_contrast;
-                
+                % Convert to visible pixel values and scale by contrast
+                stimuli.test_textures(:,:,i,j,k) = noise_texture * 255 * stimuli.contrast(1);
+
             end
         end
     end
-
 end
 
 disp(['Elapsed time: ' num2str(toc) ' s'])
