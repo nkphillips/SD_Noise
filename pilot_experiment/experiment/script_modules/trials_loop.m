@@ -16,11 +16,19 @@ lur003@ucsd.edu
 
 redo_trial = 0;
 
-while n_trial <= p.num_trials_per_block
+for n_trial = 1:size(p.trial_events,1)
 
-    % Grab current trial info
-    curr_test_orient = p.trial_events(n_trial, 1, n_block);
-    curr_probe_orient = p.trial_events(n_trial, 2, n_block);
+    % Get current test orientation
+    curr_test_orient = p.trial_events(n_trial, 1, n_block); 
+
+    % Create rotated probe line
+    curr_probe_orient = p.trial_events(n_trial, 2, n_block); % Get current probe orientation
+    curr_probe_orient_rad = deg2rad(curr_probe_orient);
+    curr_rotation = [cos(curr_probe_orient_rad), -sin(curr_probe_orient_rad); ...
+        sin(curr_probe_orient_rad), cos(curr_probe_orient_rad)];
+
+    curr_probe_line = curr_rotation * (stimuli.probe_line_base - [w.centerX; w.centerY]);
+    curr_probe_line = curr_probe_line + [w.centerX; w.centerY];
 
     % Get current contrast and filter width
     if curr_cond == 1
@@ -30,31 +38,69 @@ while n_trial <= p.num_trials_per_block
 
     elseif curr_cond == 2
 
-        curr_contrast = 1;
+        curr_contrast = 1; 
         curr_filter_width = p.trial_events(n_trial, 3, n_block);
 
     end
 
     if p.demo_run
-        disp(['Trial #' num2str(n_trial)])
-        disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°']);
-        disp(['Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°']);
+    disp(['Trial ' num2str(n_trial)])
+    disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
+    disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
+    disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
+    disp(['Probe Orientation: ' num2str(curr_probe_orient) '°'])
+
     end
 
     %% Test orientation
     
     n_noise_sample = 0;
 
-    for n_frame = 1:frames.target_frames_count
+    for n_frame = 1:frames.test_frames_count
 
         % Update noise sample when a new sample is needed
         if frames.test_noise_sample_update(n_frame)
             n_noise_sample = n_noise_sample + 1;
-            curr_noise_sample = frames.test_noise_sample_update_seq{n_block}(n_trial, n_noise_sample);
+            curr_noise_sample = frames.test_noise_sample_update_seq(n_trial, n_noise_sample, n_block);
         end
 
         % Draw Test
         Screen('DrawTexture', w.window, stimuli.test_textures_made(curr_contrast, curr_filter_width, curr_noise_sample), [], noise_patch, curr_test_orient);
+
+        % Stimulus aperture
+        Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch, curr_test_orient);
+
+        % Draw fixation
+        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+        % Flip
+        if n_frame == 1
+           test_frames_onsets = frames.test_frames_onsets + GetSecs;
+        end
+        Screen('Flip', w.window, test_frames_onsets(n_frame));
+
+        if p.demo_run && n_frame == frames.test_frames_count
+            KbWait;
+        end
+
+    end
+    
+    %% Mask
+    % present rapidly updating white noise
+    
+    n_noise_sample = 0;
+
+    for n_frame = 1:frames.mask_frames_count
+
+        % Update noise sample when a new sample is needed
+        if frames.mask_noise_sample_update(n_frame)
+            n_noise_sample = n_noise_sample + 1;
+            curr_noise_sample = frames.mask_noise_sample_update_seq(n_trial, n_noise_sample, n_block);
+        end
+
+        % Draw mask
+        Screen('DrawTexture', w.window, stimuli.mask_textures_made(curr_contrast, curr_noise_sample), [], noise_patch);
 
         % Stimulus aperture
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
@@ -65,35 +111,13 @@ while n_trial <= p.num_trials_per_block
 
         % Flip
         if n_frame == 1
-           test_frames_onset = frames.test_frames_onset + GetSecs;
+            mask_frames_onsets = frames.mask_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, test_frames_onset(n_frame));
+        Screen('Flip', w.window, mask_frames_onsets(n_frame)); % every frame has a deadline
 
-    end
-    
-    %% Mask
-    % present rapidly updating white noise
-    
-    for n_frame = 1:frames.mask_frames_count
-
-        % Update noise sample when a new sample is needed
-        if frames.mask_noise_sample_update(n_frame)
-            n_noise_sample = n_noise_sample + 1;
-            curr_noise_sample = frames.mask_noise_sample_update_seq{n_block}(n_trial, n_noise_sample);
-        end
-
-        % Draw mask
-        Screen('DrawTexture', w.window, stimuli.mask_textures_made(curr_contrast, curr_noise_sample), [], noise_patch);
-
-        % Draw fixation
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
-        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
-
-        % Flip
-        if n_frame == 1
-            mask_frames_onset = frames.mask_frames_onset + GetSecs;
-        end
-        Screen('Flip', w.window, mask_frames_onset(n_frame)); % every frame has a deadline
+        % if p.demo_run && n_frame == frames.test_frames_count
+        %     KbWait;
+        % end
 
     end
     
@@ -109,9 +133,9 @@ while n_trial <= p.num_trials_per_block
 
         % Flip
         if n_frame == 1
-            delay_frames_onset = frames.delay_frames_onset + GetSecs;
+            delay_frames_onsets = frames.delay_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, delay_frames_onset(n_frame)); % every frame has a deadline
+        Screen('Flip', w.window, delay_frames_onsets(n_frame)); % every frame has a deadline
 
     end
     
@@ -120,7 +144,7 @@ while n_trial <= p.num_trials_per_block
     for n_frame = 1:frames.probe_frames_count
 
         % Draw Line
-       % Screen('DrawLines', w.window, cues.xy(:,1:2), cue_thickness, w.white);
+       Screen('DrawLines', w.window, curr_probe_line, stimuli.probe_thickness, stimuli.probe_color);
 
         % Stimulus aperture
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
@@ -131,9 +155,13 @@ while n_trial <= p.num_trials_per_block
 
         % Flip
         if n_frame == 1
-            test_frames_onset = frames.test_frames_onset + GetSecs;
+            probe_frames_onsets = frames.probe_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, test_frames_onset(n_frame));
+        Screen('Flip', w.window, probe_frames_onsets(n_frame));
+        
+        if p.demo_run && n_frame == frames.test_frames_count
+            KbWait;
+        end
 
     end
 
@@ -144,7 +172,7 @@ while n_trial <= p.num_trials_per_block
 
     response_start = GetSecs;
 
-    while GetSecs - response_start < t.response_dur
+    while no_response
 
         % Draw fixation
         Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
@@ -177,14 +205,14 @@ while n_trial <= p.num_trials_per_block
                 % Store response based on the pressed key
                 if first_relevant_key == p.keypress_numbers(1)
                   
-                    behav_data.response{n_block}(n_trial) = 0; % CCW
+                    behav_data.response(n_trial, n_block) = 0; % CCW
                     if p.demo_run
                         disp('Response: Test perceived as CCW.');
                     end
                
                 elseif first_relevant_key == p.keypress_numbers(2)
                 
-                    behav_data.response{n_block}(n_trial) = 1; % CW
+                    behav_data.response(n_trial, n_block) = 1; % CW
                     if p.demo_run
                         disp('Response: Test perceived as CW.');
                     end
@@ -212,21 +240,22 @@ while n_trial <= p.num_trials_per_block
 
     if n_trial <= p.num_trials_per_block
 
-        for n_frame = 1:frames.iti_frames_count
+        for n_frame = 1:frames.iti_frames_count(n_trial)
 
             % Draw fixation
             Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 
-            % Flip
+            
             % Update frame deadlines
+            if n_frame == 1
+                iti_frames_onsets = frames.iti_frames_onsets{n_trial} + GetSecs;
+            end
+
+            % Flip
             [exe_timing.iti_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.iti_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.iti_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.iti_Missed{n_block}(n_trial,n_frame)] = ...
-                Screen('Flip', w.window, pres_timing.iti_flip_times{n_block}(n_trial,n_frame));
+                Screen('Flip', w.window, iti_frames_onsets(n_frame));
 
         end
-
-        % Draw fixation
-        Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
-        Screen('Flip', w.window);
 
     end
 
