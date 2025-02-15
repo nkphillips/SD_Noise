@@ -21,7 +21,7 @@ t.trial_dur_est = sum([t.test_dur, t.mask_dur, t.delay_dur, t.response_dur_est])
 t.iti_min = 1;
 t.iti_max = 1.5;
 
-t.iti_dur = t.iti_min + (t.iti_max - t.iti_min) .* rand(p.num_trials, 1);
+t.iti_dur = t.iti_min + (t.iti_max - t.iti_min) .* rand(p.num_trials-1, 1);
 
 t.block_dur_est = ((t.trial_dur_est + mean(t.iti_dur(1:p.num_trials_per_block)))  * p.num_trials_per_block) / 60; % s
 t.rest_dur = 30;
