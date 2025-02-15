@@ -37,7 +37,7 @@ else
         most_recent_file = data_file_names{end};
         
         file_strs = strsplit(most_recent_file,'_');
-        most_recent_run_num = str2double(file_strs{6}(end));
+        most_recent_run_num = str2double(file_strs{5}(end));
         
         p.run_num = most_recent_run_num + 1;
         
@@ -111,8 +111,8 @@ run_info.p = p;
 run_info.t = t;
 run_info.w = w;
 run_info.frames = frames;
-run_info.pres_timing = pres_timing;
-run_info.exe_timing = exe_timing;
+% run_info.pres_timing = pres_timing;
+% run_info.exe_timing = exe_timing;
 
 cd(dirs.data_dir)
 
