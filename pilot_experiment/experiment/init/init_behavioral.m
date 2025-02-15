@@ -2,5 +2,5 @@
 
 %% Pre-allocate fields
 
-behav_data.response = nan(1, p.num_trials);
+behav_data.response = nan(p.num_trials,p.num_blocks);
 
