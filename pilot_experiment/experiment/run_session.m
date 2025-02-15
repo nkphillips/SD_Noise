@@ -21,8 +21,8 @@ rng(t.my_rng_seed);
 %% Toggles
 
 p.demo_run = 1; % halves the screen
-p.simulate_response = 1;
-p.training = 0;
+p.simulate_response = 0;
+p.training = 1;
 
 p.which_setup = 3; % 0 = MacBook, 1 = 3329D, 2 = Scanner, 3 = S32D850
 
