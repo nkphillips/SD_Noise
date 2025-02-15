@@ -11,4 +11,4 @@ aperture_patch = CenterRectOnPoint([0 0 stimuli.aperture_width_px stimuli.apertu
 
 %% Noise textures
 
-noise_patch = CenterRectOnPoint([0 0 stimuli.noise_width_px stimuli.noise_height_px], w.centerX, w.centerY);
+noise_patch = CenterRectOnPoint([0 0 stimuli.width_px stimuli.height_px], w.centerX, w.centerY);
