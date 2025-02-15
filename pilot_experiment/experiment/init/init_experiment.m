@@ -35,9 +35,9 @@ p.block_order = repmat(1:p.num_conds, 1, p.num_blocks_per_cond);
 p.block_order = Shuffle(p.block_order);
 
 if p.training 
-    p.num_trials_per_unique_cond = p.num_levels;  
+    p.num_trials_per_unique_cond = p.num_levels * 2;  
 else
-    p.num_trials_per_unique_cond = 1005; % default = 105
+    p.num_trials_per_unique_cond = 105; % default = 105
 end
 
 p.num_trials_per_block = p.num_levels * p.num_trials_per_unique_cond/p.num_blocks_per_cond;
@@ -59,6 +59,10 @@ for n_block = 1:p.num_blocks
     test_orientation = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1));
     probe_orientation = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1));
     
+    % Transform probe orientation to match the test axis
+    probe_orientation = probe_orientation + 90;
+    probe_orientation(probe_orientation >= 360) = probe_orientation(probe_orientation >= 360) - 270;
+
     
     % Storing trial events
     p.trial_events(:,:,n_block) = [test_orientation, probe_orientation, level_order];
