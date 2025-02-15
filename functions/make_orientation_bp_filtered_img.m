@@ -1,6 +1,6 @@
 
 
-function img = make_orientation_bp_filtered_img(img, orientation, filter_width, ppd)
+function img = make_orientation_bp_filtered_img(img, orientation, filter_width, smoothen_width)
 
     %% Create the bandpass filter
 
@@ -9,10 +9,10 @@ function img = make_orientation_bp_filtered_img(img, orientation, filter_width, 
     upper_bound = orientation + filter_width/2;
 
     % Define the bandpass filter
-    bandpass_filter = OrientationBandpass(size(img,1), lower_bound, upper_bound);
+    bandpass_filter = OrientationBandpass(size(img), lower_bound, upper_bound);
 
     % Smooth the bandpass filter
-    bandpass_filter = imgaussfilt(bandpass_filter, 0.1 * ppd);
+    bandpass_filter = imgaussfilt(bandpass_filter, smoothen_width);
 
     % Normalize the bandpass filter
     bandpass_filter = normalize_array(bandpass_filter, 'min-max');
