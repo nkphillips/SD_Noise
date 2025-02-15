@@ -104,34 +104,42 @@ if generate_textures
     disp('Generating stimuli...')
 
     % Preallocate textures
-    noise_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
-    stimuli.test_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
-    stimuli.mask_textures = nan(stimuli.noise_height_px, stimuli.noise_width_px, length(stimuli.contrast), p.num_mask_samples);
+    noise_textures = nan(stimuli.height_px, stimuli.width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
+    stimuli.test_textures = nan(stimuli.height_px, stimuli.width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
+    stimuli.mask_textures = nan(stimuli.height_px, stimuli.width_px, length(stimuli.contrast), p.num_mask_samples);
 
     for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Filter widths
             for k = 1:size(noise_textures, 5) % Samples
                 
                 % Create base noise
-                base_noise = create_noise_texture(stimuli.noise_height_px, stimuli.noise_width_px);
+                base_noise = create_noise_texture(stimuli.height_px, stimuli.width_px);
                
                 % Store base noise as mask texture
                 if j == 1
-                    stimuli.mask_textures(:,:,i,k) = base_noise * stimuli.contrast(i) * 255;
+                    stimuli.mask_textures(:,:,i,k) = base_noise * w.gray * stimuli.contrast(i) + w.gray; % * stimuli.contrast(i)
                 end
                 
                 % Make orientation-bandpass filtered noise
-                noise_texture = make_orientation_bp_filtered_img(base_noise, 0, stimuli.bp_filter_width(j), w.ppd);
+                noise_texture = make_orientation_bp_filtered_img(base_noise, 0, stimuli.bp_filter_width(j), w.ppd * 0.1);
                 
                 % Normalize noise texture
                 noise_texture = normalize_array(noise_texture, 'min-max');
                 
+                % Ignore certain combos
+                if i > 1 && j > 1
+                    continue
+                end
+
                 % Convert to visible pixel values and scale by contrast
-                stimuli.test_textures(:,:,i,j,k) = noise_texture * 255 * stimuli.contrast(1);
+                stimuli.test_textures(:,:,i,j,k) = noise_texture * w.gray * stimuli.contrast(i) + w.gray; % 
 
             end
         end
     end
+
+        
+
 end
 
 disp(['Elapsed time: ' num2str(toc) ' s'])
