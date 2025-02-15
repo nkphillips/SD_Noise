@@ -26,9 +26,9 @@ stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
 stimuli.test_textures_made = nan(length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
 stimuli.mask_textures_made = nan(length(stimuli.contrast), p.num_mask_samples);
 
-for i = 1:size(stimuli.textures_made,1) % Contrasts
-    for j = 1:size(stimuli.textures_made,2) % Filter width
-        for k = 1:size(stimuli.textures_made,3) % noise sample
+for i = 1:size(stimuli.test_textures_made,1) % Contrasts
+    for j = 1:size(stimuli.test_textures_made,2) % Filter width
+        for k = 1:size(stimuli.test_textures_made,3) % noise sample
         
             stimuli.test_textures_made(i, j, k) = Screen('MakeTexture', w.window, stimuli.test_textures(:,:,i,j,k));
 
