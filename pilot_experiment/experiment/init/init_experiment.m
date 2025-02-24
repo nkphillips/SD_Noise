@@ -55,23 +55,32 @@ for n_block = 1:p.num_blocks
         level_order = BalanceFactors(p.num_trials_per_block/p.num_levels, 1, 1:length(stimuli.bp_filter_width));
         
     end
-    
+
+    % Sample Test and Probe orientations
     test_orientation = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1));
     probe_orientation = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1));
-    
-    % Transform probe orientation to match the test axis
-    probe_orientation = probe_orientation + 90;
-    probe_orientation(probe_orientation >= 360) = probe_orientation(probe_orientation >= 360) - 270;
+   
 
+    for n_trial = 1:p.num_trials_per_block
+    % Check for angle differences >= 90 and resample probe until angle difference < 90 and save
+    while abs(test_orientation(n_trial) - probe_orientation(n_trial)) >= 90
+    probe_orientation(n_trial) = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(1));
+    end
     
+    end
+
+    % Transform probe orientation to match the test axis
+    corrected_probe_orientation = probe_orientation + 90;
+    corrected_probe_orientation(corrected_probe_orientation >= 180) = corrected_probe_orientation(corrected_probe_orientation >= 180) - 90;
+
     % Storing trial events
-    p.trial_events(:,:,n_block) = [test_orientation, probe_orientation, level_order];
+    p.trial_events(:,:,n_block) = [test_orientation, corrected_probe_orientation, level_order];
    
     
     % Storing correct response
-    correct_response = double(test_orientation < probe_orientation);
-    correct_response(correct_response == 0) = 2;
-    p.correct_response(:,n_block) = correct_response;
+    cclockwise_trials = double(probe_orientation < test_orientation);
+    cclockwise_trials(cclockwise_trials == 0) = 2;
+    p.correct_response(:,n_block) = cclockwise_trials;
 
 end
 
