@@ -41,7 +41,7 @@ end
 %% Define orientations
 
 stimuli.orientation_min = 0;
-stimuli.orientation_max = 359;
+stimuli.orientation_max = 179;
 
 %% Define number of noise samples
 
