@@ -65,7 +65,11 @@ exit_session = 0; % default: 0
 
 %% Session loop
 
-dirs.save_filename_template = ['SD_Noise_Pilot_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+if p.training
+    dirs.save_filename_template = ['SD_Noise_Pilot_Training_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+else
+    dirs.save_filename_template = ['SD_Noise_Pilot_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+end
 
 while ~exit_session
 
