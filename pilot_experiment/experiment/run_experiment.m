@@ -47,7 +47,11 @@ end
 cd(dirs.script_dir)
 
 disp(['Entering Run ' num2str(p.run_num)]);
-save_filename = ['SD_Noise_Pilot_S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '.mat'];
+if p.training
+    save_filename = ['SD_Noise_Pilot_Training_S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '.mat'];
+else
+    save_filename = ['SD_Noise_Pilot_S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '.mat'];
+end
 
 %% Initialize experiment
 
