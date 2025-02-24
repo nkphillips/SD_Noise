@@ -44,12 +44,16 @@ for n_trial = 1:size(p.trial_events,1)
     end
 
     if p.demo_run
-    disp(['Trial ' num2str(n_trial)])
-    disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
-    disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
-    disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
-    disp(['Probe Orientation: ' num2str(curr_probe_orient) '°'])
-
+        disp(['Trial ' num2str(n_trial)])
+        disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
+        disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
+        disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
+        if curr_probe_orient > 90
+            disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
+        else
+            disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
+        end
+        disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
     end
 
     %% Test orientation
@@ -205,14 +209,14 @@ for n_trial = 1:size(p.trial_events,1)
                 % Store response based on the pressed key
                 if first_relevant_key == p.keypress_numbers(1)
                   
-                    behav_data.response(n_trial, n_block) = 0; % CCW
+                    behav_data.response(n_trial, n_block) = 1; % CCW
                     if p.demo_run
                         disp('Response: Test perceived as CCW.');
                     end
                
                 elseif first_relevant_key == p.keypress_numbers(2)
                 
-                    behav_data.response(n_trial, n_block) = 1; % CW
+                    behav_data.response(n_trial, n_block) = 2; % CW
                     if p.demo_run
                         disp('Response: Test perceived as CW.');
                     end
@@ -221,6 +225,12 @@ for n_trial = 1:size(p.trial_events,1)
 
                 % Mark response as successful
                 no_response = 0;
+
+                if p.demo_run && p.correct_response(n_trial,n_block) == behav_data.response(n_trial, n_block)
+                    disp('Correct response!')
+                elseif p.demo_run && p.correct_response(n_trial,n_block) ~= behav_data.response(n_trial, n_block)
+                    disp('Incorrect response!')
+                end
 
             elseif any(which_press == p.keypress_numbers(end)) % Escape key
                 
