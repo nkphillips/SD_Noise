@@ -24,11 +24,11 @@ stimuli.width_px = stimuli.aperture_width_px;
 
 %% Define contrasts
 
-stimuli.contrast = [0.9 0.5 0.25]; % high contrast, medium, low 
+stimuli.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michelson contrast
 
 %% Define orientation bandpass filter widths
 
-stimuli.bp_filter_width = [0.1 5 20]; % "0" noise, medium, high ;unit: °
+stimuli.bp_filter_width = [0.1 5 20]; % low noise, medium, high ; unit: °
 
 %% Check that the number of levels between stimulus contrast and bp filter widths match
 
