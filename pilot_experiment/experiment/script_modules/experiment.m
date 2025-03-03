@@ -25,20 +25,20 @@ for n_block = 1:p.num_blocks
     % Pull the current block condition
     curr_cond = p.block_order(n_block);
 
-    % Update probe offsets if it's not the first block of the condition
+    % Update probe offsets if it's not the first block of the current condition
     if n_block > first_block(curr_cond)
     
-        update_staircase
+        %update_staircase
         
     else
 
-        curr_probe_offsets = staircases.final_probe_offsets(curr_cond,:);
+        curr_probe_offsets = staircases.final_probe_offsets(p.trial_events(:, level_order_col, n_block), curr_cond);
 
     end
 
-    % Update probe orientations
-    probe_orientation = p.trial_events(:,1,n_block) + curr_probe_offsets(p.trial_events(:,3,n_block)) .* datasample([-1 1], size(p.trial_events,1)); % test_orientation ± probe_offset
-    p.trial_events(:,2,n_block) = correct_orientation(probe_orientation); % Transform probe orientation to match the compass axis
+    % Calculate probe orientations (test_orientation ± probe_offset)
+    probe_orientation = calc_probe_orientation(p.trial_events(:,test_orientation_col, n_block), curr_probe_offsets);
+    p.trial_events(:,probe_orientation_col,n_block) = correct_orientation(probe_orientation); % Transform probe orientation to match the compass axis
 
     % Grab current block info
     n_trial = 1;
