@@ -54,15 +54,15 @@ for subj = 1:length(subj_IDs)
     figure_name = ['Staircase Trials S' subj_IDs{subj}];
     figure('Name', figure_name, 'Color', 'w');
 
-    for n_sf = 1:size(all_staircases(subj).contrast_deltas, 3)
+    for n_sf = 1:size(all_staircases(subj).probe_offsets, 3)
 
-        subplot(size(all_staircases(subj).contrast_deltas, 3), 1, n_sf);
-        plot(100*all_staircases(subj).contrast_deltas(:,:,n_sf)');
+        subplot(size(all_staircases(subj).probe_offsets, 3), 1, n_sf);
+        plot(100*all_staircases(subj).probe_offsets(:,:,n_sf)');
 
         % Format figure
         % title(['SF ' num2str(all_staircases(subj).inducer_sfs(n_sf))]);
         if n_sf == 3, xlabel('Trial'); end
-        if n_sf == 1, ylabel('Contrast delta (%)'); end
+        if n_sf == 1, ylabel('Probe offset (°)'); end
         box off; set(gca, 'TickDir', 'out');
 
     end
@@ -70,11 +70,11 @@ for subj = 1:length(subj_IDs)
     % Plot final thresholds
     figure_name = ['Final Thresholds S' subj_IDs{subj}];
     figure('Name', figure_name, 'Color', 'w');
-    bar(100*all_staircases(subj).final_contrast_deltas);
+    bar(100*all_staircases(subj).final_probe_offsets);
     
     % Format figure
     xlabel('Inducer SF');
-    ylabel('Final contrast delta (%)');
+    ylabel('Final probe offset (°)');
 
     % xticklabels(num2str(round(all_staircases(subj).inducer_sfs, 2)));
 
