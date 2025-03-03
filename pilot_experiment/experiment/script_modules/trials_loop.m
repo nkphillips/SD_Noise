@@ -19,10 +19,10 @@ redo_trial = 0;
 for n_trial = 1:size(p.trial_events,1)
 
     % Get current test orientation
-    curr_test_orient = p.trial_events(n_trial, 1, n_block); 
+    curr_test_orient = p.trial_events(n_trial, test_orientation_col, n_block); 
 
     % Create rotated probe line
-    curr_probe_orient = p.trial_events(n_trial, 2, n_block); % Get current probe orientation
+    curr_probe_orient = p.trial_events(n_trial, probe_orientation_col, n_block); % Get current probe orientation
     curr_probe_orient_rad = deg2rad(curr_probe_orient);
     curr_rotation = [cos(curr_probe_orient_rad), -sin(curr_probe_orient_rad); ...
         sin(curr_probe_orient_rad), cos(curr_probe_orient_rad)];
@@ -33,13 +33,13 @@ for n_trial = 1:size(p.trial_events,1)
     % Get current contrast and filter width
     if curr_cond == 1
 
-        curr_contrast = p.trial_events(n_trial, 3, n_block);
+        curr_contrast = p.trial_events(n_trial, level_order_col, n_block);
         curr_filter_width = 1;
 
     elseif curr_cond == 2
 
         curr_contrast = 1; 
-        curr_filter_width = p.trial_events(n_trial, 3, n_block);
+        curr_filter_width = p.trial_events(n_trial, level_order_col, n_block);
 
     end
 
@@ -56,7 +56,7 @@ for n_trial = 1:size(p.trial_events,1)
         disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
     end
 
-    %% Test orientation
+    %% Draw Test orientation
     
     n_noise_sample = 0;
 
@@ -85,12 +85,12 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, test_frames_onsets(n_frame));
 
         if p.demo_run && n_frame == frames.test_frames_count
-            KbWait;
+            %KbWait;
         end
 
     end
     
-    %% Mask
+    %% Draw Mask
     % present rapidly updating white noise
     
     n_noise_sample = 0;
@@ -125,7 +125,7 @@ for n_trial = 1:size(p.trial_events,1)
 
     end
     
-    %% Delay
+    %% Delay period
     % blank period of a specified duration
     % just draw fixation
 
@@ -143,7 +143,7 @@ for n_trial = 1:size(p.trial_events,1)
 
     end
     
-    %% Probe
+    %% Draw Probe
     
     for n_frame = 1:frames.probe_frames_count
 
@@ -164,7 +164,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, probe_frames_onsets(n_frame));
         
         if p.demo_run && n_frame == frames.test_frames_count
-            KbWait;
+            %KbWait;
         end
 
     end
