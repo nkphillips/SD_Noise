@@ -49,8 +49,22 @@ p.num_trials_per_block = p.num_levels * p.num_trials_per_unique_cond/p.num_block
 p.trial_events = nan(p.num_trials_per_block, 3, p.num_blocks); % num_trials x [test_orientation, probe_orientation, cond_lvl] x num_blocks 
 p.correct_response = nan(p.num_trials_per_block, p.num_blocks);
 
+%% Load staircase
+
+if p.demo_run
+
+    staircases.final_probe_offsets = randi(15, p.num_levels, p.num_conds);
+
+else
+
+end
+
+%% Generate level order, orientations, correct response
+
 for n_block = 1:p.num_blocks
    
+    curr_cond = p.block_order(n_block);
+
     if p.block_order(n_block) == 1
         
         level_order = BalanceFactors(p.num_trials_per_block/p.num_levels, 1, 1:length(stimuli.contrast));
@@ -64,11 +78,20 @@ for n_block = 1:p.num_blocks
     % Sample Test orientations
     test_orientation = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1));
 
+    % Pre-allocate the probe orientations
+    if n_block == first_block(curr_cond)
+        probe_orientation = calc_probe_orientation(test_orientation, staircases.final_probe_offsets(level_order, curr_cond));
+        corrected_probe_orientation = correct_orientation(probe_orientation); 
+    else
+        corrected_probe_orientation = nan(length(test_orientation),1);
+    end
 
     % Storing trial events
     p.trial_events(:,:,n_block) = [test_orientation, corrected_probe_orientation, level_order];
-   
-    
+    test_orientation_col = 1;
+    probe_orientation_col = 2;
+    level_order_col = 3;
+
     % Storing correct response
     cclockwise_trials = double(probe_orientation < test_orientation);
     cclockwise_trials(cclockwise_trials == 0) = 2;
@@ -76,7 +99,6 @@ for n_block = 1:p.num_blocks
 
 end
 
-p.num_trials = size(p.trial_events,1) * size(p.trial_events,3);
 p.num_trials = p.num_trials_per_block * p.num_blocks;
 
 %% Check condition distribution
