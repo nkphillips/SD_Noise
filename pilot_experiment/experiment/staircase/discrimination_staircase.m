@@ -7,20 +7,19 @@ for curr_cond = 1:p.num_conds
         for n_trial = 1:length(staircases.trial_order(:, curr_lvl, curr_cond))
 
             % Get current test orientation
-            curr_test_orient = p.trial_events(n_trial, 1, n_block);
-
+            curr_test_orient = [];
 
             if p.demo_run
                 disp(['Trial ' num2str(n_trial)])
                 disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
-                disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
-                disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
-                if curr_probe_orient > 90
-                    disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
-                else
-                    disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
-                end
-                disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
+                % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
+                % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
+                % if curr_probe_orient > 90
+                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
+                % else
+                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
+                % end
+                % disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
             end
 
             %% Get current staircase info
@@ -41,14 +40,12 @@ for curr_cond = 1:p.num_conds
 
 
             % Probe offset
-
-
+            curr_probe_orientation = [];
 
             % Create rotated probe line
-            curr_probe_orient = p.trial_events(n_trial, 2, n_block); % Get current probe orientation
-            curr_probe_orient_rad = deg2rad(curr_probe_orient);
-            curr_rotation = [cos(curr_probe_orient_rad), -sin(curr_probe_orient_rad); ...
-                sin(curr_probe_orient_rad), cos(curr_probe_orient_rad)];
+            curr_probe_orientation_rad = deg2rad(curr_probe_orientation);
+            curr_rotation = [cos(curr_probe_orientation_rad), -sin(curr_probe_orientation_rad); ...
+                sin(curr_probe_orientation_rad), cos(curr_probe_orientation_rad)];
 
             curr_probe_line = curr_rotation * (stimuli.probe_line_base - [w.centerX; w.centerY]);
             curr_probe_line = curr_probe_line + [w.centerX; w.centerY];
