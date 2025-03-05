@@ -66,7 +66,7 @@ for cond = 1:p.num_conds
         % use the datasample() function to generate a sequence of test orientations from a min and max range of orientation values,
         % equal in size to the staircase structure (eg., staircases.probe_offsets)
         data = stimuli.orientation_min:stimuli.orientation_max;
-        staircases.test_orientation() = datasample(data, p.num_trials_per_block); 
+        staircases.test_orientation(:, lvl, cond) = datasample(data, staircases.max_trials_per_sc * staircases.num_staircases_per_cond); 
 
     end
 end
