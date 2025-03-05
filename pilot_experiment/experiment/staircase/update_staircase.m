@@ -20,9 +20,9 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
         % Update direction
         staircases.direction(curr_sc, 2, curr_lvl, curr_cond) = -1; % the current direction is updated as decreasing
 
-        % Decrease contrast delta for next trial of the current staircase
+        % Decrease probe offset for next trial of the current staircase
         if curr_sc_trial < staircases.max_trials_per_sc
-            staircases.contrast_deltas(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = max(staircases.min_contrast_delta, staircases.contrast_deltas(curr_sc, curr_sc_trial, curr_lvl, curr_cond) - staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
+            staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = max(staircases.min_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) - staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
         end
 
         % Reset counter
@@ -33,9 +33,9 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
         % Update direction
         staircases.direction(curr_sc, 2, curr_lvl, curr_cond) = -1;
         
-        % Next contrast delta is the same as the current contrast delta
+        % Next probe offset is the same as the current probe offset
         if curr_sc_trial < staircases.max_trials_per_sc
-            staircases.contrast_deltas(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = staircases.contrast_deltas(curr_sc, curr_sc_trial, curr_lvl, curr_cond);
+            staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond);
         end
     end
 
@@ -51,18 +51,18 @@ else
     % Update direction
     staircases.direction(curr_sc, 2, curr_lvl, curr_cond) = 1; % the current direction is updated as increasing
 
-    % Increase contrast delta for next trial of the current staircase
+    % Increase probe offset for next trial of the current staircase
     if curr_sc_trial < staircases.max_trials_per_sc
-        staircases.contrast_deltas(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = min(staircases.max_contrast_delta, staircases.contrast_deltas(curr_sc, curr_sc_trial, curr_lvl, curr_cond) + staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
+        staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = min(staircases.max_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) + staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
     end
 
 end
 
 if p.demo_run && curr_sc_trial < staircases.max_trials_per_sc
     if staircases.correct_count(curr_sc, curr_lvl, curr_cond) == 0
-        disp(['Next contrast delta increased to ' num2str(100*staircases.contrast_deltas(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '%'])
+        disp(['Next probe offset increased to ' num2str(100*staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '%'])
     elseif staircases.correct_count(curr_sc, curr_lvl, curr_cond) == 2
-        disp(['Next contrast delta decreased to ' num2str(100*staircases.contrast_deltas(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '%'])
+        disp(['Next probe offset decreased to ' num2str(100*staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '%'])
     end
 end
 
