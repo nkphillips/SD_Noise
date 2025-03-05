@@ -1,29 +1,21 @@
 %%% detection_staircase
 % 2 staircases per inducer SF that begin at the min and max contrast value
 
+n_block = 0;
+
 for curr_cond = 1:p.num_conds
     for curr_lvl = 1:p.num_levels
 
+        n_block = n_block + 1;
+
         for n_trial = 1:length(staircases.trial_order(:, curr_lvl, curr_cond))
-
-            % Get current test orientation
-            curr_test_orient = [];
-
-            if p.demo_run
-                disp(['Trial ' num2str(n_trial)])
-                disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
-                % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
-                % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
-                % if curr_probe_orient > 90
-                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
-                % else
-                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
-                % end
-                % disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
-            end
-
+        
             %% Get current staircase info
 
+            % Get current test orientation
+            curr_test_orient = staircases.test_orientation(n_trial,curr_lvl,curr_cond);           
+            
+            % Get current staircase
             curr_sc = staircases.trial_order(n_trial, curr_lvl, curr_cond);
 
             % Skip current trial if the max reversals have already been reached for the current staircase
@@ -40,7 +32,7 @@ for curr_cond = 1:p.num_conds
 
 
             % Probe offset
-            curr_probe_orientation = [];
+            curr_probe_orientation = calc_probe_orientation(curr_test_orient,staircases.probe_offsets(curr_sc,curr_sc_trial,curr_lvl,curr_cond ));
 
             % Create rotated probe line
             curr_probe_orientation_rad = deg2rad(curr_probe_orientation);
@@ -50,12 +42,101 @@ for curr_cond = 1:p.num_conds
             curr_probe_line = curr_rotation * (stimuli.probe_line_base - [w.centerX; w.centerY]);
             curr_probe_line = curr_probe_line + [w.centerX; w.centerY];
 
-            
+            % Get current contrast and filter width
+            if curr_cond == 1
+
+                curr_contrast = curr_lvl;
+                curr_filter_width = 1;
+
+            elseif curr_cond == 2
+
+                curr_contrast = 1;
+                curr_filter_width = curr_lvl;
+
+            end
+
+
+            if p.demo_run
+                disp(['Trial ' num2str(n_trial)])
+                disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
+                % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
+                % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
+                % if curr_probe_orient > 90
+                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
+                % else
+                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
+                % end
+                % disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
+            end
+
+
             %% Draw Test
 
+            n_noise_sample = 0;
+
+            for n_frame = 1:frames.test_frames_count
+
+                % Update noise sample when a new sample is needed
+                if frames.test_noise_sample_update(n_frame)
+                    n_noise_sample = n_noise_sample + 1;
+                    curr_noise_sample = frames.test_noise_sample_update_seq(n_trial, n_noise_sample, n_block);
+                end
+
+                % Draw Test
+                Screen('DrawTexture', w.window, stimuli.test_textures_made(curr_contrast, curr_filter_width, curr_noise_sample), [], noise_patch, curr_test_orient);
+
+                % Stimulus aperture
+                Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch, curr_test_orient);
+
+                % Draw fixation
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+                % Flip
+                if n_frame == 1
+                    test_frames_onsets = frames.test_frames_onsets + GetSecs;
+                end
+                Screen('Flip', w.window, test_frames_onsets(n_frame));
+
+                if p.demo_run && n_frame == frames.test_frames_count
+                    % KbWait;
+                end
+
+            end
 
             %% Draw mask
 
+            n_noise_sample = 0;
+
+            for n_frame = 1:frames.mask_frames_count
+
+                % Update noise sample when a new sample is needed
+                if frames.mask_noise_sample_update(n_frame)
+                    n_noise_sample = n_noise_sample + 1;
+                    curr_noise_sample = frames.mask_noise_sample_update_seq(n_trial, n_noise_sample, n_block);
+                end
+
+                % Draw mask
+                Screen('DrawTexture', w.window, stimuli.mask_textures_made(curr_contrast, curr_noise_sample), [], noise_patch);
+
+                % Stimulus aperture
+                Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
+
+                % Draw fixation
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+                % Flip
+                if n_frame == 1
+                    mask_frames_onsets = frames.mask_frames_onsets + GetSecs;
+                end
+                Screen('Flip', w.window, mask_frames_onsets(n_frame)); % every frame has a deadline
+
+                % if p.demo_run && n_frame == frames.test_frames_count
+                %     KbWait;
+                % end
+
+            end
 
             %% Delay period
 
@@ -73,8 +154,31 @@ for curr_cond = 1:p.num_conds
 
             end
 
-            %% Draw probe
+            %% Draw Probe
 
+            for n_frame = 1:frames.probe_frames_count
+
+                % Draw Line
+                Screen('DrawLines', w.window, curr_probe_line, stimuli.probe_thickness, stimuli.probe_color);
+
+                % Stimulus aperture
+                Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
+
+                % Draw fixation
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+
+                % Flip
+                if n_frame == 1
+                    probe_frames_onsets = frames.probe_frames_onsets + GetSecs;
+                end
+                Screen('Flip', w.window, probe_frames_onsets(n_frame));
+
+                if p.demo_run && n_frame == frames.test_frames_count
+                    %KbWait;
+                end
+
+            end
 
             %% Response
 
@@ -216,7 +320,7 @@ for curr_cond = 1:p.num_conds
 
         %% Rest period
 
-        
+
 
     end
 end
