@@ -74,26 +74,13 @@ init_stimuli_params
 
 init_staircase
 
-%% Create fixation
+%% Initialize (create) textures
 
-fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
+init_textures
 
-%% Create circular aperture
-% alpha level for aperture:
-% 0 = completely transparent (the texture of the aperture is invisible)
-% 255 = completely opaque (the texture of the aperture dominates)
+%% Make textures for drawing
 
-aperture = create_circular_aperture(stimuli.aperture_width_px, stimuli.aperture_height_px, stimuli.aperture_radius_px); % angle, texture size, radius of circle
-
-aperture = imgaussfilt(aperture, 0.05 * w.ppd);
-
-% First layer of aperture is just a gray rectangle the size of the screen
-aperture_texture(:,:,1) = ones(size(aperture)) * w.gray;
-
-% The second layer is the smoothened aperture made above
-aperture_texture(:,:,2) = aperture * 255;
-
-stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
+make_textures
 
 %% Define patches for drawing
 
