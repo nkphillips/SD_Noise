@@ -8,9 +8,9 @@ staircases = struct();
 staircases.num_staircases_per_cond = 2;
 
 % Probe offset range
-staircases.max_offset = 15;
-staircases.min_offset = 1;
-staircases.init_probe_offset = [staircases.min_offset staircases.max_offset];
+staircases.max_probe_offset = 15;
+staircases.min_probe_offset = 1;
+staircases.init_probe_offset = [staircases.min_probe_offset staircases.max_probe_offset];
 
 % Step size
 staircases.min_step_size = 1;
@@ -44,6 +44,7 @@ staircases.reversal_indices = nan(staircases.num_staircases_per_cond, staircases
 p.num_trials = numel(staircases.trial_order);
 p.num_trials_per_block = staircases.max_trials_per_sc*2;
 p.num_blocks = p.num_conds * p.num_levels;
+
 for cond = 1:p.num_conds
     for lvl = 1:p.num_levels
 
@@ -57,8 +58,9 @@ for cond = 1:p.num_conds
         for n_sc = 1:staircases.num_staircases_per_cond
 
             staircases.trial_indices(n_sc, :, lvl, cond) = find(staircases.trial_order(:, lvl, cond) == n_sc);
-            staircases.probe_offsets(n_sc, 1, lvl, cond) = staircases.init_probe_offset(n_sc);
-            staircases.step_size(n_sc, 1, lvl, cond) = staircases.init_step_size(n_sc);
+
+            staircases.probe_offsets(n_sc, 1, lvl, cond) = staircases.init_probe_offset(n_sc); % set the initial probe offset
+            staircases.step_size(n_sc, 1, lvl, cond) = staircases.init_step_size(n_sc); % set the initial step size
 
         end
 
