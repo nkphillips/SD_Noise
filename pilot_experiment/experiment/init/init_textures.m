@@ -8,74 +8,13 @@ lur003@ucsd.edu
 
 %}
 
-%% Check if textures exist
+%% Toggles
 
-textures_filename = ['SD_Noise_Pilot_S' p.subj_ID '_textures_' p.display_setup '_' num2str(p.run_num) '.mat'];
+textures_filename = ['SD_Noise_textures_' p.display_setup '.mat'];
 
 tic
 generate_textures = 1; % this will be set to 0 if they don't need to be generated
-save_textures = 1;
-
-if p.run_num > 1
-
-    cd(dirs.texture_dir)
-
-    % Check if subject folder exists
-    if ~exist(p.subj_ID,'dir')
-
-        mkdir(p.subj_ID)
-
-    elseif exist(p.subj_ID,'dir') ~= 0
-
-        % Check if textures file exists
-        cd(p.subj_ID)
-        if exist(textures_filename,'file') ~= 0
-
-            disp('Loading stimuli...')
-            load(textures_filename)
-
-            % Check compatibility
-            struct_fieldnames = fieldnames(textures);
-
-            incompat = zeros(1,numel(struct_fieldnames));
-
-            for n_field = 1:numel(struct_fieldnames)
-                
-                incompat_test = stimuli.(struct_fieldnames{n_field}) == textures.(struct_fieldnames{n_field});
-                
-                if sum(incompat_test) < length(incompat_test)
-                    incompat(n_field) = 1;
-                end
-
-            end
-
-            % If the loaded textures are compatible, append them to the stimuli struct
-            if sum(incompat) == 0
-
-                disp('Loaded textures are compatible!')
-                generate_textures = 0;
-                save_textures = 0;
-
-                struct_fieldnames = fieldnames(textures);
-                struct_fieldnames(~contains(struct_fieldnames,'textures')) = [];
-
-                for n_field = 1:numel(struct_fieldnames)
-                
-                    stimuli.(struct_fieldnames{n_field}) = textures.(struct_fieldnames{n_field});
-
-                end
-
-                clear textures
-
-            end
-
-        end
-        
-        cd(dirs.script_dir)
-
-    end
-
-end
+save_textures = 0;
 
 %% Aperture
 % alpha level for aperture:
@@ -139,7 +78,6 @@ if generate_textures
     end
 
         
-
 end
 
 disp(['Elapsed time: ' num2str(toc) ' s'])
