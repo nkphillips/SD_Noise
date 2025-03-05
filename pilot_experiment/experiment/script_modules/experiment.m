@@ -16,6 +16,7 @@ Created 10.24.2024
 if ~p.demo_run, wait_for_trigger; end
 t.exp_start_time = GetSecs;
 
+
 %% Block loop
 
 for n_block = 1:p.num_blocks
@@ -48,6 +49,16 @@ for n_block = 1:p.num_blocks
 
     % Enter rest period
     if n_block < p.num_blocks
+
+        % Briefly show progress
+        rest_period_text = ['Block ' num2str(n_block) ' of ' num2str(p.num_blocks)];
+        rest_period_text_boundary = Screen('TextBounds', w.window, rest_period_text);
+        rest_period_text_patch = CenterRectOnPoint(rest_period_text_boundary, w.centerX, w.centerY);
+        Screen('DrawText', w.window, rest_period_text, rest_period_text_patch(1),  rest_period_text_patch(2), w.white);
+        Screen('Flip', w.window);
+        WaitSecs(2);
+
+        % Enter rest period
         rest_period
     end
 
