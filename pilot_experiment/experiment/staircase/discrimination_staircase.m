@@ -319,8 +319,8 @@ for curr_cond = 1:p.num_conds
 
 
         %% Rest period
-
-
+        
+        rest_period
 
     end
 end
