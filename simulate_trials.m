@@ -107,8 +107,6 @@ delta_theta = cell(p.num_levels, p.num_levels, p.num_conds);
 
 for cond = 1:p.num_conds
     
-    figure('Name',  p.cond_names{cond}, 'Color', [1 1 1])
-
     curr_blocks = find(p.block_order == cond);
     
     curr_lvls = squeeze(p.trial_events(:,end,curr_blocks));
@@ -155,7 +153,7 @@ for cond = 1:p.num_conds
         for b = 1:p.num_levels
 
             % Plot histogram
-            subplot(subplotX, subplotX, plot_counter);
+            subplot(subplotX, subplotY, plot_counter);
             histogram(delta_theta{b, a, cond});
             box off;
             xlim([-180 180]);
@@ -175,3 +173,41 @@ end
 % [h, p_value] = ttest(x(:), y(:));
 % 
 % figure, histogram(x(:)), hold on;  histogram(y(:))
+
+%% Simulate subject 
+
+% Define parameters
+amplitude = 4.5;
+sigma = 10;
+width = 1 / sigma;
+noise = 1;
+
+% Pre-allocate output
+y = cell(p.num_levels, p.num_levels, p.num_conds);
+
+for cond = 1:p.num_conds
+    figure('Name',  p.cond_names{cond}, 'Color', [1 1 1])
+    plot_counter = 1;
+    for a = 1:p.num_levels
+        for b = 1:p.num_levels
+
+            % Generate values
+            params = [amplitude, width];
+            y{b, a, cond} = gaussian_prime(params, delta_theta{b, a, cond}) + noise .* randn(1,length(delta_theta{b, a, cond}));
+
+            % Plot 
+            subplot(subplotX, subplotY, plot_counter);
+            scatter(delta_theta{b, a, cond}, y{b, a, cond}, 20, 'Marker','o' , 'MarkerFaceColor',[0 0 0], 'MarkerEdgeColor',[1 1 1]);
+            xlim([-180 180]);
+
+            hold on
+            line([min(xlim), max(xlim)], [0 0],'LineStyle','-','Color', [0 0 0])
+            box off;
+            ylim([-10 10])    
+
+            plot_counter = plot_counter + 1;
+            
+        end
+    end
+end
+
