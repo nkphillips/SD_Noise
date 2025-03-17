@@ -4,7 +4,7 @@
 % c scales the amplitude and is a constant
 % w = the inverse of the curve width
 
-function y = gaussian_prime(params,delta)
+function y = gaussian_prime(params, delta)
 
     c = sqrt(2)/exp(-0.5);
 
@@ -12,6 +12,8 @@ function y = gaussian_prime(params,delta)
     w = params(2);
 
     y = delta .* amplitude .* w * c .* exp(-((w.*delta).^2));
+
+    % scatter(delta,y);
 
 end
 
