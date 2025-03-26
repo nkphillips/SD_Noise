@@ -31,7 +31,7 @@ function staircases = check_convergence(staircases, curr_sc, curr_lvl, curr_cond
         if abs(performance - target_performance) <= performance_window
             staircases.converged(curr_sc, curr_lvl, curr_cond) = 1;
             
-            if p.demo_run
+            if p.disp_on
                 disp(['Staircase converged! Performance = ' num2str(performance, '%.1f') '%']);
             end
             

@@ -33,6 +33,9 @@ for curr_cond = 1:p.num_conds
             % Probe offset
             curr_probe_offset = staircases.probe_offsets(curr_sc,curr_sc_trial,curr_lvl,curr_cond);
             curr_probe_orientation = calc_probe_orientation(curr_test_orient,curr_probe_offset);
+            
+            % Calculate absolute orientation difference
+            orient_diff = abs(curr_probe_orientation - curr_test_orient);
 
             % Create rotated probe line
             curr_probe_orientation_rad = deg2rad(curr_probe_orientation);
@@ -59,6 +62,7 @@ for curr_cond = 1:p.num_conds
             if p.demo_run
                 disp(['Trial ' num2str(n_trial)])
                 disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
+                disp(['Probe Orientation: ' num2str(curr_probe_orientation) '°'])
                 % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
                 % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
                 % if curr_probe_orient > 90
@@ -186,6 +190,15 @@ for curr_cond = 1:p.num_conds
             no_response_recorded = 1;
             response_start = GetSecs;
 
+            if p.demo_run
+                disp(['Orientation difference: ' num2str(orient_diff) '°'])
+                if curr_probe_orientation < curr_test_orient
+                    disp('Correct response: Left')
+                else
+                    disp('Correct response: Right')
+                end
+            end
+
             % Check for a key press
             if ~p.simulate_response
 
@@ -196,26 +209,40 @@ for curr_cond = 1:p.num_conds
             else
 
                 % Define psychometric function parameters
-                threshold = 5; % Discrimination threshold in degrees
+                threshold = 10; % Discrimination threshold in degrees
                 slope = 0.3; % Controls steepness of psychometric function
-                guess_rate = 0.5; % Chance performance (50% for 2AFC)
-                lapse_rate = 0.02; % Small probability of lapses/mistakes
+                lapse_rate = 0.05; % Small probability of lapses/mistakes
                 
-                % Calculate discrimination probability using cumulative normal function
-                z_score = (curr_probe_offset - threshold) / slope;
-                p_correct = guess_rate + (1 - guess_rate - lapse_rate) * normcdf(z_score);
+                % Calculate probability of correct discrimination using cumulative normal
+                z_score = (orient_diff - threshold) / slope;
+                p_correct = 0.5 + (0.5 - lapse_rate) * normcdf(z_score);
                 
                 if p.demo_run
                     disp(['Discrimination probability: ' num2str(round(100*p_correct)) '%'])
                 end
                 
                 % Simulate response based on discrimination probability
-                key_pressed = rand() < p_correct;
-
-                if key_pressed
-                    which_press = p.keypress_numbers(1);
+                correct_response = rand() < p_correct;
+                
+                % Determine which key would be pressed
+                if correct_response
+                    % Correct response - choose appropriate key for tilt direction
+                    if curr_probe_orientation < curr_test_orient
+                        which_press = p.keypress_numbers(1); % Left tilt
+                    else
+                        which_press = p.keypress_numbers(2); % Right tilt
+                    end
+                else
+                    % Incorrect response - choose wrong key for tilt direction
+                    if curr_probe_orientation < curr_test_orient
+                        which_press = p.keypress_numbers(2); % Wrong for left tilt
+                    else
+                        which_press = p.keypress_numbers(1); % Wrong for right tilt
+                    end
                 end
-            
+                
+                key_pressed = true;
+                
                 % Record response duration
                 response_dur = GetSecs - response_start;
 
@@ -223,17 +250,26 @@ for curr_cond = 1:p.num_conds
 
             % Evaluate key press
             if key_pressed 
-
                 % Find overlap between pressed keys and relevant keys
-                relevant_keys = intersect(which_press, p.keypress_numbers(1));
+                relevant_keys = intersect(which_press, p.keypress_numbers);
                 if ~isempty(relevant_keys) % If a relevant key was pressed
 
                     first_relevant_key = relevant_keys(1); % Get the first relevant key
 
-                    % Store response based on the pressed key
-                    if first_relevant_key == p.keypress_numbers(1)
-                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 1;
-                        staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl) = response_dur;
+                    if first_relevant_key == p.keypress_numbers(1) && curr_probe_orientation < curr_test_orient
+                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
+                        staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
+                        if p.demo_run
+                            disp('Response: Left')
+                        end
+                    elseif first_relevant_key == p.keypress_numbers(2) && curr_probe_orientation > curr_test_orient
+                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
+                        staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
+                        if p.demo_run
+                            disp('Response: Right')
+                        end
+                    else
+                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
                     end
 
                     % No response is now false
@@ -282,11 +318,8 @@ for curr_cond = 1:p.num_conds
 
                             % Store response based on the pressed key
                             if first_relevant_key == p.keypress_numbers(1)
-                                staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 1;
-                                staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl) = response_dur;
-                                if p.demo_run
-                                    disp('Change detected')
-                                end
+                                staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
+                                staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
                             end
 
                             % No response is now false
@@ -306,10 +339,7 @@ for curr_cond = 1:p.num_conds
                 end
 
                 if no_response_recorded
-                    staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 0;
-                    if p.demo_run
-                        disp('Change missed')
-                    end
+                    staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
                 end
 
             end

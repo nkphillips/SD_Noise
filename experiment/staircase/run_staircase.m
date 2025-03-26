@@ -15,6 +15,7 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
+p.disp_on = 1;
 p.demo_run = 1;
 p.simulate_response = 1;
 

@@ -9,8 +9,8 @@ if staircases.num_reversals(curr_sc, curr_lvl, curr_cond) >= staircases.num_reve
     % Reduce step size
     staircases.step_size(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = max(staircases.min_step_size, staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond) / 2);
 
-    if p.demo_run
-            disp(['Staircase step size for next trial reduced from ' num2str(old_step_size) ' to ' num2str(staircases.step_size(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond))])
+    if p.disp_on
+        disp(['Staircase step size for next trial reduced from ' num2str(old_step_size) ' to ' num2str(staircases.step_size(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond))])
     end
     
 end

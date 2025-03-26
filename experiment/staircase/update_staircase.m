@@ -20,7 +20,7 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
     % Increase correct response counter
     staircases.correct_count(curr_sc, curr_lvl, curr_cond) = staircases.correct_count(curr_sc, curr_lvl, curr_cond) + 1;
 
-    if p.demo_run
+    if p.disp_on
         disp(['Correct responses: ' num2str(staircases.correct_count(curr_sc, curr_lvl, curr_cond))])
     end
 
@@ -40,7 +40,7 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
             staircases.reversal_indices(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
 
             % Display message
-            if p.demo_run
+            if p.disp_on
                 disp('Reversal detected (increasing to decreasing).')
             end
 
@@ -56,13 +56,13 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
         if curr_sc_trial < staircases.max_trials_per_sc
 
             % Display message
-            if p.demo_run
+            if p.disp_on
                 disp(['Current step size: ' num2str(staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond)) '°'])
             end
 
             % Decrease probe offset for next trial
             staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = max(staircases.min_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) - staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
-            if p.demo_run
+            if p.disp_on
                 disp(['Next probe offset decreased to ' num2str(staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '°'])
             end
 
@@ -80,13 +80,13 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
         if curr_sc_trial < staircases.max_trials_per_sc
 
             % Display message
-            if p.demo_run
+            if p.disp_on
                 disp(['Current step size: ' num2str(staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond)) '°'])
             end
 
             % Next probe offset is the same as the current probe offset
             staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond);
-            if p.demo_run
+            if p.disp_on
                 disp(['Next probe offset will stay as ' num2str(staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '°'])
             end
 
@@ -106,7 +106,7 @@ else
         staircases.reversal_indices(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
 
         % Display message
-        if p.demo_run
+        if p.disp_on
             disp('Reversal detected (decreasing to increasing).')
         end
 
@@ -126,13 +126,13 @@ else
     if curr_sc_trial < staircases.max_trials_per_sc
 
         % Display message
-        if p.demo_run
+        if p.disp_on
             disp(['Current step size: ' num2str(staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond)) '°'])
         end
 
         % Increase probe offset for next trial
         staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = min(staircases.max_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) + staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
-        if p.demo_run
+        if p.disp_on
             disp(['Next probe offset increased to ' num2str(staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '°'])
         end
         
