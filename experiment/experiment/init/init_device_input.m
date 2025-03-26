@@ -17,7 +17,7 @@ switch p.which_setup
         %     p.device_string =  'USB-HID Keyboard'; % external keyboard
 
         % Define keypress numbers
-        p.keypress_numbers = [KbName('1!') KbName('2@') KbName('Space') KbName('Escape')];
+        p.keypress_numbers = [KbName('1!') KbName('2@')];
 
         % Assign trigger key
         p.trigger_key = KbName('Space');
@@ -27,25 +27,10 @@ switch p.which_setup
         p.device_string = 'Dell Dell USB Keyboard';
 
         % Define keypress numbers
-        p.keypress_numbers = [KbName('1!') KbName('2@') KbName('Space') KbName('Escape')];
+        p.keypress_numbers = [KbName('1!') KbName('2@')];
 
         % Assign trigger key
         p.trigger_key = KbName('Space');
-
-    case 2
-
-        p.device_string = {''}; % MRI-safe button box
-        %    p.device_string = ''; % Built-in keyboard
-
-        if p.demo_run == 0 && strcmp(p.device_string, '') == 0
-            error('Incorrect device string! Change to button box.')
-        end
-
-        % Define keypress numbers
-        p.keypress_numbers = [KbName('b') KbName('y') KbName('g') KbName('r')];
-
-        % Assign trigger key
-        p.trigger_key = KbName('t');
 
     case 3 % If using S32D850
 

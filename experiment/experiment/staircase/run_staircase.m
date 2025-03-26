@@ -18,10 +18,6 @@ rng(t.my_rng_seed);
 p.demo_run = 1;
 p.simulate_response = 1;
 
-if p.simulate_response
-    presumed_target = 0.707; % From Garcia-Perez 1998, two-down, one-up rule Table 2
-end
-
 p.which_setup = 3; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
 
 % Sync Test

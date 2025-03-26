@@ -30,9 +30,9 @@ for curr_cond = 1:p.num_conds
                 disp(['Staircase ' num2str(curr_sc) ', trial ' num2str(curr_sc_trial)])
             end
 
-
             % Probe offset
-            curr_probe_orientation = calc_probe_orientation(curr_test_orient,staircases.probe_offsets(curr_sc,curr_sc_trial,curr_lvl,curr_cond ));
+            curr_probe_offset = staircases.probe_offsets(curr_sc,curr_sc_trial,curr_lvl,curr_cond);
+            curr_probe_orientation = calc_probe_orientation(curr_test_orient,curr_probe_offset);
 
             % Create rotated probe line
             curr_probe_orientation_rad = deg2rad(curr_probe_orientation);
@@ -183,7 +183,7 @@ for curr_cond = 1:p.num_conds
             %% Response
 
             % Initialize response state and response start
-            no_response = 1;
+            no_response_recorded = 1;
             response_start = GetSecs;
 
             % Check for a key press
@@ -195,41 +195,51 @@ for curr_cond = 1:p.num_conds
 
             else
 
-                key_pressed = datasample([0 1], 1, 'Weights',[1-presumed_target presumed_target]);
+                % Define psychometric function parameters
+                threshold = 5; % Discrimination threshold in degrees
+                slope = 0.3; % Controls steepness of psychometric function
+                guess_rate = 0.5; % Chance performance (50% for 2AFC)
+                lapse_rate = 0.02; % Small probability of lapses/mistakes
+                
+                % Calculate discrimination probability using cumulative normal function
+                z_score = (curr_probe_offset - threshold) / slope;
+                p_correct = guess_rate + (1 - guess_rate - lapse_rate) * normcdf(z_score);
+                
+                if p.demo_run
+                    disp(['Discrimination probability: ' num2str(round(100*p_correct)) '%'])
+                end
+                
+                % Simulate response based on discrimination probability
+                key_pressed = rand() < p_correct;
+
                 if key_pressed
                     which_press = p.keypress_numbers(1);
-                    response_dur = GetSecs - response_start;
-                    if p.demo_run
-                        disp('Change detected')
-                    end
-                else
-                    staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 0;
-                    if p.demo_run
-                        disp('Change missed')
-                    end
                 end
+            
+                % Record response duration
+                response_dur = GetSecs - response_start;
 
             end
 
-            % Evaluate response
-            if key_pressed && no_response
+            % Evaluate key press
+            if key_pressed 
 
                 % Find overlap between pressed keys and relevant keys
-                relevant_keys = intersect(which_press, [0 p.keypress_numbers(1)]);
+                relevant_keys = intersect(which_press, p.keypress_numbers(1));
                 if ~isempty(relevant_keys) % If a relevant key was pressed
 
-                    response_dur(n_trial) = response_dur; % Record response duration
                     first_relevant_key = relevant_keys(1); % Get the first relevant key
 
                     % Store response based on the pressed key
                     if first_relevant_key == p.keypress_numbers(1)
                         staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 1;
+                        staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl) = response_dur;
                     end
 
                     % No response is now false
-                    no_response = 0;
+                    no_response_recorded = 0;
 
-                elseif any(which_press == p.keypress_numbers(end)) % Escape key
+                elseif any(which_press == KbName('ESCAPE')) % Escape key
 
                     if p.demo_run
                         disp('Escape key pressed. Exiting...');
@@ -254,45 +264,35 @@ for curr_cond = 1:p.num_conds
                     Screen('Flip', w.window);
 
                     % Check for a key press
-                    if ~p.simulate_response
+                    if ~p.simulate_response && no_response_recorded
                         [key_pressed, first_press] = KbQueueCheck(p.device_number);
                         which_press = find(first_press);
                         response_dur = GetSecs - response_start;
-                    else
-
-                        key_pressed = datasample([0 1], 1, 'Weights',[1-presumed_target presumed_target]);
-                        if key_pressed
-                            which_press = p.keypress_numbers(1);
-                            response_dur = GetSecs - response_start;
-                        else
-                            staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 0;
-                        end
-
                     end
 
                     % Evaluate response
-                    if key_pressed && no_response
+                    if key_pressed && no_response_recorded
 
                         % Find overlap between pressed keys and relevant keys
-                        relevant_keys = intersect(which_press, [0 p.keypress_numbers(1)]);
+                        relevant_keys = intersect(which_press, p.keypress_numbers(1));
 
                         if ~isempty(relevant_keys) % If a relevant key was pressed
 
-                            response_dur(n_trial) = response_dur; % Record response duration
                             first_relevant_key = relevant_keys(1); % Get the first relevant key
 
                             % Store response based on the pressed key
                             if first_relevant_key == p.keypress_numbers(1)
                                 staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 1;
+                                staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl) = response_dur;
                                 if p.demo_run
                                     disp('Change detected')
                                 end
                             end
 
                             % No response is now false
-                            no_response = 0;
+                            no_response_recorded = 0;
 
-                        elseif any(which_press == p.keypress_numbers(end)) % Escape key
+                        elseif any(which_press == KbName('ESCAPE')) % Escape key
 
                             if p.demo_run
                                 disp('Escape key pressed. Exiting...');
@@ -304,6 +304,14 @@ for curr_cond = 1:p.num_conds
                     end
 
                 end
+
+                if no_response_recorded
+                    staircases.responses(curr_sc, curr_sc_trial, curr_lvl) = 0;
+                    if p.demo_run
+                        disp('Change missed')
+                    end
+                end
+
             end
 
             %% Update staircase
