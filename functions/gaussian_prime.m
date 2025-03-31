@@ -11,10 +11,8 @@ function y = gaussian_prime(params, delta)
     amplitude = params(1);
     w = params(2);
 
-    y = delta .* amplitude .* w * c .* exp(-((w.*delta).^2));
-
-    % scatter(delta,y);
-
+    y = delta * amplitude * w * c .* exp(-((w * delta).^2));
+ 
 end
 
 

@@ -107,10 +107,10 @@ for cond = 1:p.num_conds
     for lvl = 1:p.num_levels
 
         % Pre-allocate vector to store the mean probe offset for a staircase
-        reversal_probe_offsets = nan(staircases.num_staircases_per_sf, 1);
+        reversal_probe_offsets = nan(staircases.num_staircases_per_cond, 1);
 
         % Get the contrast levels at all the reversals from both staircases
-        for n_sc = 1:staircases.num_staircases_per_sf
+        for n_sc = 1:staircases.num_staircases_per_cond
 
             % Get the number of reversals
             curr_num_reversals = nnz(staircases.reversal_indices(n_sc,:,lvl,cond) == 1);

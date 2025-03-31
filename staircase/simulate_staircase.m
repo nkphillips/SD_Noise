@@ -17,6 +17,7 @@ rng(t.my_rng_seed);
 
 p.disp_on = 1;
 p.which_setup = 3; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
+save_staircase_data = 1;
 
 %% Set directories
 
@@ -25,10 +26,8 @@ p.subj_ID = '999';
 dirs.script_dir = pwd;
 dirs.init_dir = '../init'; addpath(dirs.init_dir);
 dirs.modules_dir = '../script_modules'; addpath(dirs.modules_dir);
-dirs.functions_dir = '../../../functions'; addpath(dirs.functions_dir);
-dirs.texture_dir = '../textures'; addpath(dirs.texture_dir);
-dirs.data_dir = '../../data'; addpath(dirs.data_dir);
-dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
+dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
+dirs.data_dir = '../data'; addpath(dirs.data_dir);
 
 %% Define stimuli
 
@@ -125,7 +124,7 @@ for curr_cond = 1:p.num_conds
             %% Simulate response
 
             % Define psychometric function parameters
-            threshold = 10; % Discrimination threshold in degrees
+            threshold = 5; % Discrimination threshold in degrees
             slope = 0.3; % Controls steepness of psychometric function
             lapse_rate = 0.05; % Small probability of lapses/mistakes
             
@@ -185,4 +184,50 @@ for curr_cond = 1:p.num_conds
         end
 
     end
+end
+
+%% Calculate final probe offsets for each condition & level
+
+staircases.final_probe_offsets = nan(p.num_levels, p.num_conds);
+
+for cond = 1:p.num_conds
+    for lvl = 1:p.num_levels
+
+        % Pre-allocate vector to store the mean probe offset for a staircase
+        reversal_probe_offsets = nan(staircases.num_staircases_per_cond, 1);
+
+        % Get the contrast levels at all the reversals from both staircases
+        for n_sc = 1:staircases.num_staircases_per_cond
+
+            % Get the number of reversals
+            curr_num_reversals = nnz(staircases.reversal_indices(n_sc,:,lvl,cond) == 1);
+
+            % Get the contrast levels at the reversals
+            if curr_num_reversals > 0
+                tmp_reversal_probe_offsets = staircases.probe_offsets(n_sc, staircases.reversal_indices(n_sc,:,lvl,cond) == 1, lvl,cond);
+            end
+
+            % Ignore the first reversals with respect to num_reversals_to_consider (counting back from the last reversal)
+            tmp_reversal_probe_offsets = tmp_reversal_probe_offsets(end-staircases.num_reversals_to_consider+1:end);
+
+            % Average all the reversals across a staircase
+            reversal_probe_offsets(n_sc) = mean(tmp_reversal_probe_offsets, 'omitnan');
+
+        end
+
+        % Average the two levels across staircases
+        staircases.final_probe_offsets(lvl,cond) = mean(reversal_probe_offsets);
+
+    end
+end
+
+%% Save staircase data
+
+staircases.contrast = stimuli.contrast;
+staircases.bp_filter_width = stimuli.bp_filter_width;
+
+if save_staircase_data
+    save_filename = ['staircase_data_S' p.subj_ID '_' t.the_date '_' t.the_time '.mat'];
+    save([dirs.data_dir '/' p.subj_ID '/' save_filename], 'staircases');
+    disp(['Staircase data saved to ' dirs.data_dir '/' p.subj_ID '/' save_filename]);
 end

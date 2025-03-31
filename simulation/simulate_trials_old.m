@@ -5,10 +5,9 @@ clear all; close all; clc;
 %% Set directories
 
 script_dir = pwd;
-init_dir = [script_dir '/pilot_experiment/experiment/init']; addpath(init_dir);
-functions_dir = [script_dir '/functions']; addpath(functions_dir);
+functions_dir = '../functions'; addpath(functions_dir);
 
-%%
+%% Define parameters
 
 % Define contrasts
 stimuli.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michelson contrast
@@ -17,7 +16,6 @@ stimuli.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michels
 stimuli.bp_filter_width = [0.1 5 20]; % low noise, medium, high ; unit: °
 
 % Check that the number of levels between stimulus contrast and bp filter widths match
-
 if length(stimuli.bp_filter_width) == length(stimuli.contrast)
     p.num_levels = length(stimuli.contrast);
 else
@@ -179,7 +177,7 @@ end
 % Define parameters
 amplitude = 4.5;
 sigma = 10;
-width = 1 / sigma;
+width = 10;
 noise = 1;
 
 % Pre-allocate output
@@ -195,17 +193,20 @@ for cond = 1:p.num_conds
             params = [amplitude, width];
             y{b, a, cond} = gaussian_prime(params, delta_theta{b, a, cond}) + noise .* randn(1,length(delta_theta{b, a, cond}));
 
-            % % Plot 
-            % subplot(subplotX, subplotY, plot_counter);
-            % scatter(delta_theta{b, a, cond}, y{b, a, cond}, 20, 'Marker','o' , 'MarkerFaceColor',[0 0 0], 'MarkerEdgeColor',[1 1 1]);
-            % xlim([-180 180]);
+            % Plot 
+            subplot(subplotX, subplotY, plot_counter);
+            scatter(delta_theta{b, a, cond}, y{b, a, cond}, 20, 'Marker','o' , 'MarkerFaceColor',[0 0 0], 'MarkerEdgeColor',[1 1 1]);
+            xlim([-180 180]);
 
-            % hold on
-            % line([min(xlim), max(xlim)], [0 0],'LineStyle','-','Color', [0 0 0])
-            % box off;
-            % ylim([-10 10])    
+            hold on
+            line([min(xlim), max(xlim)], [0 0],'LineStyle','-','Color', [0 0 0])
+            box off;
+            xlabel('\Delta\theta')
+            ylabel('Bias (°)')
+            ylim([-10 10])    
+            set(gca, 'TickDir','out')
 
-            % plot_counter = plot_counter + 1;
+            plot_counter = plot_counter + 1;
             
         end
     end
