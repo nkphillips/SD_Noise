@@ -29,3 +29,22 @@ function responses = simulate_responses(p)
     responses = 100 * responses;
 
 end
+
+n = 100;
+sigma = 2;
+mu = 10;
+
+% Random list of test orientations from 0 - 179 deg
+sim_test_orientation = rand(1, n) * 179;
+
+% Random list of probe offsets
+offsets = [-15, 15]
+
+rand_offsets = datasample(offsets, n, 'Replace', true)
+
+simulation_probe_offsets = sim_test_orientation + rand_offsets
+
+cdf = normcdf(n, mu, sigma)
+
+pdf = normpdf(n, mu, sigma)
+
