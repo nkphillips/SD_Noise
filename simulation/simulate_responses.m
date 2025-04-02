@@ -18,33 +18,16 @@ function responses = simulate_responses(p)
     internal_orient_diff = orient_diff + bias + p.DoG_params(3) .* randn(length(orient_diff), 1);
 
     % Calculate probability of correct discrimination using cumulative normal
-    threshold = p.psychometric_params(1);
-    slope = p.psychometric_params(2);
-    lapse_rate = p.psychometric_params(3);
-    z_score = (internal_orient_diff - threshold) / slope;
-    p_correct = 0.5 + (0.5 - lapse_rate) * normcdf(z_score);
+    mu = p.psychometric_params(1); % ie threshold
+    sigma = p.psychometric_params(2); % ie slope
+    guess_rate = p.psychometric_params(3);
+    p_correct = (1 - guess_rate) * normcdf(internal_orient_diff, mu, sigma) + 0.5 * guess_rate;
     
     % Simulate response based on discrimination probability
     responses = rand() < p_correct;
-    responses = 100 * responses;
 
 end
 
-n = 100;
-sigma = 2;
-mu = 10;
 
-% Random list of test orientations from 0 - 179 deg
-sim_test_orientation = rand(1, n) * 179;
 
-% Random list of probe offsets
-offsets = [-15, 15]
-
-rand_offsets = datasample(offsets, n, 'Replace', true)
-
-simulation_probe_offsets = sim_test_orientation + rand_offsets
-
-cdf = normcdf(n, mu, sigma)
-
-pdf = normpdf(n, mu, sigma)
 
