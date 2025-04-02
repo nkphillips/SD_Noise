@@ -20,9 +20,6 @@ subj_mu = -3;
 subj_sigma = 7;
 guess_rate = 0.25;
 
-threshold = 10;
-slope = 5;
-
 p_CW = (1 - guess_rate) * normcdf(rand_offsets, subj_mu, subj_sigma) + (0.5 * guess_rate);
 
 figure('Color', 'w');
@@ -54,6 +51,8 @@ box off
 responses = rand() < p_CW;
 
 %% Grid search for mu and sigma
+
+[best_sse, best_params] = grid_search(mu, sigma, guess_rate, x);
 
 %% Estimate mu and sigma
 
