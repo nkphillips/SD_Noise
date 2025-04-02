@@ -76,7 +76,7 @@ for n_block = 1:p.num_blocks
     end
 
     % Sample Test orientations
-    test_orientation = round(stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1));
+    test_orientation = stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1);
 
     % Pre-allocate the probe orientations
     if n_block == first_block(curr_cond)
