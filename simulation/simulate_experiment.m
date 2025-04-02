@@ -29,7 +29,7 @@ end
 % Define possible orientations
 stimuli.orientation_min = 0;
 stimuli.orientation_max = 179;
-probe_offset_range = [1 10];
+probe_offset_range = [1 15];
 
 % Define conditions
 p.cond_names = {'contrast', 'filter'};
@@ -47,7 +47,7 @@ experiment_parameters = [subject_counts, trials_per_cond_counts];
 % Define psychometric function parameters
 threshold_range = [2 8]; % Discrimination threshold in degrees
 slope_range = [5 10]; % Controls steepness of psychometric function
-lapse_rate_range = [0.01 0.1]; % Small probability of lapses/mistakes 
+lapse_rate_range = [0.01 0.25]; % Small probability of lapses/mistakes 
 
 % Define serial dependence parameter range (increasing amplitude with noise levels)
 amplitude_range = [2 4; 4 6; 6 8];
@@ -117,6 +117,8 @@ for n_exp = 1:num_experiments
 
     % Summarize group-level responses
 
+    
+
 end
 
 
@@ -127,9 +129,9 @@ n_exp = find(experiment_parameters(:,1) == 10 & experiment_parameters(:,2) == p.
 curr_num_subjects = experiment_parameters(n_exp,1);
 curr_num_trials_per_cond = experiment_parameters(n_exp,2);
 
-% for cond = 1:p.num_conds
+for cond = 1:p.num_conds
 
-%     figure('Color', 'w','Name', ['Example group-level response for ' p.cond_names{cond}]);
+    figure('Color', 'w','Name', ['Example group-level response for ' p.cond_names{cond}]);
 
 
-% end
+end
