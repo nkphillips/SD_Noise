@@ -53,6 +53,8 @@ box off
 % Simulate response based on discrimination probability
 responses = rand() < p_CW;
 
+%% Grid search for mu and sigma
+
 %% Estimate mu and sigma
 
 options = optimset('MaxFunEvals', 100000, 'MaxIter', 10000, 'display','off');
