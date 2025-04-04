@@ -7,7 +7,7 @@ function sse = calc_fit(free_params, fixed_params)
     mu = free_params(1);
     sigma = free_params(2);
 
-    p_CW_est = (1 - guess_rate) * normcdf(x, mu, sigma) + (0.5 * guess_rate);
+    p_CW_est = calc_pCW(x, mu, sigma, guess_rate);
 
     sse = sum((p_CW_est - p_CW).^2); % sum of squared errors
 
