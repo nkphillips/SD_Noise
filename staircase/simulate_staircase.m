@@ -49,6 +49,13 @@ end
 stimuli.orientation_min = 0;
 stimuli.orientation_max = 179;
 
+%% Define psychometric function parameters
+% For each condition (contrast and filter width, 3 levels each)
+
+p.mu = [0 0 0; 0 0 0]; 
+p.sigma = [7 8 9; 7 8 9]; % Controls steepness of psychometric function
+p.guess_rate = [0.25 0.25 0.25; 0.25 0.25 0.25]; % Small probability of guessing
+
 %% Enter staircase
 
 p.keypress_numbers = 1:2;
@@ -126,11 +133,10 @@ for curr_cond = 1:p.num_conds
             % Define psychometric function parameters
             threshold = 5; % Discrimination threshold in degrees
             slope = 0.3; % Controls steepness of psychometric function
-            lapse_rate = 0.05; % Small probability of lapses/mistakes
+            guess_rate = 0.05; % Small probability of guessing
             
             % Calculate probability of correct discrimination using cumulative normal
-            z_score = (orient_diff - threshold) / slope;
-            p_correct = 0.5 + (0.5 - lapse_rate) * normcdf(z_score);
+            p_correct = calc_pCW(orient_diff, threshold, slope, guess_rate);
             
             if p.disp_on
                 disp(['Discrimination probability: ' num2str(round(100*p_correct)) '%'])
