@@ -21,10 +21,10 @@ function responses = simulate_responses(p)
     mu = p.psychometric_params(1); % ie threshold
     sigma = p.psychometric_params(2); % ie slope
     guess_rate = p.psychometric_params(3);
-    p_correct = (1 - guess_rate) * normcdf(internal_orient_diff, mu, sigma) + 0.5 * guess_rate;
+    p_CW = calc_pCW(internal_orient_diff, mu, sigma, guess_rate);
     
-    % Simulate response based on discrimination probability
-    responses = rand() < p_correct;
+    % Simulate responses
+    responses = rand(length(p_CW), 1) < p_CW;
 
 end
 
