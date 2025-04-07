@@ -29,7 +29,11 @@ function responses = simulate_responses(p)
 end
 
 
+
 % === Compute probe offset and condition labels ===
+
+
+
 
 trial_events = experiments(n_exp).p(subj).trial_events;
 
