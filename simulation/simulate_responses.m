@@ -15,7 +15,9 @@ function responses = simulate_responses(p)
     bias = [0; bias];
 
     % Get internal orientation difference (actual diff + bias + noise)
-    internal_orient_diff = orient_diff + bias + p.DoG_params(3) .* randn(length(orient_diff), 1);
+%     bias_from_sd = bias + p.DoG_params(3) .* randn(length(orient_diff), 1);
+    bias_from_sd = 0;
+    internal_orient_diff = orient_diff + bias_from_sd;
 
     % Calculate probability of correct discrimination using cumulative normal
     mu = p.psychometric_params(1); % ie threshold
@@ -31,24 +33,24 @@ end
 
 
 % Determine correct vs incorrect responses based on sign of offset
-    is_CW = orient_diff > 0;
-    is_CCW = orient_diff < 0;
+%     is_CW = orient_diff > 0;
+%     is_CCW = orient_diff < 0;
+% 
+%     correct = (responses == 1 & is_CW) | (responses == 0 & is_CCW);
+% 
+% % Store all relevant trial-level data in a debug matrix
+%     delta_theta_padded = [delta_theta; NaN];
+%     p.debug_matrix = [ ...
+%         orient_diff, ...          % 1
+%         delta_theta_padded, ...   % 2
+%         bias, ...                 % 3
+%         internal_orient_diff, ...% 4
+%         p_CW, ...                 % 5
+%         responses, ...            % 6
+%         correct ...               % 7
+%     ];
 
-    correct = (responses == 1 & is_CW) | (responses == 0 & is_CCW);
 
-% Store all relevant trial-level data in a debug matrix
-    delta_theta_padded = [delta_theta; NaN];
-    p.debug_matrix = [ ...
-        orient_diff, ...          % 1
-        delta_theta_padded, ...   % 2
-        bias, ...                 % 3
-        internal_orient_diff, ...% 4
-        p_CW, ...                 % 5
-        responses, ...            % 6
-        correct ...               % 7
-    ];
-
-end
 
 % Probability CW
 
