@@ -45,9 +45,9 @@ num_experiments = length(num_subjects) * length(num_trials_per_cond);
 experiment_parameters = [subject_counts, trials_per_cond_counts];
 
 % Define psychometric function parameters
-threshold_range = [2 8]; % Discrimination threshold in degrees
-slope_range = [5 10]; % Controls steepness of psychometric function
-lapse_rate_range = [0.01 0.25]; % Small probability of lapses/mistakes 
+mu_range = [-2 2]; %
+signa_range = [3 10]; % Controls steepness of psychometric function
+guess_rate_range = [0.01 0.25]; % 
 
 % Define serial dependence parameter range (increasing amplitude with noise levels)
 amplitude_range = [2 4; 4 6; 6 8];
@@ -81,9 +81,9 @@ for n_exp = 1:num_experiments
         experiments(n_exp).p(subj).trial_events = [test_orientation, probe_orientation, level_order];
         
         % Define subject characteristics
-        threshold = threshold_range(1) + (threshold_range(2) - threshold_range(1)) .* rand(1);
-        slope = slope_range(1) + (slope_range(2) - slope_range(1)) .* rand(1);
-        lapse_rate = lapse_rate_range(1) + (lapse_rate_range(2) - lapse_rate_range(1)) .* rand(1);
+        threshold = mu_range(1) + (mu_range(2) - mu_range(1)) .* rand(1);
+        slope = signa_range(1) + (signa_range(2) - signa_range(1)) .* rand(1);
+        lapse_rate = guess_rate_range(1) + (guess_rate_range(2) - guess_rate_range(1)) .* rand(1);
         experiments(n_exp).p(subj).psychometric_params = [threshold, slope, lapse_rate];
         
         for i = 1:p.num_levels
