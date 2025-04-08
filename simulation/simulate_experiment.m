@@ -46,7 +46,7 @@ experiment_parameters = [subject_counts, trials_per_cond_counts];
 
 % Define psychometric function parameters
 mu_range = [-2 2]; %
-signa_range = [3 10]; % Controls steepness of psychometric function
+sigma_range = [3 10]; % Controls steepness of psychometric function
 guess_rate_range = [0.01 0.25]; % 
 
 % Define serial dependence parameter range (increasing amplitude with noise levels)
@@ -81,10 +81,10 @@ for n_exp = 1:num_experiments
         experiments(n_exp).p(subj).trial_events = [test_orientation, probe_orientation, level_order];
         
         % Define subject characteristics
-        threshold = mu_range(1) + (mu_range(2) - mu_range(1)) .* rand(1);
-        slope = signa_range(1) + (signa_range(2) - signa_range(1)) .* rand(1);
-        lapse_rate = guess_rate_range(1) + (guess_rate_range(2) - guess_rate_range(1)) .* rand(1);
-        experiments(n_exp).p(subj).psychometric_params = [threshold, slope, lapse_rate];
+        mu = mu_range(1) + (mu_range(2) - mu_range(1)) .* rand(1);
+        sigma = sigma_range(1) + (sigma_range(2) - sigma_range(1)) .* rand(1);
+        guess_rate = guess_rate_range(1) + (guess_rate_range(2) - guess_rate_range(1)) .* rand(1);
+        experiments(n_exp).p(subj).psychometric_params = [mu, sigma, guess_rate];
         
         for i = 1:p.num_levels
             amp = amplitude_range(i,1) + (amplitude_range(i,2) - amplitude_range(i,1)) .* rand(1);
@@ -94,7 +94,7 @@ for n_exp = 1:num_experiments
         end
         
         % Simulate responses
-        experiments(n_exp).subj_data(subj).responses = simulate_responses( experiments(n_exp).p(subj) );
+        [experiments(n_exp).subj_data(subj).responses, ] = simulate_responses( experiments(n_exp).p(subj) );
 
         % Summarize responses
         for cond = 1:p.num_conds
