@@ -24,11 +24,19 @@ stimuli.width_px = stimuli.aperture_width_px;
 
 %% Define contrasts
 
-stimuli.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michelson contrast
+if p.training
+    stimuli.contrast = 0.9; 
+else
+    stimuli.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michelson contrast
+end
 
 %% Define orientation bandpass filter widths
 
-stimuli.bp_filter_width = [0.1 5 20]; % low noise, medium, high ; unit: °
+if p.training
+    stimuli.bp_filter_width = 0.1;
+else
+    stimuli.bp_filter_width = [0.1 5 20]; % low noise, medium, high ; unit: °
+end
 
 %% Check that the number of levels between stimulus contrast and bp filter widths match
 
@@ -45,7 +53,7 @@ stimuli.orientation_max = 179;
 
 %% Define number of noise samples
 
-p.num_test_samples = 20; % 
+p.num_test_samples = 20;
 p.num_mask_samples = 20;
 
 %% Define probe line length
