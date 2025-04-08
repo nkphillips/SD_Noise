@@ -1,4 +1,6 @@
 
+close all; clear all; clc;
+
 functions_dir = '../functions';
 addpath(functions_dir);
 
@@ -100,7 +102,7 @@ box off
 set(gca, 'TickDir', 'out');
 
 figure('Color', 'w');
-scatter(sorted_p_CW(:,1), sorted_p_CW(:,2));
+plot(sorted_p_CW(:,1), sorted_p_CW(:,2), 'k.');
 ylim([0, 1]);
 xlim([-20, 20]);
 box off
