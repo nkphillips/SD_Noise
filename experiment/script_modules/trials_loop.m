@@ -1,10 +1,4 @@
 %%% trials_loop
-% Main task loop.
-% For every trial:
-% Present test and reference SF (500-ms bandpass filtered noise; noise sample refreshed at 20 Hz),
-% Record a response (2-s blank screen),
-% Present ITI (blank screen) or top-up adaptation.
-% Repeat missed trials.
 
 %{
 
@@ -22,7 +16,7 @@ for n_trial = 1:size(p.trial_events,1)
     curr_test_orient = p.trial_events(n_trial, test_orientation_col, n_block); 
 
     % Create rotated probe line
-    curr_probe_orient = p.trial_events(n_trial, probe_orientation_col, n_block); % Get current probe orientation
+    curr_probe_orient = p.trial_events(n_trial, probe_orientation_col, n_block); 
     curr_probe_orient_rad = deg2rad(curr_probe_orient);
     curr_rotation = [cos(curr_probe_orient_rad), -sin(curr_probe_orient_rad); ...
         sin(curr_probe_orient_rad), cos(curr_probe_orient_rad)];
@@ -43,17 +37,15 @@ for n_trial = 1:size(p.trial_events,1)
 
     end
 
-    if p.demo_run
+    if p.disp_on
         disp(['Trial ' num2str(n_trial)])
-        disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
         disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
         disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
-        if curr_probe_orient > 90
-            disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
-        else
-            disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
-        end
-        disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
+        disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°'])
+
+        % disp(['Old Probe Orientation: ' num2str(round(curr_probe_orient-90)) '°'])
+
+        disp(['Corrected Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°'])
     end
 
     %% Draw Test orientation
@@ -84,8 +76,8 @@ for n_trial = 1:size(p.trial_events,1)
         end
         Screen('Flip', w.window, test_frames_onsets(n_frame));
 
-        if p.demo_run && n_frame == frames.test_frames_count
-            %KbWait;
+        if p.disp_on && n_frame == frames.test_frames_count
+            % KbWait;
         end
 
     end
@@ -117,11 +109,7 @@ for n_trial = 1:size(p.trial_events,1)
         if n_frame == 1
             mask_frames_onsets = frames.mask_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, mask_frames_onsets(n_frame)); % every frame has a deadline
-
-        % if p.demo_run && n_frame == frames.test_frames_count
-        %     KbWait;
-        % end
+        Screen('Flip', w.window, mask_frames_onsets(n_frame));
 
     end
     
@@ -163,8 +151,8 @@ for n_trial = 1:size(p.trial_events,1)
         end
         Screen('Flip', w.window, probe_frames_onsets(n_frame));
         
-        if p.demo_run && n_frame == frames.test_frames_count
-            %KbWait;
+        if p.disp_on && n_frame == frames.probe_frames_count
+            % KbWait;
         end
 
     end
@@ -210,14 +198,14 @@ for n_trial = 1:size(p.trial_events,1)
                 if first_relevant_key == p.keypress_numbers(1)
                   
                     behav_data.response(n_trial, n_block) = 1; % CCW
-                    if p.demo_run
+                    if p.disp_on
                         disp('Response: Test perceived as CCW.');
                     end
                
                 elseif first_relevant_key == p.keypress_numbers(2)
                 
                     behav_data.response(n_trial, n_block) = 2; % CW
-                    if p.demo_run
+                    if p.disp_on
                         disp('Response: Test perceived as CW.');
                     end
                 
@@ -226,15 +214,17 @@ for n_trial = 1:size(p.trial_events,1)
                 % Mark response as successful
                 no_response = 0;
 
-                if p.demo_run && p.correct_response(n_trial,n_block) == behav_data.response(n_trial, n_block)
+                behav_data.correct(n_trial, n_block) = p.correct_response(n_trial, n_block) == behav_data.response(n_trial, n_block);
+
+                if p.disp_on && behav_data.correct(n_trial, n_block)
                     disp('Correct response!')
-                elseif p.demo_run && p.correct_response(n_trial,n_block) ~= behav_data.response(n_trial, n_block)
+                elseif p.disp_on && ~behav_data.correct(n_trial, n_block)
                     disp('Incorrect response!')
                 end
 
             elseif any(which_press == p.keypress_numbers(end)) % Escape key
                 
-                if p.demo_run
+                if p.disp_on
                     disp('Escape key pressed. Exiting...');
                 end
                
@@ -269,6 +259,6 @@ for n_trial = 1:size(p.trial_events,1)
 
     end
 
-    if p.demo_run, disp('  '); end
+    if p.disp_on, disp('  '); end
 
 end
