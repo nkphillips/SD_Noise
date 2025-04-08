@@ -54,7 +54,7 @@ elseif p.which_setup == 3 % S32D850
 
 end
 
-if p.demo_run
+if p.half_screen
 
     switch p.which_setup
         case 0 % Macbook
@@ -75,6 +75,7 @@ if p.demo_run
     end
 
 end
+
 %% Calculate visual angle of the display, pixels per degree of visual angle, size of a pixel, and Nyquist frequency
 
 screen_length = w.screen_width;
