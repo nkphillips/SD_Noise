@@ -26,8 +26,12 @@ make_patches
 p.cond_names = {'contrast', 'filter'};
 p.num_conds = numel(p.cond_names);
 
-p.num_blocks = 6;
-while mod(p.num_blocks, p.num_conds) ~= 0, p.num_blocks = input(['Error! Number of blocks must be a multiple of ' num2str(p.num_conds) '. Please enter a multiple of 2: ']); end
+if p.training
+    p.num_blocks = p.num_conds;
+else
+    p.num_blocks = 6;
+    while mod(p.num_blocks, p.num_conds) ~= 0, p.num_blocks = input(['Error! Number of blocks must be a multiple of ' num2str(p.num_conds) '. Please enter a multiple of 2: ']); end
+end
 
 p.num_blocks_per_cond = p.num_blocks / p.num_conds;
 
@@ -40,23 +44,9 @@ for cond = 1:p.num_conds
 end
 
 if p.training 
-    p.num_trials_per_unique_cond = p.num_levels * 2;  
+    p.num_trials_per_cond = 20;  
 else
-    p.num_trials_per_unique_cond = 105; % default = 105
-end
-
-p.num_trials_per_block = p.num_levels * p.num_trials_per_unique_cond/p.num_blocks_per_cond;
-p.trial_events = nan(p.num_trials_per_block, 3, p.num_blocks); % num_trials x [test_orientation, probe_orientation, cond_lvl] x num_blocks 
-p.correct_response = nan(p.num_trials_per_block, p.num_blocks);
-
-%% Load staircase
-
-if p.demo_run
-
-    staircases.final_probe_offsets = randi(15, p.num_levels, p.num_conds);
-
-else
-
+    p.num_trials_per_cond = 10; % default = 105
 end
 
 %% Generate level order, orientations, correct response
@@ -67,12 +57,18 @@ for n_block = 1:p.num_blocks
 
     if p.block_order(n_block) == 1
         
-        level_order = BalanceFactors(p.num_trials_per_block/p.num_levels, 1, 1:length(stimuli.contrast));
+        level_order = BalanceFactors(p.num_trials_per_cond, 1, 1:p.num_levels);
         
     elseif p.block_order(n_block) == 2
         
-        level_order = BalanceFactors(p.num_trials_per_block/p.num_levels, 1, 1:length(stimuli.bp_filter_width));
+        level_order = BalanceFactors(p.num_trials_per_cond, 1, 1:p.num_levels);
         
+    end
+
+    if n_block == 1
+        p.num_trials_per_block = length(level_order);
+        p.trial_events = nan(p.num_trials_per_block, 3, p.num_blocks); % num_trials x [test_orientation, probe_orientation, cond_lvl] x num_blocks
+        p.correct_response = nan(p.num_trials_per_block, p.num_blocks);
     end
 
     % Sample Test orientations
@@ -80,7 +76,7 @@ for n_block = 1:p.num_blocks
 
     % Pre-allocate the probe orientations
     if n_block == first_block(curr_cond)
-        probe_orientation = calc_probe_orientation(test_orientation, staircases.final_probe_offsets(level_order, curr_cond));
+        probe_orientation = calc_probe_orientation(test_orientation, p.probe_offsets(level_order, curr_cond));
         corrected_probe_orientation = correct_orientation(probe_orientation); 
     else
         corrected_probe_orientation = nan(length(test_orientation),1);
