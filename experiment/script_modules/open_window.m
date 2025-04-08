@@ -16,7 +16,7 @@
 
 commandwindow; 
 
-if ~p.demo_run
+if ~p.half_screen
     HideCursor;
 end
 
