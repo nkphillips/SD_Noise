@@ -14,7 +14,11 @@ textures_filename = ['SD_Noise_textures_' p.display_setup '.mat'];
 
 tic
 generate_textures = 1; % this will be set to 0 if they don't need to be generated
-save_textures = 0;
+if p.training
+    save_textures = 0;
+else
+    save_textures = 1;
+end
 
 %% Aperture
 % alpha level for aperture:
