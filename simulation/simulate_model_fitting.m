@@ -16,12 +16,13 @@ rand_offsets = datasample(offsets, num_trials, 'Replace', true);
 simulation_probe_orientations = sim_test_orientation + rand_offsets;
 
 % Calculate probability of correct discrimination using cumulative normal
-subj_mu = -3;
-subj_sigma = 7;
+subj_mu = -6;
+subj_sigma = 3;
 guess_rate = 0.25;
 
-p_CW = (1 - guess_rate) * normcdf(rand_offsets, subj_mu, subj_sigma) + (0.5 * guess_rate);
+p_CW = calc_pCW(rand_offsets, subj_mu, subj_sigma, guess_rate);
 
+%{
 figure('Color', 'w');
 subplot(1,4,1)
 plot(sort(normcdf(rand_offsets, subj_mu, subj_sigma)))
@@ -46,25 +47,26 @@ plot(sort(p_CW))
 title('Model')
 ylim([0, 1])
 box off
+%}
 
 % Simulate response based on discrimination probability
 responses = rand() < p_CW;
 
 %% Grid search for mu and sigma
 
-[best_sse, best_params] = grid_search(mu, sigma, guess_rate, x);
+[best_params, best_sse] = grid_search(rand_offsets, p_CW, guess_rate);
 
 %% Estimate mu and sigma
 
-options = optimset('MaxFunEvals', 100000, 'MaxIter', 10000, 'display','off');
+options = optimoptions('fmincon');
 
-init_params = [0, 1];
+init_params = best_params;
 
 lower_bounds = [-15, 1]; % lower bounds for [mu, sigma]
 upper_bounds = [15, 7];
 
 free_params = init_params;
-fixed_params{1} = [x', p_CW'];
+fixed_params{1} = [rand_offsets', p_CW'];
 fixed_params{2} = guess_rate;
 
 response_model = @(free_params) calc_fit(free_params, fixed_params);
