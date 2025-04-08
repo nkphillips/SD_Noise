@@ -13,7 +13,7 @@ Created 10.24.2024
 
 %%
 
-if ~p.demo_run, wait_for_trigger; end
+if ~p.simulate_response, wait_for_trigger; end
 t.exp_start_time = GetSecs;
 
 
@@ -21,7 +21,7 @@ t.exp_start_time = GetSecs;
 
 for n_block = 1:p.num_blocks
 
-    if p.demo_run, disp(['Block ' num2str(n_block)]); end
+    if p.disp_on, disp(['Block ' num2str(n_block)]); end
 
     % Pull the current block condition
     curr_cond = p.block_order(n_block);
@@ -33,7 +33,7 @@ for n_block = 1:p.num_blocks
         
     else
 
-        curr_probe_offsets = staircases.final_probe_offsets(p.trial_events(:, level_order_col, n_block), curr_cond);
+        curr_probe_offsets = p.probe_offsets(p.trial_events(:, level_order_col, n_block), curr_cond);
 
     end
 
@@ -63,6 +63,8 @@ for n_block = 1:p.num_blocks
     end
 
 end
+
+behav_data.performance = mean(behav_data.correct(:));
 
 %%
 
