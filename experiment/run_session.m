@@ -20,9 +20,10 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.demo_run = 1; % halves the screen
+p.disp_on = 1;
+p.half_screen = 1;
 p.simulate_response = 1;
-p.training = 1;
+p.training = 0;
 
 p.which_setup = 3; % 0 = MacBook, 1 = 3329D, 2 = Scanner, 3 = S32D850
 
@@ -37,12 +38,13 @@ end
 
 p.subj_ID = '999';
 
+dirs.project_dir = '../'; addpath(dirs.project_dir);
+dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
+dirs.data_dir = '../data'; addpath(dirs.data_dir);
 dirs.script_dir = pwd;
 dirs.init_dir = 'init'; addpath(dirs.init_dir);
 dirs.modules_dir = 'script_modules'; addpath(dirs.modules_dir);
-dirs.functions_dir = '../../functions'; addpath(dirs.functions_dir);
 dirs.texture_dir = 'textures'; addpath(dirs.texture_dir);
-dirs.data_dir = '../data'; addpath(dirs.data_dir);
 dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
 
 if p.which_setup == 1
@@ -54,6 +56,45 @@ end
 init_device_input
 init_display
 open_window
+
+%% Load probe offset magnitudes
+
+if ~p.training
+
+    save_filename = [dirs.data_dir '/' 'staircase_data_S' p.subj_ID '_*.mat'];
+    
+    files_found = dir([dirs.data_dir '/' p.subj_ID]);
+
+    % Keep only the file names
+    files_found = {files_found.name};
+
+    % Keep only the file names that match staircase filename
+    files_found = files_found(contains(files_found, 'staircase'));
+
+    % Keep only the most recent file
+    files_found = files_found{end};
+
+    % Check if the file exists
+    if ~isempty(files_found)
+
+        % Load staircase data
+        load([dirs.data_dir '/' p.subj_ID '/' files_found]);
+
+        % Get final probe offsets
+        p.probe_offsets = staircases.final_probe_offsets; % num_conds x num_levels
+
+        disp(['Loaded staircase data for subject ' p.subj_ID]);
+        clear staircases;
+
+    else
+        error('No staircase data found for subject %s', p.subj_ID);
+    end
+
+elseif p.training
+
+    p.probe_offsets = 5 * ones(3, 2);
+
+end
 
 %% Initialize trackers
 
@@ -73,8 +114,12 @@ end
 
 while ~exit_session
 
-    % Enter experiment
-    run_info = run_experiment(p, w, dirs);
+    % Enter training/experiment
+    if p.training
+        training_info = run_experiment(p, w, dirs);
+    else
+        run_info = run_experiment(p, w, dirs);
+    end
 
     % Rest between runs / All done screen
     if n_run ~= num_runs_to_complete
@@ -136,6 +181,12 @@ while ~exit_session
 
     end
 
+end
+
+if p.training
+    disp(['Training performance: ' num2str(round(100*training_info.behav_data.performance)) '%']);
+else
+    % disp(['Experiment performance: ' num2str(round(100*run_info.behav_data.performance)) '%']);
 end
 
 %% Turn off Kb and restore display
