@@ -147,10 +147,14 @@ ShowCursor;
 
 staircases.contrast = stimuli.contrast;
 staircases.bp_filter_width = stimuli.bp_filter_width;
+staircases.p = p;
+staircases.t = t;
 
 if save_staircase_data
-    save_filename = ['staircase_data_S' p.subj_ID '_' t.the_date '_' t.the_time '.mat'];
+
+    save_filename = ['staircase_data_S' p.subj_ID '_' p.display_setup '_' t.the_date '_' t.the_time '.mat'];
     save([dirs.data_dir '/' p.subj_ID '/' save_filename], 'staircases');
     disp(['Staircase data saved to ' dirs.data_dir '/' p.subj_ID '/' save_filename]);
+    
 end
 
