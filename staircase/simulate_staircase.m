@@ -24,8 +24,6 @@ save_staircase_data = 1;
 p.subj_ID = '999';
 
 dirs.script_dir = pwd;
-dirs.init_dir = '../init'; addpath(dirs.init_dir);
-dirs.modules_dir = '../script_modules'; addpath(dirs.modules_dir);
 dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
 dirs.data_dir = '../data'; addpath(dirs.data_dir);
 
