@@ -39,8 +39,8 @@ for n_trial = 1:size(p.trial_events,1)
 
     if p.disp_on
         disp(['Trial ' num2str(n_trial)])
-        disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
-        disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
+        disp(['Test Contrast: ' num2str(round(100*p.contrast(curr_contrast),2)) '%'])
+        disp(['Test Filter Width: ' num2str(p.bp_filter_width(curr_filter_width)) '°'])
         disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°'])
 
         % disp(['Old Probe Orientation: ' num2str(round(curr_probe_orient-90)) '°'])
@@ -136,7 +136,7 @@ for n_trial = 1:size(p.trial_events,1)
     for n_frame = 1:frames.probe_frames_count
 
         % Draw Line
-       Screen('DrawLines', w.window, curr_probe_line, stimuli.probe_thickness, stimuli.probe_color);
+       Screen('DrawLines', w.window, curr_probe_line, p.probe_thickness, p.probe_color);
 
         % Stimulus aperture
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
