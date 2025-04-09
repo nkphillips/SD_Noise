@@ -38,8 +38,14 @@ for n_block = 1:p.num_blocks
     end
 
     % Calculate probe orientations (test_orientation ± probe_offset)
-    probe_orientation = calc_probe_orientation(p.trial_events(:,test_orientation_col, n_block), curr_probe_offsets);
+    test_orientation = p.trial_events(:,test_orientation_col, n_block);
+    probe_orientation = calc_probe_orientation(test_orientation, curr_probe_offsets);
     p.trial_events(:,probe_orientation_col,n_block) = correct_orientation(probe_orientation); % Transform probe orientation to match the compass axis
+
+    % Storing correct response
+    cclockwise_trials = double(probe_orientation < test_orientation);
+    cclockwise_trials(cclockwise_trials == 0) = 2;
+    p.correct_response(:,n_block) = cclockwise_trials;
 
     % Grab current block info
     n_trial = 1;
