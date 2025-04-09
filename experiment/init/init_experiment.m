@@ -44,17 +44,16 @@ for cond = 1:p.num_conds
 end
 
 if p.training 
+    % Note that the number of levels for each condition in training is 1
     p.num_trials_per_cond = 20;  
 else
-    p.num_trials_per_cond = 10; % default = 105
+    p.num_trials_per_cond = 5;
 end
 
 %% Generate level order, orientations, correct response
 
 for n_block = 1:p.num_blocks
    
-    curr_cond = p.block_order(n_block);
-
     if p.block_order(n_block) == 1
         
         level_order = BalanceFactors(p.num_trials_per_cond, 1, 1:p.num_levels);
@@ -72,26 +71,13 @@ for n_block = 1:p.num_blocks
     end
 
     % Sample Test orientations
-    test_orientation = stimuli.orientation_min + (stimuli.orientation_max - stimuli.orientation_min) .* rand(p.num_trials_per_block, 1);
-
-    % Pre-allocate the probe orientations
-    if n_block == first_block(curr_cond)
-        probe_orientation = calc_probe_orientation(test_orientation, p.probe_offsets(level_order, curr_cond));
-        corrected_probe_orientation = correct_orientation(probe_orientation); 
-    else
-        corrected_probe_orientation = nan(length(test_orientation),1);
-    end
+    test_orientation = sample_orientation(p.orientation_min, p.orientation_max, p.num_trials_per_block);
 
     % Storing trial events
-    p.trial_events(:,:,n_block) = [test_orientation, corrected_probe_orientation, level_order];
+    p.trial_events(:,:,n_block) = [test_orientation, nan(length(test_orientation),1), level_order];
     test_orientation_col = 1;
     probe_orientation_col = 2;
     level_order_col = 3;
-
-    % Storing correct response
-    cclockwise_trials = double(probe_orientation < test_orientation);
-    cclockwise_trials(cclockwise_trials == 0) = 2;
-    p.correct_response(:,n_block) = cclockwise_trials;
 
 end
 
@@ -99,55 +85,7 @@ p.num_trials = p.num_trials_per_block * p.num_blocks;
 
 %% Check condition distribution
 
-% "scoreboard" for the # of level pairs
-pair_count = zeros(p.num_levels, p.num_levels, p.num_conds);
-
-% store the indices of the current trial if the current and previous trial
-% match the current level pair
-% note: you must use a cell array
-pair_indices = cell(p.num_levels, p.num_levels, p.num_blocks_per_cond, p.num_conds);
-
-for cond = 1:p.num_conds
-    
-    curr_blocks = find(p.block_order == cond);
-    
-    curr_trial_events = squeeze(p.trial_events(:,end,curr_blocks));
-    
-    % Count # of unique trial pairs (ignore 1st trial)
-    for level_a = 1:p.num_levels % prev
-        for level_b = 1:p.num_levels % curr
-            
-            % use level_a and level_b to identify the current trial pair (trial_n and trial_{n-1})
-            % count the number of those pairs across each block
-            for n_block = 1:length(curr_blocks)
-                for n_trial = 2:size(curr_trial_events,1)
-                    
-                    prev_trial_lvl = curr_trial_events(n_trial-1, n_block);
-                    curr_trial_lvl = curr_trial_events(n_trial, n_block);
-                    
-                    if prev_trial_lvl == level_a  && curr_trial_lvl == level_b
-                        
-                        pair_count(level_a, level_b, cond) = pair_count(level_a, level_b) + 1;
-                        
-                        % store the indices of the current trial if the current and previous trial
-                        pair_indices{level_a, level_b, n_block, cond} = [pair_indices{level_a, level_b, n_block, cond}, n_trial];
-                   
-                    end
-                end
-            end            
-        end
-    end
-    
-end
-
-% test for diff in number of pairs between condition
-
-% x = pair_count(:,:,1);
-% y = pair_count(:,:,2);
-% 
-% [h, p_value] = ttest(x(:), y(:));
-% 
-% figure, histogram(x(:)), hold on;  histogram(y(:))
+% get_trial_distribution(p)
 
 %% Define timing and generate frame presentation
 
