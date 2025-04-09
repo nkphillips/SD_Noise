@@ -37,7 +37,11 @@ else
         most_recent_file = data_file_names{end};
         
         file_strs = strsplit(most_recent_file,'_');
-        most_recent_run_num = str2double(file_strs{6}(end));
+        if ~p.training
+            most_recent_run_num = str2double(file_strs{5}(end));
+        else
+            most_recent_run_num = str2double(file_strs{6}(end));
+        end
         
         p.run_num = most_recent_run_num + 1;
         
