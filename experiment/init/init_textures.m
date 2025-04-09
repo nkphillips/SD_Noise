@@ -25,7 +25,7 @@ end
 % 0 = completely transparent (the texture of the aperture is invisible)
 % 255 = completely opaque (the texture of the aperture dominates)
 
-aperture = create_circular_aperture(stimuli.aperture_width_px, stimuli.aperture_height_px, stimuli.aperture_radius_px); % texture size, radius of circle
+aperture = create_circular_aperture(p.aperture_width_px, p.aperture_height_px, p.aperture_radius_px); % texture size, radius of circle
 % figure, subplot(1,2,1), imshow(aperture)
 
 aperture = imgaussfilt(aperture, 0.1 * w.ppd);
@@ -47,24 +47,24 @@ if generate_textures
     disp('Generating stimuli...')
 
     % Preallocate textures
-    noise_textures = nan(stimuli.height_px, stimuli.width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
-    stimuli.test_textures = nan(stimuli.height_px, stimuli.width_px, length(stimuli.contrast), length(stimuli.bp_filter_width), p.num_test_samples);
-    stimuli.mask_textures = nan(stimuli.height_px, stimuli.width_px, length(stimuli.contrast), p.num_mask_samples);
+    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.bp_filter_width), p.num_test_samples);
+    p.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.bp_filter_width), p.num_test_samples);
+    p.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
 
     for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Filter widths
             for k = 1:size(noise_textures, 5) % Samples
                 
                 % Create base noise
-                base_noise = create_noise_texture(stimuli.height_px, stimuli.width_px);
+                base_noise = create_noise_texture(p.height_px, p.width_px);
                
                 % Store base noise as mask texture
                 if j == 1
-                    stimuli.mask_textures(:,:,i,k) = base_noise * w.gray * stimuli.contrast(i) + w.gray; % * stimuli.contrast(i)
+                    stimuli.mask_textures(:,:,i,k) = base_noise * w.gray * p.contrast(i) + w.gray;
                 end
                 
                 % Make orientation-bandpass filtered noise
-                noise_texture = make_orientation_bp_filtered_img(base_noise, 0, stimuli.bp_filter_width(j), w.ppd * 0.1);
+                noise_texture = make_orientation_bp_filtered_img(base_noise, 0, p.bp_filter_width(j), w.ppd * 0.1);
                 
                 % Normalize noise texture
                 noise_texture = normalize_array(noise_texture, 'min-max');
@@ -75,7 +75,7 @@ if generate_textures
                 end
 
                 % Convert to visible pixel values and scale by contrast
-                stimuli.test_textures(:,:,i,j,k) = noise_texture * w.gray * stimuli.contrast(i) + w.gray; % 
+                stimuli.test_textures(:,:,i,j,k) = noise_texture * w.gray * p.contrast(i) + w.gray; % 
 
             end
         end
