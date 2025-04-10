@@ -80,11 +80,12 @@ if ~p.training
         % Load staircase data
         load([dirs.data_dir '/' p.subj_ID '/' files_found]);
 
+        p.staircases = staircases;
+
         % Get final probe offsets
-        p.probe_offsets = staircases.final_probe_offsets; % num_conds x num_levels
+        p.probe_offsets = staircases.final_probe_offsets; % num_levels x num_conds
 
         disp(['Loaded staircase data for subject ' p.subj_ID]);
-        clear staircases;
 
     else
         error('No staircase data found for subject %s', p.subj_ID);
