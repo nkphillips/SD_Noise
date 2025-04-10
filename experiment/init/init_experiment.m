@@ -45,9 +45,9 @@ end
 
 if p.training 
     % Note that the number of levels for each condition in training is 1
-    p.num_trials_per_cond = 20;  
+    p.num_trials_per_cond = 40;  
 else
-    p.num_trials_per_cond = 5;
+    p.num_trials_per_cond = 10; % default = 40
 end
 
 %% Generate level order, orientations, correct response
