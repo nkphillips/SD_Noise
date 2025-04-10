@@ -11,7 +11,7 @@ lur003@ucsd.edu
 %% Define aperture size
 % 6° diameter
 
-p.aperture_height_px = w.screen_height_px / 2;
+p.aperture_height_px = round(w.screen_height_px / 2);
 p.aperture_width_px = p.aperture_height_px;
 
 p.aperture_radius_px = w.ppd * 6;

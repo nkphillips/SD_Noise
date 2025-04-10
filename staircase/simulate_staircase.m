@@ -16,7 +16,7 @@ rng(t.my_rng_seed);
 %% Toggles
 
 p.disp_on = 1;
-p.which_setup = 3; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
+p.which_setup = 0; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
 save_staircase_data = 1;
 
 %% Set directories
@@ -26,6 +26,10 @@ p.subj_ID = '999';
 dirs.script_dir = pwd;
 dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
 dirs.data_dir = '../data'; addpath(dirs.data_dir);
+
+if ~exist([dirs.data_dir '/' p.subj_ID],'dir')
+    mkdir([dirs.data_dir '/' p.subj_ID])
+end
 
 %% Define stimuli
 

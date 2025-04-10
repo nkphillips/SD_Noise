@@ -63,6 +63,7 @@ responses = rand() < p_CW;
 options = optimoptions('fmincon');
 
 init_params = best_params;
+init_params = [0,1];
 
 lower_bounds = [-15, 1]; % lower bounds for [mu, sigma]
 upper_bounds = [15, 7];

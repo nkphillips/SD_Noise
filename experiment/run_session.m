@@ -25,7 +25,7 @@ p.half_screen = 1;
 p.simulate_response = 1;
 p.training = 0;
 
-p.which_setup = 3; % 0 = MacBook, 1 = 3329D, 2 = Scanner, 3 = S32D850
+p.which_setup = 0; % 0 = MacBook, 1 = 3329D, 2 = Scanner, 3 = S32D850
 
 % Sync Test
 if sum(p.which_setup == [0 3]) > 0
