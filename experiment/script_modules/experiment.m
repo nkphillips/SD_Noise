@@ -29,15 +29,28 @@ for n_block = 1:p.num_blocks
     % Update probe offsets if it's not the first block of the current condition
     if n_block > first_block(curr_cond)
     
-        %update_staircase
-        
-    else
+        prev_block = find(p.block_order(1:n_block-1) == curr_cond, 1, 'last');
+        prev_correct = behav_data.correct(:, prev_block);
+        prev_lvl_order = p.trial_events(:, level_order_col, prev_block);
 
-        curr_probe_offsets = p.probe_offsets(p.trial_events(:, level_order_col, n_block), curr_cond);
+        probe_offsets = p.probe_offsets(:,curr_cond);
+        step_size = squeeze(mean(p.staircases.step_size(:,end,:,curr_cond),1));
+
+        new_probe_offsets = update_probe_offset(prev_correct, prev_lvl_order, probe_offsets, step_size, p.staircases.min_probe_offset, p.staircases.max_probe_offset);
+        
+        if p.disp_on
+            disp('Old probe offsets:');
+            disp(num2str(probe_offsets));
+            disp('New probe offsets:');
+            disp(num2str(new_probe_offsets)); 
+        end
+
+        p.probe_offsets(:,curr_cond) = new_probe_offsets;
 
     end
 
     % Calculate probe orientations (test_orientation ± probe_offset)
+    curr_probe_offsets = p.probe_offsets(p.trial_events(:, level_order_col, n_block), curr_cond);
     test_orientation = p.trial_events(:,test_orientation_col, n_block);
     probe_orientation = calc_probe_orientation(test_orientation, curr_probe_offsets);
     p.trial_events(:,probe_orientation_col,n_block) = correct_orientation(probe_orientation); % Transform probe orientation to match the compass axis
@@ -70,7 +83,7 @@ for n_block = 1:p.num_blocks
 
 end
 
-behav_data.performance = mean(behav_data.correct(:));
+% behav_data.performance = mean(behav_data.correct(:));
 
 %%
 
