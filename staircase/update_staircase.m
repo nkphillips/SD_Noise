@@ -61,7 +61,7 @@ if staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) == 1
             end
 
             % Decrease probe offset for next trial
-            staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = max(staircases.min_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) - staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
+            staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = round(max(staircases.min_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) - staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond)));
             if p.disp_on
                 disp(['Next probe offset decreased to ' num2str(staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '°'])
             end
@@ -131,7 +131,7 @@ else
         end
 
         % Increase probe offset for next trial
-        staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = min(staircases.max_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) + staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond));
+        staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond) = round(min(staircases.max_probe_offset, staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond) + staircases.step_size(curr_sc, curr_sc_trial, curr_lvl, curr_cond)));
         if p.disp_on
             disp(['Next probe offset increased to ' num2str(staircases.probe_offsets(curr_sc, curr_sc_trial+1, curr_lvl, curr_cond)) '°'])
         end
