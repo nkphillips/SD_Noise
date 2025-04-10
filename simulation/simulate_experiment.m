@@ -14,7 +14,7 @@ p.disp_on = 1;
 %% Define parameters
 
 num_subjects = 10:5:30;
-num_trials_per_cond = 40:40:200; % 40:80:120 (1 to 5 sessions)
+num_trials_per_cond = 40:40:200; % (1 to 5 sessions)
 
 num_experiments = length(num_subjects) * length(num_trials_per_cond);
 
@@ -23,16 +23,16 @@ num_experiments = length(num_subjects) * length(num_trials_per_cond);
 experiment_parameters = [subject_counts, trials_per_cond_counts];
 
 % Define psychometric function parameters
-mu_range = [-4 4]; %
-sigma_range = [3 10]; % Controls steepness of psychometric function
-guess_rate_range = [0.25 0.25]; % 
+mu_range = [-4 4]; 
+sigma_range = [3 10]; 
+guess_rate_range = [0.25 0.25]; 
 
 % Define serial dependence parameter range 
 % (increasing amplitude with noise levels)
 % (this needs to respect each noise type and lvl pair as well)
 amplitude_range = [2 4; 4 6; 6 8];
 width_range = [5 10];
-noise_range = [0.5 1];
+noise_range = [0.5 1.5];
 
 %% Simulate experiment
 
@@ -147,8 +147,6 @@ for n_exp = 1:num_experiments
     
 
 end
-
-
 
 %% Visualize example group response
 
