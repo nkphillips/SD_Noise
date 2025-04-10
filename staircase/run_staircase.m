@@ -16,7 +16,7 @@ rng(t.my_rng_seed);
 %% Toggles
 
 p.disp_on = 1;
-p.demo_run = 1;
+p.half_screen = 1;
 p.simulate_response = 1;
 
 p.which_setup = 3; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
