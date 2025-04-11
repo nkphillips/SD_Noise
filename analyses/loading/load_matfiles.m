@@ -34,39 +34,15 @@ for subj = 1:num.subjs
 
         all_runs{subj} = [all_runs{subj}, run_info];
 
-        num.trials_per_block{subj}(n_file,:) = run_info.behav_data.num_trials_per_block;
+        num.trials_per_block{subj}(n_file,:) = run_info.p.num_trials_per_block;
 
         if n_file == 1 && subj == 1
 
             % Pull experiment info
             % Info that is identical no matter the subject
 
-            num.test_sfs = all_runs{subj}(n_file).p.num_test_sfs;
             num.blocks = all_runs{subj}(n_file).p.num_blocks;
 
-            num.min_trials_per_block = all_runs{subj}(n_file).p.num_trials_per_block;
-
-            num.min_trials_per_cond_per_run = num.min_trials_per_block * (num.blocks/num.conds);
-            num.min_trials_per_test_sf_per_cond_per_run = num.min_trials_per_block/num.test_sfs;
-
-            num.min_total_trials_per_cond = num.min_trials_per_cond_per_run * num.runs(subj);
-            num.min_total_trials = num.min_total_trials_per_cond * num.conds;
-
-            num.trial_per_test_sf_per_cond = num.min_trials_per_test_sf_per_cond_per_run * num.runs(subj);
-
-            test_sfs = all_runs{subj}(n_file).p.test_sfs;
-            reference_sf = all_runs{subj}(n_file).p.reference_sf;
-            adaptor_sfs = all_runs{subj}(n_file).p.adaptor_sfs;
-            sf_ratios = all_runs{subj}(n_file).p.sf_ratios;
-
-            delta_sfs = nan(num.test_sfs);
-            for i = 1:num.test_sfs
-                for j = 1:num.test_sfs
-
-                    delta_sfs(i,j) = log2(test_sfs(i)/test_sfs(j));
-
-                end
-            end
         end
 
         clear run_info
