@@ -16,7 +16,7 @@ rng(t.my_rng_seed);
 %% Toggles
 
 p.disp_on = 1;
-p.which_setup = 0; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
+p.which_setup = 3; % 0 = MacBook, 1 = 3329B, 2 = 3329C_ASUS, 3 = S32D850
 save_staircase_data = 1;
 
 %% Set directories
@@ -55,8 +55,8 @@ stimuli.orientation_max = 179;
 % For each condition (contrast and filter width, 3 levels each)
 
 p.mu = [0 0 0; 0 0 0]; 
-p.sigma = [7 8 9; 7 8 9]; % Controls steepness of psychometric function
-p.guess_rate = [0.25 0.25 0.25; 0.25 0.25 0.25]; % Small probability of guessing
+p.sigma = [3 3 3; 3 3 3]; % Controls steepness of psychometric function
+p.guess_rate = [0.02 0.02 0.02; 0.02 0.02 0.02]; % Small probability of guessing
 
 %% Enter staircase
 
@@ -101,9 +101,8 @@ for curr_cond = 1:p.num_conds
             % Probe offset
             curr_probe_offset = staircases.probe_offsets(curr_sc,curr_sc_trial,curr_lvl,curr_cond);
             curr_probe_orientation = calc_probe_orientation(curr_test_orient,curr_probe_offset);
-            
-            % Calculate absolute orientation difference
-            orient_diff = abs(curr_probe_orientation - curr_test_orient);
+            orient_diff = curr_probe_orientation - curr_test_orient;
+            is_CW = orient_diff > 0;    
 
             % Get current contrast and filter width
             if curr_cond == 1
@@ -123,10 +122,10 @@ for curr_cond = 1:p.num_conds
                 disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
                 disp(['Probe Orientation: ' num2str(curr_probe_orientation) '°'])
                 disp(['Orientation difference: ' num2str(orient_diff) '°'])
-                if curr_probe_orientation < curr_test_orient
-                    disp('Correct response: Left')
-                else
+                if is_CW
                     disp('Correct response: Right')
+                else
+                    disp('Correct response: Left')
                 end
             end
 
@@ -138,7 +137,7 @@ for curr_cond = 1:p.num_conds
             
             p_CW = calc_pCW(orient_diff, mu, sigma, guess_rate);
             response = rand() < p_CW;
-            correct_response = response == (curr_probe_orientation > curr_test_orient);
+            correct_response = response == is_CW;
                         
             staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = correct_response;
 
