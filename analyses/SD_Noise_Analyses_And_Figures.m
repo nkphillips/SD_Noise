@@ -4,10 +4,8 @@
 
 clc; close all; clear all;
 
-which_setup = '3329D';
+which_setup = 'simulated';
 analysis_date = '11.18.2024';
-
-init_dir = 'init'; addpath(init_dir);
 
 init_paths
 
@@ -24,6 +22,9 @@ plot_grp = 1;
 
 save_ind_figures = 1;
 save_grp_figures = 1;
+
+estimate_response_bias = 1;
+estimate_sd_bias = 1;
 
 %% Plot settings
 
