@@ -161,12 +161,6 @@ if save_textures
     % Enter directory for saving the textures
     cd(dirs.texture_dir)
     
-    % Check if subject data folder exists
-    if ~exist(p.subj_ID, 'dir')
-        mkdir(p.subj_ID)
-    end
-    
-    cd(p.subj_ID)
     if ~exist(textures_filename, "file")
         
         % If textures don't exist, save them
