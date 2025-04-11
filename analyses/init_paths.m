@@ -5,7 +5,7 @@
 script_dir = pwd;
 
 data_dir = '../data';
-func_dir = '../../functions';
+func_dir = '../functions';
 
 figures_folder = 'figures/';
 ind_figure_path = [figures_folder 'subjects/' analysis_date];
