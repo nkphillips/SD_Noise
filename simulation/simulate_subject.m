@@ -66,6 +66,8 @@ for subj = 1:num_subjs
         p.orientation_min = 0;
         p.orientation_max = 179;
 
+        probe_offset_range = [0 15];
+
         %% Define experiment
 
         p.num_blocks = 6;
@@ -102,9 +104,11 @@ for subj = 1:num_subjs
 
             % Sample Test orientations
             test_orientation = sample_orientation(p.orientation_min, p.orientation_max, p.num_trials_per_block);
+            probe_offsets = probe_offset_range(1) + (probe_offset_range(2) - probe_offset_range(1)) .* rand(length(test_orientation),1);
+            probe_orientation = round(calc_probe_orientation(test_orientation, probe_offsets));
 
             % Storing trial events
-            p.trial_events(:,:,n_block) = [test_orientation, nan(length(test_orientation),1), level_order];
+            p.trial_events(:,:,n_block) = [test_orientation, probe_orientation, level_order];
             test_orientation_col = 1;
             probe_orientation_col = 2;
             level_order_col = 3;
