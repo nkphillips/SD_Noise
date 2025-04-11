@@ -83,7 +83,14 @@ for n_block = 1:p.num_blocks
 
 end
 
-% behav_data.performance = mean(behav_data.correct(:));
+disp('Performance:')
+for cond = 1:p.num_conds
+    for lvl = 1:p.num_levels
+        curr_trials = behav_data.correct(p.trial_events(:,3) == lvl, p.block_order(:) == cond);
+        behav_data.performance(lvl, cond) = mean(curr_trials(:));
+        disp(['Condition ' p.cond_names{cond} ' Level ' num2str(lvl) ': ' num2str(round(100*behav_data.performance(lvl, cond))) ' %']);
+    end
+end
 
 %%
 
