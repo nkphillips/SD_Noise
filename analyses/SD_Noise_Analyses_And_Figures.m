@@ -7,9 +7,11 @@ clc; close all; clear all;
 which_setup = '3329D';
 analysis_date = '11.18.2024';
 
+init_dir = 'init'; addpath(init_dir);
+
 init_paths
 
-subj_IDs = {'001' '003' '004'}; % '001' '003' '004'
+subj_IDs = {'900' '901' '902' '903' '904' '905' '906' '907' '908' '909'};  
 cond_names = {'contrast' 'filter'};
 
 num.subjs = length(subj_IDs);
