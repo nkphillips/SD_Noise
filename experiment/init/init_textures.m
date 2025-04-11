@@ -8,12 +8,18 @@ lur003@ucsd.edu
 
 %}
 
+tic
+
 %% Toggles
 
 textures_filename = ['SD_Noise_textures_' p.display_setup '.mat'];
 
-tic
-generate_textures = 1; % this will be set to 0 if they don't need to be generated
+if ~exist([dirs.texture_dir '/' textures_filename], 'file')
+    generate_textures = 1;
+else
+    generate_textures = 0;
+end
+
 if p.training
     save_textures = 0;
 else
@@ -81,7 +87,12 @@ if generate_textures
         end
     end
 
-        
+else
+
+    load([dirs.texture_dir '/' textures_filename]);
+
+    stimuli = textures;
+    clear textures;
 end
 
 disp(['Elapsed time: ' num2str(toc) ' s'])
