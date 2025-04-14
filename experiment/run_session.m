@@ -22,10 +22,10 @@ rng(t.my_rng_seed);
 
 p.disp_on = 1;
 p.half_screen = 1;
-p.simulate_response = 1;
-p.training = 0;
+p.simulate_response = 0;
+p.training = 1;
 
-p.which_setup = 3; % 0 = MacBook, 1 = 3329D, 2 = Scanner, 3 = S32D850
+p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 
 % Sync Test
 if sum(p.which_setup == [0 3]) > 0
@@ -39,16 +39,30 @@ end
 p.subj_ID = '999';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
-dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
-dirs.data_dir = '../data'; addpath(dirs.data_dir);
 dirs.script_dir = pwd;
+dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
+
+
+dirs.data_dir = '../data'; 
+dirs.texture_dir = 'textures';
+
+if exist(dirs.data_dir,'dir') == 0
+    mkdir(dirs.data_dir);
+end
+
+if exist(dirs.texture_dir,'dir') == 0
+    mkdir(dirs.texture_dir);
+end
+
+addpath(dirs.data_dir);
+addpath(dirs.texture_dir);
+
 dirs.init_dir = 'init'; addpath(dirs.init_dir);
 dirs.modules_dir = 'script_modules'; addpath(dirs.modules_dir);
-dirs.texture_dir = 'textures'; addpath(dirs.texture_dir);
 dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
 
 if p.which_setup == 1
-    dirs.monitor_cal_dir = '/home/pclexp/Documents/Luis/MonitorCalibration'; addpath(dirs.monitor_cal_dir);
+    dirs.monitor_cal_dir = '/home/serenceslabexp/Desktop/MonitorCalibration'; addpath(dirs.monitor_cal_dir);
 end
 
 %% Set device and display; open window
@@ -184,17 +198,11 @@ while ~exit_session
 
 end
 
-if p.training
-    disp(['Training performance: ' num2str(round(100*training_info.behav_data.performance)) '%']);
-else
-    % disp(['Experiment performance: ' num2str(round(100*run_info.behav_data.performance)) '%']);
-end
-
 %% Turn off Kb and restore display
 
 KbQueueStop(p.device_number);
 
 Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
-if p.which_setup == 1, SetScreenDefault; end
+if p.which_setup == 1 && w.gamma_correct, SetScreenDefault; end
 Screen('CloseAll');
 ShowCursor;

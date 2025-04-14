@@ -22,9 +22,9 @@ switch p.which_setup
         % Assign trigger key
         p.trigger_key = KbName('Space');
 
-    case 1 % If using 3329D
+    case 1 % If using 3329C
 
-        p.device_string = 'Dell Dell USB Keyboard';
+        p.device_string = 'LiteOn Lenovo Traditional USB Keyboard';
 
         % Define keypress numbers
         p.keypress_numbers = [KbName('1!') KbName('2@')];
@@ -32,7 +32,7 @@ switch p.which_setup
         % Assign trigger key
         p.trigger_key = KbName('Space');
 
-    case 3 % If using S32D850
+    case 2 % If using S32D850
 
         p.device_string =  'USB-HID Keyboard'; % external keyboard
 

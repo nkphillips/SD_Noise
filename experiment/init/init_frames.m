@@ -21,6 +21,7 @@ frames.mask_frames_count = round(t.mask_dur/t.frame_dur);
 frames.delay_frames_count = round(t.delay_dur/t.frame_dur);
 frames.probe_frames_count = round(t.probe_dur/t.frame_dur);
 frames.iti_frames_count = round(t.iti_dur./t.frame_dur);
+frames.rest_frames_count = round(t.rest_dur/t.frame_dur);
 
 %% Test
 
@@ -70,5 +71,9 @@ for n_trial = 1:p.num_trials-1
     frames.iti_frames_onsets{n_trial} = 0:t.frame_dur:t.iti_dur(n_trial);
 
 end
+
+%% Rest
+
+frames.rest_frame_onsets = 0:t.frame_dur:t.rest_dur-t.frame_dur;
 
 end

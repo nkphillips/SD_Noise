@@ -10,6 +10,9 @@ for curr_cond = 1:p.num_conds
 
         for n_trial = 1:length(staircases.trial_order(:, curr_lvl, curr_cond))
         
+            KbQueueFlush(p.device_number);
+            if p.disp_on, disp(' '); end
+
             %% Get current staircase info
 
             % Get current test orientation
@@ -26,8 +29,7 @@ for curr_cond = 1:p.num_conds
             % Get the current staircase trial number
             curr_sc_trial = find(n_trial == staircases.trial_indices(curr_sc, :, curr_lvl, curr_cond));
 
-            if p.demo_run
-                disp(['Staircase ' num2str(curr_sc) ', trial ' num2str(curr_sc_trial)])
+            if p.disp_on
             end
 
             % Probe offset
@@ -36,6 +38,36 @@ for curr_cond = 1:p.num_conds
             
             % Calculate absolute orientation difference
             orient_diff = abs(curr_probe_orientation - curr_test_orient);
+            is_CW = curr_probe_orientation > curr_test_orient;
+            
+
+            if p.disp_on
+                % disp(['Trial ' num2str(n_trial)])
+                disp(['Staircase ' num2str(curr_sc) ', trial ' num2str(curr_sc_trial)])
+                disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
+                disp(['Probe Orientation: ' num2str(curr_probe_orientation) '°'])
+                disp(['Orientation difference: ' num2str(orient_diff) '°'])
+                disp(' ')
+                if is_CW
+                    disp('Correct response: Right')
+                else
+                    disp('Correct response: Left')
+                end
+
+                % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
+                % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
+                % if curr_probe_orient > 90
+                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
+                % else
+                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
+                % end
+                % disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
+            end
+
+            
+
+
+            curr_probe_orientation = correct_orientation(curr_probe_orientation);
 
             % Create rotated probe line
             curr_probe_orientation_rad = deg2rad(curr_probe_orientation);
@@ -57,22 +89,6 @@ for curr_cond = 1:p.num_conds
                 curr_filter_width = curr_lvl;
 
             end
-
-
-            if p.demo_run
-                disp(['Trial ' num2str(n_trial)])
-                disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
-                disp(['Probe Orientation: ' num2str(curr_probe_orientation) '°'])
-                % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
-                % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
-                % if curr_probe_orient > 90
-                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
-                % else
-                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
-                % end
-                % disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
-            end
-
 
             %% Draw Test
 
@@ -102,8 +118,8 @@ for curr_cond = 1:p.num_conds
                 end
                 Screen('Flip', w.window, test_frames_onsets(n_frame));
 
-                if p.demo_run && n_frame == frames.test_frames_count
-                    % KbWait;
+                if p.disp_on && n_frame == frames.test_frames_count
+                    KbWait;
                 end
 
             end
@@ -136,7 +152,7 @@ for curr_cond = 1:p.num_conds
                 end
                 Screen('Flip', w.window, mask_frames_onsets(n_frame)); % every frame has a deadline
 
-                % if p.demo_run && n_frame == frames.test_frames_count
+                % if p.disp_on && n_frame == frames.test_frames_count
                 %     KbWait;
                 % end
 
@@ -163,7 +179,7 @@ for curr_cond = 1:p.num_conds
             for n_frame = 1:frames.probe_frames_count
 
                 % Draw Line
-                Screen('DrawLines', w.window, curr_probe_line, stimuli.probe_thickness, stimuli.probe_color);
+                Screen('DrawLines', w.window, curr_probe_line, p.probe_thickness, p.probe_color);
 
                 % Stimulus aperture
                 Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
@@ -178,8 +194,8 @@ for curr_cond = 1:p.num_conds
                 end
                 Screen('Flip', w.window, probe_frames_onsets(n_frame));
 
-                if p.demo_run && n_frame == frames.test_frames_count
-                    %KbWait;
+                if p.disp_on && n_frame == frames.probe_frames_count
+                    KbWait;
                 end
 
             end
@@ -189,15 +205,6 @@ for curr_cond = 1:p.num_conds
             % Initialize response state and response start
             no_response_recorded = 1;
             response_start = GetSecs;
-
-            if p.demo_run
-                disp(['Orientation difference: ' num2str(orient_diff) '°'])
-                if curr_probe_orientation < curr_test_orient
-                    disp('Correct response: Left')
-                else
-                    disp('Correct response: Right')
-                end
-            end
 
             % Check for a key press
             if ~p.simulate_response
@@ -235,13 +242,13 @@ for curr_cond = 1:p.num_conds
 
                     first_relevant_key = relevant_keys(1); % Get the first relevant key
 
-                    if first_relevant_key == p.keypress_numbers(1) && curr_probe_orientation < curr_test_orient
+                    if first_relevant_key == p.keypress_numbers(1) && ~is_CW
                         staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
                         staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
                         if p.disp_on
                             disp('Response: Left')
                         end
-                    elseif first_relevant_key == p.keypress_numbers(2) && curr_probe_orientation > curr_test_orient
+                    elseif first_relevant_key == p.keypress_numbers(2) && is_CW
                         staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
                         staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
                         if p.disp_on
@@ -256,7 +263,7 @@ for curr_cond = 1:p.num_conds
 
                 elseif any(which_press == KbName('ESCAPE')) % Escape key
 
-                    if p.demo_run
+                    if p.disp_on
                         disp('Escape key pressed. Exiting...');
                     end
                     return; % Exit the experiment
@@ -294,13 +301,13 @@ for curr_cond = 1:p.num_conds
         
                             first_relevant_key = relevant_keys(1); % Get the first relevant key
         
-                            if first_relevant_key == p.keypress_numbers(1) && curr_probe_orientation < curr_test_orient
+                            if first_relevant_key == p.keypress_numbers(1) && ~is_CW
                                 staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
                                 staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
                                 if p.disp_on
                                     disp('Response: Left')
                                 end
-                            elseif first_relevant_key == p.keypress_numbers(2) && curr_probe_orientation > curr_test_orient
+                            elseif first_relevant_key == p.keypress_numbers(2) && is_CW
                                 staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
                                 staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
                                 if p.disp_on
@@ -315,7 +322,7 @@ for curr_cond = 1:p.num_conds
         
                         elseif any(which_press == KbName('ESCAPE')) % Escape key
         
-                            if p.demo_run
+                            if p.disp_on
                                 disp('Escape key pressed. Exiting...');
                             end
                             return; % Exit the experiment
@@ -328,6 +335,13 @@ for curr_cond = 1:p.num_conds
 
                 if no_response_recorded
                     staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
+                    if p.disp_on
+                        disp('Response missed.')
+                    end
+                else
+                    if p.disp_on
+                        KbWait;
+                    end
                 end
 
             end
@@ -335,11 +349,6 @@ for curr_cond = 1:p.num_conds
             %% Update staircase
 
             update_staircase
-
-            if p.demo_run
-                disp(' ')
-                % KbWait;
-            end
 
         end
 

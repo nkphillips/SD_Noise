@@ -139,3 +139,7 @@ else
     end
 
 end
+
+if p.disp_on
+    KbWait;
+end

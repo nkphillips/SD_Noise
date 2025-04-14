@@ -20,7 +20,7 @@ if ~p.simulate_response
         % Flip
         % Update frame deadlines
         if n_frame == 1
-            pres_timing.rest_flip_times{n_block} = frames.rest_frame_deadlines + GetSecs;
+            pres_timing.rest_flip_times{n_block} = frames.rest_frame_onsets + GetSecs;
         end
         Screen('Flip', w.window, pres_timing.rest_flip_times{n_block}(n_frame));
 
@@ -46,11 +46,11 @@ while ~exit_rest
     % If key is pressed
     if key_pressed
 
-        if which_press(1) == p.keypress_numbers(3)
+        if which_press(1) == p.trigger_key
             exit_rest = 1;
             t.optional_rest_dur(n_block) = toc;
-        elseif which_press(1) == p.keypress_numbers(end)
-            return;
+        elseif which_press(1) == KbName('Escape')
+            break;
         end
     end
 

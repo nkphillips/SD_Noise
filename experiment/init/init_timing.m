@@ -24,7 +24,7 @@ t.iti_max = 1.5;
 t.iti_dur = t.iti_min + (t.iti_max - t.iti_min) .* rand(p.num_trials-1, 1);
 
 t.block_dur_est = ((t.trial_dur_est + mean(t.iti_dur(1:p.num_trials_per_block)))  * p.num_trials_per_block) / 60; % s
-t.rest_dur = 30;
+t.rest_dur = 5; % default = 30;
 
 t.exp_dur_est = (p.num_trials * t.trial_dur_est + sum(t.iti_dur) + t.rest_dur * (p.num_blocks-1)) / 60;
 

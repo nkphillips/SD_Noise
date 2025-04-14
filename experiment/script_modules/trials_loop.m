@@ -43,9 +43,9 @@ for n_trial = 1:size(p.trial_events,1)
         disp(['Test Filter Width: ' num2str(p.bp_filter_width(curr_filter_width)) '°'])
         disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°'])
 
-        % disp(['Old Probe Orientation: ' num2str(round(curr_probe_orient-90)) '°'])
+        disp(['Probe Orientation: ' num2str(round(curr_probe_orient-90)) '°'])
 
-        disp(['Corrected Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°'])
+        % disp(['Corrected Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°'])
     end
 
     %% Draw Test orientation
@@ -228,7 +228,7 @@ for n_trial = 1:size(p.trial_events,1)
                     disp('Escape key pressed. Exiting...');
                 end
                
-                return; % Exit the experiment
+                break; % Exit the experiment
             
             end
 

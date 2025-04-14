@@ -8,7 +8,7 @@ staircases = struct();
 staircases.num_staircases_per_cond = 2;
 
 % Probe offset range
-staircases.max_probe_offset = 15;
+staircases.max_probe_offset = 10;
 staircases.min_probe_offset = 1;
 staircases.init_probe_offset = [staircases.min_probe_offset staircases.max_probe_offset];
 
@@ -68,7 +68,7 @@ for cond = 1:p.num_conds
         % Generate test orientations
         % use the datasample() function to generate a sequence of test orientations from a min and max range of orientation values,
         % equal in size to the staircase structure (eg., staircases.probe_offsets)
-        data = stimuli.orientation_min:stimuli.orientation_max;
+        data = p.orientation_min:p.orientation_max;
         staircases.test_orientation(:, lvl, cond) = datasample(data, staircases.max_trials_per_sc * staircases.num_staircases_per_cond); 
 
     end

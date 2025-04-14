@@ -16,31 +16,19 @@ if p.which_setup == 0 % Macbook
     w.screen_width_px = 1512; % in pixels, px
     w.screen_height_px = 982; % px
 
-elseif p.which_setup == 1 % 3329D
+elseif p.which_setup == 1 % 3329C
 
-    p.display_setup = '3329D';
+    p.display_setup = '3329C_ASUS';
 
     w.use_screen = 0;
-    w.gamma_correct = 1;
+    w.gamma_correct = 0;
     w.refresh_rate = 85; % display refresh rate in Hertz, Hz
     w.view_distance = 40;  % cm
     w.screen_width = 40.7; %  cm
-    w.screen_width_px = 1600; % px
-    w.screen_height_px = 1200; % px
+    w.screen_width_px = 2560; % px
+    w.screen_height_px = 1440; % px
 
-elseif p.which_setup == 2 %  Scanner
-
-    p.display_setup = 'Scanner';
-
-    w.use_screen = 0;
-    w.refresh_rate = 60; % display refresh rate in Hertz, Hz
-    w.view_distance = [];   % cm
-    w.screen_width = [];  % cm
-    w.screen_height = [];   % cm
-    w.screen_width_px = []; % px
-    w.screen_height_px = []; % px
-
-elseif p.which_setup == 3 % S32D850
+elseif p.which_setup == 2 % S32D850
 
     p.display_setup = 'S32D850';
 
@@ -62,11 +50,11 @@ if p.half_screen
             w.screen_width = 42; % cm
             w.screen_width_px = w.screen_width_px/2; % in pixels, px
             w.screen_height_px = w.screen_height_px/2; % px
-        case 1 % 3329D
+        case 1 % 3329C
             w.view_distance = 40; % in centimeters, cm
             w.screen_width = 40.7; %  cm
-            w.screen_width_px = 800; % px
-            w.screen_height_px = 600; % px
+            w.screen_width_px = 1280; % px
+            w.screen_height_px = 720; % px
         case 3 % S32D850
             w.view_distance = 57; % in centimeters, cm
             w.screen_width = 70.8; % cm
