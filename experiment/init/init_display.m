@@ -55,7 +55,7 @@ if p.half_screen
             w.screen_width = 40.7; %  cm
             w.screen_width_px = 1280; % px
             w.screen_height_px = 720; % px
-        case 3 % S32D850
+        case 2 % S32D850
             w.view_distance = 57; % in centimeters, cm
             w.screen_width = 70.8; % cm
             w.screen_width_px = w.screen_width_px/2; % in pixels, px
