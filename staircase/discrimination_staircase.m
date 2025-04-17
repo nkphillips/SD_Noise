@@ -9,45 +9,34 @@ for curr_cond = 1:p.num_conds
         n_block = n_block + 1;
 
         for n_trial = 1:length(staircases.trial_order(:, curr_lvl, curr_cond))
-        
+
             KbQueueFlush(p.device_number);
             if p.disp_on, disp(' '); end
 
             %% Get current staircase info
-
-            % Get current test orientation
-            curr_test_orient = staircases.test_orientation(n_trial,curr_lvl,curr_cond);           
             
-            % Get current staircase
             curr_sc = staircases.trial_order(n_trial, curr_lvl, curr_cond);
-
-            % Skip current trial if the max reversals have already been reached for the current staircase
+            
             if staircases.num_reversals(curr_sc, curr_lvl, curr_cond) == staircases.max_reversals
                 % continue
             end
 
-            % Get the current staircase trial number
             curr_sc_trial = find(n_trial == staircases.trial_indices(curr_sc, :, curr_lvl, curr_cond));
-
-            if p.disp_on
-            end
-
-            % Probe offset
-            curr_probe_offset = staircases.probe_offsets(curr_sc,curr_sc_trial,curr_lvl,curr_cond);
-            curr_probe_orientation = calc_probe_orientation(curr_test_orient,curr_probe_offset);
-            
-            % Calculate absolute orientation difference
+            curr_test_orient = staircases.test_orientation(curr_sc_trial, curr_lvl, curr_cond);           
+            curr_probe_offset = staircases.probe_offsets(curr_sc, curr_sc_trial, curr_lvl, curr_cond);
+            curr_probe_orientation = calc_probe_orientation(curr_test_orient, curr_probe_offset);
+        
             orient_diff = abs(curr_probe_orientation - curr_test_orient);
             is_CW = curr_probe_orientation > curr_test_orient;
             
-
             if p.disp_on
-                % disp(['Trial ' num2str(n_trial)])
+                
                 disp(['Staircase ' num2str(curr_sc) ', trial ' num2str(curr_sc_trial)])
                 disp(['Test Orientation: ' num2str(curr_test_orient) '°'])
                 disp(['Probe Orientation: ' num2str(curr_probe_orientation) '°'])
                 disp(['Orientation difference: ' num2str(orient_diff) '°'])
                 disp(' ')
+                
                 if is_CW
                     disp('Correct response: Right')
                 else
@@ -56,16 +45,8 @@ for curr_cond = 1:p.num_conds
 
                 % disp(['Test Contrast: ' num2str(round(100*stimuli.contrast(curr_contrast),2)) '%'])
                 % disp(['Test Filter Width: ' num2str(stimuli.bp_filter_width(curr_filter_width)) '°'])
-                % if curr_probe_orient > 90
-                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient-90) '°'])
-                % else
-                %     disp(['Old Probe Orientation: ' num2str(curr_probe_orient+270) '°'])
-                % end
-                % disp(['Corrected Probe Orientation: ' num2str(curr_probe_orient) '°'])
+
             end
-
-            
-
 
             curr_probe_orientation = correct_orientation(curr_probe_orientation);
 
@@ -77,14 +58,11 @@ for curr_cond = 1:p.num_conds
             curr_probe_line = curr_rotation * (stimuli.probe_line_base - [w.centerX; w.centerY]);
             curr_probe_line = curr_probe_line + [w.centerX; w.centerY];
 
-            % Get current contrast and filter width
             if curr_cond == 1
-
                 curr_contrast = curr_lvl;
                 curr_filter_width = 1;
 
             elseif curr_cond == 2
-
                 curr_contrast = 1;
                 curr_filter_width = curr_lvl;
 
@@ -96,30 +74,23 @@ for curr_cond = 1:p.num_conds
 
             for n_frame = 1:frames.test_frames_count
 
-                % Update noise sample when a new sample is needed
                 if frames.test_noise_sample_update(n_frame)
                     n_noise_sample = n_noise_sample + 1;
                     curr_noise_sample = frames.test_noise_sample_update_seq(n_trial, n_noise_sample, n_block);
                 end
 
-                % Draw Test
                 Screen('DrawTexture', w.window, stimuli.test_textures_made(curr_contrast, curr_filter_width, curr_noise_sample), [], noise_patch, curr_test_orient);
-
-                % Stimulus aperture
                 Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch, curr_test_orient);
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
-                % Draw fixation
-                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
-                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
-
-                % Flip
                 if n_frame == 1
                     test_frames_onsets = frames.test_frames_onsets + GetSecs;
                 end
                 Screen('Flip', w.window, test_frames_onsets(n_frame));
 
                 if p.disp_on && n_frame == frames.test_frames_count
-                    KbWait;
+                    % KbWait;
                 end
 
             end
@@ -130,31 +101,24 @@ for curr_cond = 1:p.num_conds
 
             for n_frame = 1:frames.mask_frames_count
 
-                % Update noise sample when a new sample is needed
                 if frames.mask_noise_sample_update(n_frame)
                     n_noise_sample = n_noise_sample + 1;
                     curr_noise_sample = frames.mask_noise_sample_update_seq(n_trial, n_noise_sample, n_block);
                 end
 
-                % Draw mask
                 Screen('DrawTexture', w.window, stimuli.mask_textures_made(curr_contrast, curr_noise_sample), [], noise_patch);
-
-                % Stimulus aperture
                 Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); 
 
-                % Draw fixation
-                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
-                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
-
-                % Flip
                 if n_frame == 1
                     mask_frames_onsets = frames.mask_frames_onsets + GetSecs;
                 end
-                Screen('Flip', w.window, mask_frames_onsets(n_frame)); % every frame has a deadline
+                Screen('Flip', w.window, mask_frames_onsets(n_frame)); 
 
-                % if p.disp_on && n_frame == frames.test_frames_count
-                %     KbWait;
-                % end
+                if p.disp_on && n_frame == frames.test_frames_count
+                    % KbWait;
+                end
 
             end
 
@@ -162,15 +126,13 @@ for curr_cond = 1:p.num_conds
 
             for n_frame = 1:frames.delay_frames_count
 
-                % Draw fixation
-                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
-                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
-                % Flip
                 if n_frame == 1
                     delay_frames_onsets = frames.delay_frames_onsets + GetSecs;
                 end
-                Screen('Flip', w.window, delay_frames_onsets(n_frame)); % every frame has a deadline
+                Screen('Flip', w.window, delay_frames_onsets(n_frame)); 
 
             end
 
@@ -178,170 +140,112 @@ for curr_cond = 1:p.num_conds
 
             for n_frame = 1:frames.probe_frames_count
 
-                % Draw Line
                 Screen('DrawLines', w.window, curr_probe_line, p.probe_thickness, p.probe_color);
-
-                % Stimulus aperture
                 Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
-                % Draw fixation
-                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
-                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
-
-                % Flip
                 if n_frame == 1
                     probe_frames_onsets = frames.probe_frames_onsets + GetSecs;
                 end
                 Screen('Flip', w.window, probe_frames_onsets(n_frame));
 
                 if p.disp_on && n_frame == frames.probe_frames_count
-                    KbWait;
+                    % KbWait;
                 end
 
             end
 
             %% Response
 
-            % Initialize response state and response start
             no_response_recorded = 1;
             response_start = GetSecs;
 
-            % Check for a key press
-            if ~p.simulate_response
+            while no_response_recorded
 
-                [key_pressed, first_press] = KbQueueCheck(p.device_number);
-                which_press = find(first_press);
-                response_dur = GetSecs - response_start;
+                Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+                Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
-            else
+                Screen('Flip', w.window);
 
-                mu = p.mu(curr_cond, curr_lvl); 
-                sigma = p.sigma(curr_cond, curr_lvl);
-                guess_rate = p.guess_rate(curr_cond, curr_lvl); 
-                
-                p_CW = calc_pCW(orient_diff, mu, sigma, guess_rate);
-                response = rand() < p_CW;
-                
-                if response
-                    which_press = p.keypress_numbers(2);
+                if ~p.simulate_response
+                    [key_pressed, first_press] = KbQueueCheck(p.device_number);
+                    which_press = find(first_press);
+                    response_dur = GetSecs - response_start;
+
                 else
-                    which_press = p.keypress_numbers(1);
-                end
-                
-                key_pressed = true;
-                
-                response_dur = GetSecs - response_start;
-
-            end
-
-            % Evaluate key press
-            if key_pressed 
-                % Find overlap between pressed keys and relevant keys
-                relevant_keys = intersect(which_press, p.keypress_numbers);
-                if ~isempty(relevant_keys) % If a relevant key was pressed
-
-                    first_relevant_key = relevant_keys(1); % Get the first relevant key
-
-                    if first_relevant_key == p.keypress_numbers(1) && ~is_CW
-                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
-                        staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
-                        if p.disp_on
-                            disp('Response: Left')
-                        end
-                    elseif first_relevant_key == p.keypress_numbers(2) && is_CW
-                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
-                        staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
-                        if p.disp_on
-                            disp('Response: Right')
-                        end
+                    mu = 0; 
+                    sigma = 1;
+                    guess_rate = 0; 
+                    
+                    p_CW = calc_pCW(orient_diff, mu, sigma, guess_rate);
+                    response = rand() < p_CW;
+                    
+                    if response
+                        which_press = p.keypress_numbers(2);
                     else
-                        staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
+                        which_press = p.keypress_numbers(1);
                     end
-
-                    % No response is now false
-                    no_response_recorded = 0;
-
-                elseif any(which_press == KbName('ESCAPE')) % Escape key
-
-                    if p.disp_on
-                        disp('Escape key pressed. Exiting...');
-                    end
-                    return; % Exit the experiment
+                    
+                    key_pressed = true;
+                    response_dur = GetSecs - response_start;
 
                 end
 
+                if key_pressed && no_response_recorded
+
+                    relevant_keys = intersect(which_press, p.keypress_numbers);
+
+                    if ~isempty(relevant_keys) 
+
+                        first_relevant_key = relevant_keys(1); 
+
+                        if first_relevant_key == p.keypress_numbers(1) && ~is_CW
+                            staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
+                            staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
+                            if p.disp_on, disp('Response: CCW'); end
+                        
+                        elseif first_relevant_key == p.keypress_numbers(2) && is_CW
+                            staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
+                            staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
+                            if p.disp_on, disp('Response: CW'); end
+                        
+                        else
+                            staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
+                            if p.disp_on && is_CW
+                                disp('Response: CCW'); 
+                            elseif p.disp_on && ~is_CW
+                                disp('Response: CW'); 
+                            end
+                        end
+
+                        no_response_recorded = 0;
+
+                    elseif any(which_press == KbName('ESCAPE')) 
+                        if p.disp_on
+                            disp('Escape key pressed. Exiting...');
+                        end
+                        return; 
+
+                    end
+
+                end
             end
 
             %% ITI
 
             if n_trial < length(staircases.trial_order(:, curr_lvl, curr_cond))
-                iti_start = GetSecs;
 
-                while GetSecs - iti_start <= t.iti_dur
+                for n_frame = 1:frames.iti_frames_count(n_trial)
 
-                    % Draw Fixation
-                    Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
-
-                    % Flip stimuli
-                    Screen('Flip', w.window);
-
-                    % Check for a key press
-                    if ~p.simulate_response && no_response_recorded
-                        [key_pressed, first_press] = KbQueueCheck(p.device_number);
-                        which_press = find(first_press);
-                        response_dur = GetSecs - response_start;
+                    Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
+        
+                    if n_frame == 1
+                        iti_frames_onsets = frames.iti_frames_onsets{n_trial} + GetSecs;
                     end
-
-                    % Evaluate response
-                    if key_pressed && no_response_recorded
-                        
-                        % Find overlap between pressed keys and relevant keys
-                        relevant_keys = intersect(which_press, p.keypress_numbers);
-                        if ~isempty(relevant_keys) % If a relevant key was pressed
         
-                            first_relevant_key = relevant_keys(1); % Get the first relevant key
+                    Screen('Flip', w.window, iti_frames_onsets(n_frame));
         
-                            if first_relevant_key == p.keypress_numbers(1) && ~is_CW
-                                staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
-                                staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
-                                if p.disp_on
-                                    disp('Response: Left')
-                                end
-                            elseif first_relevant_key == p.keypress_numbers(2) && is_CW
-                                staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 1;
-                                staircases.response_dur(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = response_dur;
-                                if p.disp_on
-                                    disp('Response: Right')
-                                end
-                            else
-                                staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
-                            end
-        
-                            % No response is now false
-                            no_response_recorded = 0;
-        
-                        elseif any(which_press == KbName('ESCAPE')) % Escape key
-        
-                            if p.disp_on
-                                disp('Escape key pressed. Exiting...');
-                            end
-                            return; % Exit the experiment
-        
-                        end
-        
-                    end
-
-                end
-
-                if no_response_recorded
-                    staircases.responses(curr_sc, curr_sc_trial, curr_lvl, curr_cond) = 0;
-                    if p.disp_on
-                        disp('Response missed.')
-                    end
-                else
-                    if p.disp_on
-                        KbWait;
-                    end
                 end
 
             end
