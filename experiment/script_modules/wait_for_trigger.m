@@ -8,22 +8,13 @@ Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_
 Screen('Flip', w.window);
 
 %% Start screen
+    
+start_screen_text = ['Press ' KbName(p.trigger_key) ' to begin.'];
+start_screen_text_boundary = Screen('TextBounds', w.window, start_screen_text);
+start_screen_text_patch = CenterRectOnPoint(start_screen_text_boundary, w.centerX, w.centerY);
 
-if p.which_setup ~= 2
-    
-    start_screen_text = ['Press ' KbName(p.trigger_key) ' to begin.'];
-    start_screen_text_boundary = Screen('TextBounds', w.window, start_screen_text);
-    start_screen_text_patch = CenterRectOnPoint(start_screen_text_boundary, w.centerX, w.centerY);
-    Screen('DrawText', w.window, start_screen_text, start_screen_text_patch(1),  start_screen_text_patch(2), w.white);
-    
-else
-    
-    DrawFormattedText(w.window, '~', w.ppd, w.ppd, w.white, w.bg_color);
-    
-end
-
+Screen('DrawText', w.window, start_screen_text, start_screen_text_patch(1),  start_screen_text_patch(2), w.white);
 Screen('Flip', w.window);
-
 disp('Waiting for trigger...')
 
 %% Wait for trigger
