@@ -1,5 +1,6 @@
 
-close all; clear all; clc;
+clear all; clc;
+% close all; 
 
 functions_dir = '../functions';
 addpath(functions_dir);
@@ -18,7 +19,7 @@ rand_offsets = datasample(offsets, num_trials, 'Replace', true);
 simulation_probe_orientations = sim_test_orientation + rand_offsets;
 
 % Calculate probability of correct discrimination using cumulative normal
-subj_mu = -6;
+subj_mu = 0;
 subj_sigma = 3;
 guess_rate = 0.25;
 
@@ -94,6 +95,7 @@ plot(x, cdf_response', 'LineWidth', 2,'Color', 'b');
 hold on;
 plot(x, pdf_response', 'LineWidth', 2,'LineStyle', '--','Color', 'b');
 line([0,0], [0,1], 'LineWidth', 2, 'Color', 'k');
+line([-20,20], [0.5,0.5], 'LineWidth', 2, 'Color', 'k');
 title(['\mu = ' num2str(round(mu, 2)) ', \sigma = ' num2str(round(sigma, 2))]);
 xlabel('Probe Offset');
 ylabel('P(Resp|CW)');
@@ -102,9 +104,9 @@ xlim([-20, 20]);
 box off
 set(gca, 'TickDir', 'out');
 
-figure('Color', 'w');
-plot(sorted_p_CW(:,1), sorted_p_CW(:,2), 'k.');
-ylim([0, 1]);
-xlim([-20, 20]);
-box off
-set(gca, 'TickDir', 'out');
+% figure('Color', 'w');
+% plot(sorted_p_CW(:,1), sorted_p_CW(:,2), 'k.');
+% ylim([0, 1]);
+% xlim([-20, 20]);
+% box off
+% set(gca, 'TickDir', 'out');
