@@ -30,17 +30,19 @@ else
     p.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michelson contrast
 end
 
-%% Define orientation bandpass filter widths
+%% Define orientation and spatial frequency bandpass filter widths
 
 if p.training
-    p.bp_filter_width = 0.1;
+    p.orientation_bp_filter_width = 0.1;
 else
-    p.bp_filter_width = [0.1 5 20]; % low noise, medium, high ; unit: °
+    p.orientation_bp_filter_width = [0.1 5 20]; % low noise, medium, high ; unit: °
 end
+
+p.sf_bp_filter_cutoffs = [1 04]; % unit: cycles/degree
 
 %% Check that the number of levels between stimulus contrast and bp filter widths match
 
-if length(p.bp_filter_width) == length(p.contrast)
+if length(p.orientation_bp_filter_width) == length(p.contrast)
     p.num_levels = length(p.contrast);
 else
     disp('Condition levels do not match in length!');
