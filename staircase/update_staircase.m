@@ -140,6 +140,4 @@ else
 
 end
 
-if p.disp_on
-    KbWait;
-end
+% if p.disp_on, KbWait; end
