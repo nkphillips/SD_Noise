@@ -37,7 +37,7 @@ switch p.which_setup
         p.device_string =  'USB-HID Keyboard'; % external keyboard
 
         % Define keypress numbers
-        p.keypress_numbers = [KbName('1!') KbName('2@') KbName('Space') KbName('Escape')];
+        p.keypress_numbers = [KbName('1!') KbName('2@')];
 
         % Assign trigger key
         p.trigger_key = KbName('Space');
