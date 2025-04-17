@@ -28,7 +28,7 @@ p.training = 0;
 p.which_setup = 2; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 
 % Sync Test
-if sum(p.which_setup == [0 3]) > 0
+if sum(p.which_setup == [0 2]) > 0
     Screen('Preference', 'SkipSyncTests', 1); % Set to 1 if running on macOS
 else
     Screen('Preference', 'SkipSyncTests', 0);
