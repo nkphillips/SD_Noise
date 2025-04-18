@@ -34,7 +34,7 @@ while ~exit_rest
 
     % Draw Fixation
     Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
-    Screen('FillOval', w.window, w.blue, fixation_dot_patch); % Fixation dot
+    Screen('FillOval', w.window, w.green, fixation_dot_patch); % Fixation dot
 
     % Flip
     Screen('Flip', w.window, pres_timing.rest_flip_times{n_block}(n_frame));

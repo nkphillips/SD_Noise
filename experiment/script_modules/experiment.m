@@ -70,7 +70,7 @@ for n_block = 1:p.num_blocks
     if n_block < p.num_blocks
 
         % Briefly show progress
-        rest_period_text = ['Block ' num2str(n_block) ' of ' num2str(p.num_blocks)];
+        rest_period_text = ['Block ' num2str(n_block) ' of ' num2str(p.num_blocks) 'completed'];
         rest_period_text_boundary = Screen('TextBounds', w.window, rest_period_text);
         rest_period_text_patch = CenterRectOnPoint(rest_period_text_boundary, w.centerX, w.centerY);
         Screen('DrawText', w.window, rest_period_text, rest_period_text_patch(1),  rest_period_text_patch(2), w.white);
