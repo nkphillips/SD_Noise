@@ -13,7 +13,7 @@ for n_trial = 1:size(p.trial_events,1)
     curr_test_orient = p.trial_events(n_trial, test_orientation_col, n_block); 
 
     % Create rotated probe line
-    curr_probe_orient = p.trial_events(n_trial, probe_orientation_col, n_block); 
+    curr_probe_orient = corrected_probe_orientations(n_trial); 
     curr_probe_orient_rad = deg2rad(curr_probe_orient);
     curr_rotation = [cos(curr_probe_orient_rad), -sin(curr_probe_orient_rad); ...
         sin(curr_probe_orient_rad), cos(curr_probe_orient_rad)];
