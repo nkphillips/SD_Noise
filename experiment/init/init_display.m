@@ -23,7 +23,7 @@ elseif p.which_setup == 1 % 3329C
     w.use_screen = 0;
     w.gamma_correct = 0;
     w.refresh_rate = 85; % display refresh rate in Hertz, Hz
-    w.view_distance = 40;  % cm
+    w.view_distance = 42;  % cm
     w.screen_width = 40.7; %  cm
     w.screen_width_px = 2560; % px
     w.screen_height_px = 1440; % px

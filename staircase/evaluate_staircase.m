@@ -4,7 +4,7 @@ clear all; close all; clc;
 
 %% Prepare workspace
 
-subj_IDs = {'999'};
+subj_IDs = {'001'};
 
 script_dir = pwd;
 staircase_data_dir = '../data'; addpath(staircase_data_dir);
