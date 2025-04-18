@@ -5,11 +5,6 @@
 % UCSD
 % lur003@ucsd.edu
 
-%% Prepare Psychtoolbox for Imaging 
-
-% PsychImaging('PrepareConfiguration');
-% PsychImaging('AddTask', 'General', 'FloatingPoint32BitIfPossible');
-
 %% Open Window
 
 [w.window, p.screen_rect_sz_px] = PsychImaging('OpenWindow', w.use_screen, w.bg_color, [0 0 w.screen_width_px w.screen_height_px]);
@@ -28,14 +23,11 @@ Screen('BlendFunction', w.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 w.DefaultCLUT = Screen('ReadNormalizedGammaTable', w.window);
 
-if p.which_setup == 1 && w.gamma_correct % 3329D
+if p.which_setup == 1 && w.gamma_correct 
     
-    LoadCLUT
-    
-elseif p.which_setup == 2 % If @ the scanner
-    
-    Screen('LoadNormalizedGammaTable', w.window, linspace(0,1, 256)'*ones(1,3));
-    
+    load([dirs.monitor_cal_dir 'corrected_gamma_table_' p.display_setup '.mat'])
+    Screen('LoadCLUT', w.window, corrected_gamma.table);
+
 end
 
 %% Define center coordinates

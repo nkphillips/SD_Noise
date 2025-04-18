@@ -15,12 +15,11 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
+p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 p.disp_on = 1;
 p.half_screen = 1;
-p.simulate_response = 0;
-p.training = 0; % keep as 0
-
-p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.simulate_response = 1;
+p.training = 0; % !! keep as 0
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
@@ -45,7 +44,7 @@ dirs.texture_dir = '../experiment/textures'; addpath(dirs.texture_dir);
 dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
 
 if p.which_setup == 1
-    dirs.monitor_cal_dir = '/home/serenceslabexp/Desktop/MonitorCalibration'; addpath(dirs.monitor_cal_dir);
+    dirs.monitor_cal_dir = '/home/serenceslabexp/Desktop/MonitorCalibration/GammaTables/'; addpath(dirs.monitor_cal_dir);
 end
 
 %% Set device and display; open window

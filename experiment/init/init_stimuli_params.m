@@ -61,7 +61,7 @@ p.num_mask_samples = 20;
 %% Define probe line 
 
 p.probe_length = p.fixation_space_aperture_px;
-p.probe_thickness = w.ppd * 0.1;
+p.probe_thickness = w.ppd * 0.08;
 p.probe_color = w.black;
 
 p.probe_start = w.centerX - p.probe_length;
