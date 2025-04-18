@@ -66,15 +66,22 @@ for n_block = 1:p.num_blocks
 
     if n_block == 1
         p.num_trials_per_block = length(level_order);
-        p.trial_events = nan(p.num_trials_per_block, 3, p.num_blocks); % num_trials x [test_orientation, probe_orientation, cond_lvl] x num_blocks
+        p.trial_events = nan(p.num_trials_per_block, 3, p.num_blocks); % num_trials x [test_orientations, probe_orientations, cond_lvl] x num_blocks
         p.correct_response = nan(p.num_trials_per_block, p.num_blocks);
     end
 
-    % Sample Test orientations
-    test_orientation = sample_orientation(p.orientation_min, p.orientation_max, p.num_trials_per_block);
+    % Sample orientations
+    test_orientations = sample_orientation(p.orientation_min, p.orientation_max, p.num_trials_per_block);
+
+    if p.use_staircase
+        probe_orientations = nan(p.num_trials_per_block, 1);
+    else
+        probe_offsets = datasample(p.probe_offsets, length(test_orientations));
+        probe_orientations = calc_probe_orientation(test_orientations, probe_offsets');
+    end
 
     % Storing trial events
-    p.trial_events(:,:,n_block) = [test_orientation, nan(length(test_orientation),1), level_order];
+    p.trial_events(:,:,n_block) = [test_orientations, probe_orientations, level_order];
     test_orientation_col = 1;
     probe_orientation_col = 2;
     level_order_col = 3;
