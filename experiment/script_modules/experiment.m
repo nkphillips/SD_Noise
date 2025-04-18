@@ -33,7 +33,7 @@ for n_block = 1:p.num_blocks
         prev_correct = behav_data.correct(:, prev_block);
         prev_lvl_order = p.trial_events(:, level_order_col, prev_block);
 
-        probe_offsets = p.probe_offsets(:,curr_cond);
+        probe_offsets = p.probe_offsets(curr_cond,:);
         step_size = squeeze(mean(p.staircases.step_size(:,end,:,curr_cond),1));
 
         new_probe_offsets = update_probe_offset(prev_correct, prev_lvl_order, probe_offsets, step_size, p.staircases.min_probe_offset, p.staircases.max_probe_offset);
@@ -45,15 +45,15 @@ for n_block = 1:p.num_blocks
             disp(num2str(new_probe_offsets)); 
         end
 
-        p.probe_offsets(:,curr_cond) = new_probe_offsets;
+        p.probe_offsets(curr_cond,:) = new_probe_offsets;
 
     end
 
     % Calculate probe orientations (test_orientation ± probe_offset)
-    curr_probe_offsets = p.probe_offsets(p.trial_events(:, level_order_col, n_block), curr_cond);
+    curr_probe_offsets = p.probe_offsets(curr_cond, p.trial_events(:, level_order_col, n_block))';
     test_orientation = p.trial_events(:,test_orientation_col, n_block);
     probe_orientation = calc_probe_orientation(test_orientation, curr_probe_offsets);
-    p.trial_events(:,probe_orientation_col,n_block) = correct_orientation(probe_orientation); % Transform probe orientation to match the compass axis
+    p.trial_events(:,probe_orientation_col,n_block) = correct_orientation(probe_orientation)'; % Transform probe orientation to match the compass axis
 
     % Storing correct response
     cclockwise_trials = double(probe_orientation < test_orientation);
@@ -86,9 +86,9 @@ end
 disp('Performance:')
 for cond = 1:p.num_conds
     for lvl = 1:p.num_levels
-        curr_trials = behav_data.correct(p.trial_events(:,3) == lvl, p.block_order(:) == cond);
+        curr_trials = behav_data.correct(p.trial_events(:,3) == lvl, p.block_order == cond);
         behav_data.performance(lvl, cond) = mean(curr_trials(:));
-        disp(['Condition ' p.cond_names{cond} ' Level ' num2str(lvl) ': ' num2str(round(100*behav_data.performance(lvl, cond))) ' %']);
+        disp(['Condition ' p.cond_names{cond} ' Level ' num2str(lvl) ': ' num2str(round(100*behav_data.performance(lvl, cond))) '%']);
     end
 end
 
