@@ -20,7 +20,7 @@ p.half_screen = 1;
 p.simulate_response = 0;
 p.training = 0; % keep as 0
 
-p.which_setup = 2; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
@@ -99,8 +99,10 @@ wait_for_trigger
 
 %% Staircase 
 
-% Run probe offset staircases
+t.start_time = GetSecs;
 discrimination_staircase
+t.end_time = GetSecs;
+t.total_time = round((t.end_time - t.start_time) / 60, 2); % minutes
 
 %% Calculate final probe offsets for each condition & level
 
@@ -147,8 +149,8 @@ ShowCursor;
 
 %% Save staircase data
 
-staircases.contrast = stimuli.contrast;
-staircases.bp_filter_width = stimuli.bp_filter_width;
+staircases.contrast = p.contrast;
+staircases.bp_filter_width = p.orientation_bp_filter_width;
 staircases.p = p;
 staircases.t = t;
 
