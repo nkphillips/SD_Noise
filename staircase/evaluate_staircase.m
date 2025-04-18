@@ -120,13 +120,15 @@ for subj = 1:length(subj_IDs)
             ylim([0 all_staircases(subj).max_probe_offset]);
             grid on;
             hold off;
-
+            axis square;
         end
 
     end
+end
 
-    %% Plot convergence analysis
+%% Plot convergence analysis
 
+for subj = 1:length(subj_IDs)
     for cond = 1:num_conds
 
         figure_name = ['Convergence S' subj_IDs{subj} ' ' cond_names{cond}];
@@ -151,7 +153,7 @@ for subj = 1:length(subj_IDs)
         
             % Format figure
             title(['Level ' num2str(lvl)]);
-            text(0.5, 0.9, sprintf('Final threshold: %.1f°', all_staircases(subj).final_probe_offsets(lvl,cond)), ...
+            text(0.5, 0.9, sprintf('Final threshold: %.1f°', all_staircases(subj).final_probe_offsets(cond,lvl)), ...
                 'Units', 'normalized', 'HorizontalAlignment', 'center');
             xlabel('Reversal Number');
             ylabel('Probe offset (°)');
@@ -160,12 +162,15 @@ for subj = 1:length(subj_IDs)
             ylim([0 all_staircases(subj).max_probe_offset]);
             grid on;
             hold off;
+            axis square;
         
         end
     end
+end
 
-    %% Performance analysis
+%% Performance analysis
 
+for subj = 1:length(subj_IDs)
     for cond = 1:num_conds
 
         figure_name = ['Performance at threshold S' subj_IDs{subj} ' ' cond_names{cond}];
@@ -234,6 +239,7 @@ for subj = 1:length(subj_IDs)
                 xticks(1:2);
                 xticklabels({'SC1', 'SC2'});
                 set(gca, 'TickDir', 'out');
+                axis square;
             else
                 text(0.5, 0.5, 'No data (insufficient reversals)', ...
                     'Units', 'normalized', 'HorizontalAlignment', 'center');
@@ -244,5 +250,4 @@ for subj = 1:length(subj_IDs)
         end
 
     end
-    
 end
