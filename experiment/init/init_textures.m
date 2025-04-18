@@ -57,7 +57,7 @@ if generate_textures
             for k = 1:size(noise_textures, 5) % Samples
                 
                 base_noise = create_noise_texture(p.height_px, p.width_px);
-                base_noise = bandpassFilterImg(base_noise, [0, 180], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
                 base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
                 
                 if j == 1
