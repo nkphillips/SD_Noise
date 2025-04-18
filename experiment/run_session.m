@@ -25,7 +25,7 @@ p.half_screen = 1;
 p.simulate_response = 1;
 p.training = 0;
 
-p.which_setup = 2; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
@@ -97,7 +97,7 @@ if ~p.training
         p.staircases = staircases;
 
         % Get final probe offsets
-        p.probe_offsets = staircases.final_probe_offsets; % num_levels x num_conds
+        p.probe_offsets = staircases.final_probe_offsets; % num_conds x num_levels
 
         disp(['Loaded staircase data for subject ' p.subj_ID]);
 
@@ -107,7 +107,7 @@ if ~p.training
 
 elseif p.training
 
-    p.probe_offsets = 5 * ones(3, 2);
+    p.probe_offsets = 5 * ones(2, 3);
 
 end
 
