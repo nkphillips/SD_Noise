@@ -8,9 +8,9 @@ staircases = struct();
 staircases.num_staircases_per_cond = 2;
 
 % Probe offset range
-staircases.max_probe_offset = 10;
+staircases.max_probe_offset = 15;
 staircases.min_probe_offset = 1;
-staircases.init_probe_offset = [staircases.min_probe_offset staircases.max_probe_offset];
+staircases.init_probe_offset = [staircases.min_probe_offset 10];
 
 % Step size
 staircases.min_step_size = 1;
