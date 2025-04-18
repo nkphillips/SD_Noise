@@ -16,9 +16,9 @@ rng(t.my_rng_seed);
 %% Toggles
 
 p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
-p.disp_on = 1;
-p.half_screen = 1;
-p.simulate_response = 1;
+p.disp_on = 0;
+p.half_screen = 0;
+p.simulate_response = 0;
 p.training = 0; % !! keep as 0
 
 % Sync Test
