@@ -20,12 +20,12 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.disp_on = 0;
-p.half_screen = 0;
-p.simulate_response = 0;
+p.which_setup = 2; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.disp_on = 1;
+p.half_screen = 1;
+p.simulate_response = 1;
 p.training = 0;
-
-p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.use_staircase = 0;
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
@@ -36,13 +36,11 @@ end
 
 %% Set directories
 
-p.subj_ID = '001';
+p.subj_ID = '999';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
 dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
-
-
 dirs.data_dir = '../data'; 
 dirs.texture_dir = 'textures';
 
@@ -73,7 +71,7 @@ open_window
 
 %% Load probe offset magnitudes
 
-if ~p.training
+if ~p.training && p.use_staircase
 
     save_filename = [dirs.data_dir '/' 'staircase_data_S' p.subj_ID '_*.mat'];
     
@@ -105,7 +103,7 @@ if ~p.training
         error('No staircase data found for subject %s', p.subj_ID);
     end
 
-elseif p.training
+elseif p.training && p.use_staircase
 
     p.probe_offsets = 5 * ones(2, 3);
 
