@@ -32,7 +32,7 @@ save_staircase_data = 1;
 
 %% Set directories
 
-p.subj_ID = '999'; % dummy subj = 999
+p.subj_ID = '001'; % dummy subj = 999
 
 dirs.script_dir = pwd;
 dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
@@ -142,7 +142,6 @@ end
 KbQueueStop(p.device_number);
 
 Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
-if p.which_setup == 1, SetScreenDefault; end
 Screen('CloseAll');
 ShowCursor;
 
@@ -156,7 +155,13 @@ staircases.t = t;
 if save_staircase_data
 
     save_filename = ['staircase_data_S' p.subj_ID '_' p.display_setup '_' t.the_date '_' t.the_time '.mat'];
+    subj_dir = [dirs.data_dir '/' p.subj_ID];
+    if exist(subj_dir,'dir') == 0
+        mkdir(subj_dir)
+    end
+
     save([dirs.data_dir '/' p.subj_ID '/' save_filename], 'staircases');
+    
     disp(['Staircase data saved to ' dirs.data_dir '/' p.subj_ID '/' save_filename]);
     
 end
