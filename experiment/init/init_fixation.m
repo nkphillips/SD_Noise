@@ -23,7 +23,7 @@ fixation_space_eccen_radii = sqrt(x_cart.^2+y_cart.^2); % Calculating the eccent
 
 fixation_space_aperture = ones(p.fixation_space_px)*255; % The aperture is fully transparent to start (the entire sqaure fixation space is let through)
 fixation_space_aperture(fixation_space_eccen_radii >= (p.fixation_space_aperture_px/2)) = 0; % Have the aperture block the fixation space texture outside of the specified radius
-fixation_space_aperture = imgaussfilt(fixation_space_aperture, 1); % Apply a guassian blur to the aperture to smooth its edge
+fixation_space_aperture = imgaussfilt(fixation_space_aperture, w.ppd*0.1); % Apply a guassian blur to the aperture to smooth its edge
 fixation_space(:,:,2) = fixation_space_aperture; % Apply the aperture layer to the fixation space texture (the gray square)
 
 %% Fixation dot

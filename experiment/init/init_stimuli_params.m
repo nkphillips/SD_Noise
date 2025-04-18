@@ -10,15 +10,15 @@ lur003@ucsd.edu
 
 %% Define aperture size
 
-p.aperture_height_px = round(w.screen_height_px / 2);
-p.aperture_width_px = p.aperture_height_px;
+p.aperture_height_px = w.screen_height_px;
+p.aperture_width_px = w.screen_width_px;
 
-p.aperture_radius_px = w.ppd * 6;
+p.aperture_radius_px = w.ppd * 4;
 
 %% Define noise texture size
 
-p.height_px = p.aperture_height_px;
-p.width_px = p.aperture_width_px;
+p.height_px = round(p.aperture_radius_px*2 + w.ppd);
+p.width_px = round(p.aperture_radius_px*2 + w.ppd);
 
 %% Define contrasts
 

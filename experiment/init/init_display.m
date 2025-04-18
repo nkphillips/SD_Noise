@@ -10,21 +10,19 @@ if p.which_setup == 0 % Macbook
     p.display_setup = 'Macbook';
 
     w.use_screen = min(screens); % If there are two or more displays, 'max' should grab the most external display.
-    w.refresh_rate = 60; % display refresh rate in Hertz, Hz
     w.view_distance = 57; % in centimeters, cm
     w.screen_width = 30; % cm
     w.screen_width_px = 1512; % in pixels, px
     w.screen_height_px = 982; % px
 
-elseif p.which_setup == 1 % 3329C
+elseif p.which_setup == 1 % 3329C_ASUS
 
     p.display_setup = '3329C_ASUS';
 
     w.use_screen = 0;
-    w.gamma_correct = 0;
-    w.refresh_rate = 85; % display refresh rate in Hertz, Hz
-    w.view_distance = 42;  % cm
-    w.screen_width = 40.7; %  cm
+    w.gamma_correct = 1;
+    w.view_distance = 57;  % cm; default = 42
+    w.screen_width = 58; %  cm
     w.screen_width_px = 2560; % px
     w.screen_height_px = 1440; % px
 
@@ -33,7 +31,6 @@ elseif p.which_setup == 2 % S32D850
     p.display_setup = 'S32D850';
 
     w.use_screen = min(screens); % If there are two or more displays, 'max' should grab the most external display.
-    w.refresh_rate = 60; % display refresh rate in Hertz, Hz
     w.view_distance = 57; % in centimeters, cm
     w.screen_width = 70.8; % cm
     w.screen_width_px = 2560; % in pixels, px
@@ -43,25 +40,9 @@ elseif p.which_setup == 2 % S32D850
 end
 
 if p.half_screen
-
-    switch p.which_setup
-        case 0 % Macbook
-            w.view_distance = 57; % in centimeters, cm
-            w.screen_width = 42; % cm
-            w.screen_width_px = w.screen_width_px/2; % in pixels, px
-            w.screen_height_px = w.screen_height_px/2; % px
-        case 1 % 3329C
-            w.view_distance = 40; % in centimeters, cm
-            w.screen_width = 40.7; %  cm
-            w.screen_width_px = 1280; % px
-            w.screen_height_px = 720; % px
-        case 2 % S32D850
-            w.view_distance = 57; % in centimeters, cm
-            w.screen_width = 70.8; % cm
-            w.screen_width_px = w.screen_width_px/2; % in pixels, px
-            w.screen_height_px = w.screen_height_px/2; % px
-    end
-
+    w.view_distance = 57; % in centimeters, cm
+    w.screen_width_px = w.screen_width_px/2; % in pixels, px
+    w.screen_height_px = w.screen_height_px/2; % px
 end
 
 %% Calculate visual angle of the display, pixels per degree of visual angle, size of a pixel, and Nyquist frequency

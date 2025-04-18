@@ -61,4 +61,4 @@ Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); 
 Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 Screen('Flip', w.window);
 
-WaitSecs(2);
+WaitSecs(3);
