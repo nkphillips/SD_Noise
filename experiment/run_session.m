@@ -20,12 +20,12 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.disp_on = 1;
-p.half_screen = 1;
-p.simulate_response = 1;
+p.disp_on = 0;
+p.half_screen = 0;
+p.simulate_response = 0;
 p.training = 0;
 
-p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
@@ -36,7 +36,7 @@ end
 
 %% Set directories
 
-p.subj_ID = '999';
+p.subj_ID = '001';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
