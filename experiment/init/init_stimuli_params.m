@@ -13,7 +13,7 @@ lur003@ucsd.edu
 p.aperture_height_px = w.screen_height_px;
 p.aperture_width_px = w.screen_width_px;
 
-p.aperture_radius_px = w.ppd * 4;
+p.aperture_radius_px = round(w.ppd * 3);
 
 %% Define noise texture size
 
