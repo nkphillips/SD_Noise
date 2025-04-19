@@ -51,10 +51,6 @@ end
 p.orientation_min = 0;
 p.orientation_max = 179;
 
-if ~p.use_staircase
-    p.probe_offsets = linspace(3,15,7);
-end
-    
 %% Define number of noise samples
 
 p.num_test_samples = 20;
@@ -63,7 +59,7 @@ p.num_mask_samples = 20;
 %% Define probe line 
 
 p.probe_length = round(0.7 * w.ppd);
-p.probe_thickness = round(w.ppd * 0.07);
+p.probe_thickness = round(w.ppd * 0.05);
 p.probe_color = w.black;
 
 p.probe_start = w.centerX - p.probe_length;
