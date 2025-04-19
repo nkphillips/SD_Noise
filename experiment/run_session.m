@@ -107,6 +107,10 @@ elseif p.training && p.use_staircase
 
     p.probe_offsets = 5 * ones(2, 3);
 
+elseif ~p.use_staircase
+
+    p.probe_offsets = linspace(3,15,7);
+
 end
 
 %% Initialize trackers
