@@ -9,7 +9,7 @@ if p.which_setup == 0 % Macbook
 
     p.display_setup = 'Macbook';
 
-    w.use_screen = min(screens); % If there are two or more displays, 'max' should grab the most external display.
+    w.use_screen = min(screens); % If there are two or more displays, 'min' should grab the most internal display.
     w.view_distance = 57; % in centimeters, cm
     w.screen_width = 30; % cm
     w.screen_width_px = 1512; % in pixels, px
