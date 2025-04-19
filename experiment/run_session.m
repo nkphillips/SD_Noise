@@ -1,6 +1,6 @@
 % run_session
 
-% Nice! 
+% Nice! Good luck!
 
 %% Clean and prepare workspace
 
