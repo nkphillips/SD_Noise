@@ -52,7 +52,7 @@ p.orientation_min = 0;
 p.orientation_max = 179;
 
 if ~p.use_staircase
-    p.probe_offsets = [3 5 7 10];
+    p.probe_offsets = linspace(3,15,7);
 end
     
 %% Define number of noise samples
