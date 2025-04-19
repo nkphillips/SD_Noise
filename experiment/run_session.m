@@ -1,5 +1,6 @@
-%%% run_session
-% Skeleton script for executing multiple runs of experiment (num_runs_to_complete).
+% run_session
+
+% Nice! 
 
 %% Clean and prepare workspace
 
