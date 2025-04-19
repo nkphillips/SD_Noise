@@ -124,7 +124,7 @@ for n_exp = 1:num_experiments
         [experiments(n_exp).subj_data(subj).responses, experiments(n_exp).subj_data(subj).correct] = simulate_responses( experiments(n_exp).p(subj) );
 
         if subj == 1 && n_exp <= length(num_trials_per_cond)
-            experiments(n_exp).counts(subj) = get_trial_distribution( experiments(n_exp).p(subj) );
+            experiments(n_exp).counts(subj) = getTrialDistribution( experiments(n_exp).p(subj) );
         end
 
         % Summarize responses
