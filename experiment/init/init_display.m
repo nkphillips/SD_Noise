@@ -21,8 +21,8 @@ elseif p.which_setup == 1 % 3329C_ASUS
 
     w.use_screen = 0;
     w.gamma_correct = 1;
-    w.view_distance = 57;  % cm; default = 42
-    w.screen_width = 58; %  cm
+    w.view_distance = 42; % cm; default = 42
+    w.screen_width = 58; % cm
     w.screen_width_px = 2560; % px
     w.screen_height_px = 1440; % px
 
@@ -36,13 +36,6 @@ elseif p.which_setup == 2 % S32D850
     w.screen_width_px = 2560; % in pixels, px
     w.screen_height_px = 1440; % px
 
-
-end
-
-if p.half_screen
-    w.view_distance = 57; % in centimeters, cm
-    w.screen_width_px = w.screen_width_px/2; % in pixels, px
-    w.screen_height_px = w.screen_height_px/2; % px
 end
 
 %% Calculate visual angle of the display, pixels per degree of visual angle, size of a pixel, and Nyquist frequency
@@ -51,9 +44,17 @@ screen_length = w.screen_width;
 screen_length_px = w.screen_width_px;
 
 w.visual_angle = 2 * atan2d(screen_length/2,  w.view_distance); % Visual angle of the whole screen in degrees
-w.ppd = floor(screen_length_px/w.visual_angle); % Pixels per degree of visual angle
+w.ppd = screen_length_px/w.visual_angle; % Pixels per degree of visual angle
 w.px_size = screen_length/screen_length_px; % size of pixel in cm
 w.f_Nyquist = 1/(2*w.px_size);
+
+%% Half screen
+
+if p.half_screen
+    w.view_distance = 57; % in centimeters, cm
+    w.screen_width_px = w.screen_width_px/2; % in pixels, px
+    w.screen_height_px = w.screen_height_px/2; % px
+end
 
 %% Define the background color
 
