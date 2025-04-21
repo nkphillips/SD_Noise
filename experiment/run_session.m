@@ -204,8 +204,8 @@ end
 %% Turn off Kb and restore display
 
 KbQueueStop(p.device_number);
-
-Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
-if p.which_setup == 1 && w.gamma_correct, SetScreenDefault; end
-Screen('CloseAll');
+if p.which_setup == 1 && w.gamma_correct 
+    Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
+end
+sca;
 ShowCursor;
