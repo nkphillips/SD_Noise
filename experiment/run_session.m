@@ -207,5 +207,4 @@ KbQueueStop(p.device_number);
 if p.which_setup == 1 && w.gamma_correct 
     Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
 end
-sca;
-ShowCursor;
+sca; ShowCursor;
