@@ -117,9 +117,7 @@ end
 %% Initialize trackers
 
 num_runs_to_complete = 1;
-
 n_run = 1;
-
 exit_session = 0; % default: 0
 
 %% Session loop
