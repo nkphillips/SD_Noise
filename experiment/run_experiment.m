@@ -108,10 +108,10 @@ close(fg)
 %% Save run info
 
 loading_text = 'Saving run info...';
-loading_text_boundary = Screen('TextBounds', w.window, loading_text);
-loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
+screen_text_boundary = Screen('TextBounds', w.window, loading_text);
+screen_text_patch = CenterRectOnPoint(screen_text_boundary, w.centerX, w.centerY);
 
-Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_patch(2), w.white);
+Screen('DrawText', w.window, loading_text, screen_text_patch(1),  screen_text_patch(2), w.white);
 Screen('Flip', w.window);
 
 run_info.behav_data = behav_data;
@@ -140,11 +140,11 @@ cd(dirs.script_dir)
 
 if save_textures
     
-    loading_text = 'Saving textures...';
-    loading_text_boundary = Screen('TextBounds', w.window, loading_text);
-    loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
+    screen_text = 'Saving textures...';
+    screen_text_boundary = Screen('TextBounds', w.window, screen_text);
+    screen_text_patch = CenterRectOnPoint(screen_text_boundary, w.centerX, w.centerY);
     
-    Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_patch(2), w.white);
+    Screen('DrawText', w.window, screen_text, screen_text_patch(1),  screen_text_patch(2), w.white);
     Screen('Flip', w.window);
     
     % Remove fields from stimuli struct associated with the output of Screen('MakeTexture',...)
@@ -153,60 +153,21 @@ if save_textures
     
     % Store stimulus into textures struct
     for n_field = 1:numel(struct_fieldnames)
-        
         textures.(struct_fieldnames{n_field}) = stimuli.(struct_fieldnames{n_field});
-        
     end
     
     % Enter directory for saving the textures
     cd(dirs.texture_dir)
     
     if ~exist(textures_filename, "file")
-        
-        % If textures don't exist, save them
-        disp('Saving textures matfile...')
         save(textures_filename,'textures','-mat','-v7.3');
-        
-    else
-        
-        % If they do exist, manually decide whether to overwrite
-        if ~p.simulate_response
-            overwrite_file = [];
-        else
-            overwrite_file = 0;
-        end
-                    
-        loading_text = [textures_filename ' exists. Do you want to overwrite it? (1 - yes, 0 - no):'];
-        loading_text_boundary = Screen('TextBounds', w.window, loading_text);
-        loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
-        
-        while isempty(overwrite_file)
-
-            Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_patch(2), w.white);
-            Screen('Flip', w.window);
-            
-            [key_pressed, first_press] = KbQueueCheck(p.device_number);
-            which_press = find(first_press);
-            
-            if key_pressed && which_press(1) == KbName('1!')
-                overwrite_file = 1;
-            elseif key_pressed && which_press(1) == KbName('0)')
-                overwrite_file = 0;
-            end
-            
-        end
-        
-        if overwrite_file
-            save(textures_filename,'textures','-mat','-v7.3');
-        end
-        
     end
     
-    loading_text = 'Textures saved!';
-    loading_text_boundary = Screen('TextBounds', w.window, loading_text);
-    loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
+    screen_text = 'Textures saved!';
+    screen_text_boundary = Screen('TextBounds', w.window, screen_text);
+    screen_text_patch = CenterRectOnPoint(screen_text_boundary, w.centerX, w.centerY);
     
-    Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_patch(2), w.white);
+    Screen('DrawText', w.window, screen_text, screen_text_patch(1),  screen_text_patch(2), w.white);
     Screen('Flip', w.window);
     
     cd(dirs.script_dir)
