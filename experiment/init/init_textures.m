@@ -16,14 +16,14 @@ textures_filename = ['SD_Noise_textures_' p.display_setup '.mat'];
 
 if ~exist([dirs.texture_dir '/' textures_filename], 'file')
     generate_textures = 1;
+    save_textures = 1;
 else
     generate_textures = 0;
+    save_textures = 0;
 end
 
 if p.training
     save_textures = 0;
-else
-    save_textures = 1;
 end
 
 %% Aperture
