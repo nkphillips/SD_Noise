@@ -35,12 +35,12 @@ end
 
 p.num_blocks_per_cond = p.num_blocks / p.num_conds;
 
-p.block_order = repmat(1:p.num_conds, 1, p.num_blocks_per_cond);
-p.block_order = Shuffle(p.block_order);
+p.cond_order = repmat(1:p.num_conds, 1, p.num_blocks_per_cond);
+p.cond_order = Shuffle(p.cond_order);
 
 first_block = nan(1, p.num_conds);
 for cond = 1:p.num_conds
-    first_block(cond) = find(p.block_order == cond, 1, 'first');
+    first_block(cond) = find(p.cond_order == cond, 1, 'first');
 end
 
 if p.training 
@@ -54,11 +54,11 @@ end
 
 for n_block = 1:p.num_blocks
    
-    if p.block_order(n_block) == 1
+    if p.cond_order(n_block) == 1
         
         level_order = BalanceFactors(p.num_trials_per_cond, 1, 1:p.num_levels);
         
-    elseif p.block_order(n_block) == 2
+    elseif p.cond_order(n_block) == 2
         
         level_order = BalanceFactors(p.num_trials_per_cond, 1, 1:p.num_levels);
         
