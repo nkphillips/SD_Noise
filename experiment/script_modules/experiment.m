@@ -23,14 +23,14 @@ for n_block = 1:p.num_blocks
     if p.disp_on, disp(['Block ' num2str(n_block)]); end
 
     % Pull the current block condition
-    curr_cond = p.block_order(n_block);
+    curr_cond = p.cond_order(n_block);
 
     if p.use_staircase
 
         % Update probe offsets if it's not the first block of the current condition
         if n_block > first_block(curr_cond)
         
-            prev_block = find(p.block_order(1:n_block-1) == curr_cond, 1, 'last');
+            prev_block = find(p.cond_order(1:n_block-1) == curr_cond, 1, 'last');
             prev_correct = behav_data.correct(:, prev_block);
             prev_lvl_order = p.trial_events(:, level_order_col, prev_block);
 
@@ -93,7 +93,7 @@ end
 disp('Performance:')
 for cond = 1:p.num_conds
     for lvl = 1:p.num_levels
-        curr_trials = behav_data.correct(p.trial_events(:,3) == lvl, p.block_order == cond);
+        curr_trials = behav_data.correct(p.trial_events(:,3) == lvl, p.cond_order == cond);
         behav_data.performance(lvl, cond) = mean(curr_trials(:));
         disp(['Condition ' p.cond_names{cond} ' Level ' num2str(lvl) ': ' num2str(round(100*behav_data.performance(lvl, cond))) '%']);
     end
