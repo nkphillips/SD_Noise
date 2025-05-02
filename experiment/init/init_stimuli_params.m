@@ -30,7 +30,7 @@ end
 
 %% Define orientation and spatial frequency bandpass filter widths
 
-p.orientation_bp_filter_width = [1 6 10]; % low noise, medium, high ; unit: °
+p.orientation_bp_filter_width = [1 20 40]; % low noise, medium, high ; unit: °
 
 if p.training
     p.orientation_bp_filter_width = p.orientation_bp_filter_width(1);   
