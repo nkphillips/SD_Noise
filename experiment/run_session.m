@@ -23,7 +23,7 @@ rng(t.my_rng_seed);
 
 p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
 p.disp_on = 1;
-p.half_screen = 1;
+p.half_screen = 0;
 p.simulate_response = 0;
 p.training = 0;
 p.use_staircase = 0;
@@ -110,7 +110,7 @@ elseif p.training && p.use_staircase
 
 elseif ~p.use_staircase
 
-    p.probe_offsets = linspace(0,15,7);
+    p.probe_offsets = round(linspace(0,15,7));
 
 end
 
