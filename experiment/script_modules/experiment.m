@@ -59,8 +59,6 @@ for n_block = 1:p.num_blocks
         probe_orientation = p.trial_events(:, probe_orientation_col, n_block);
     
     end
-
-    corrected_probe_orientations = correct_orientation(probe_orientation)'; % Transform probe orientation to match the compass axis
     
     % Storing correct response
     cclockwise_trials = double(probe_orientation < p.trial_events(:,test_orientation_col, n_block));
