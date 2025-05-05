@@ -30,7 +30,7 @@ for n_trial = 1:size(p.trial_events,1)
         disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°'])
         disp(['Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°'])
     end
-
+    
     %% Draw Test orientation
     
     n_noise_sample = 0;
@@ -96,7 +96,9 @@ for n_trial = 1:size(p.trial_events,1)
     end
     
     %% Draw Probe
-    
+
+    KbQueueFlush(p.device_number,1);
+
     for n_frame = 1:frames.probe_frames_count
 
         Screen('DrawTexture',w.window, stimuli.probe_line_made, [], probe_patch, curr_probe_orient);
@@ -170,7 +172,7 @@ for n_trial = 1:size(p.trial_events,1)
                 break;
             
             end
-
+       
         end
 
     end
