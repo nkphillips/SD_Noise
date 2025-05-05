@@ -53,7 +53,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, test_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.test_frames_count
-            KbWait;
+            % KbWait;
         end
 
     end
@@ -110,7 +110,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, probe_frames_onsets(n_frame));
         
         if p.disp_on && n_frame == frames.probe_frames_count
-            KbWait;
+            % KbWait;
         end
 
     end
