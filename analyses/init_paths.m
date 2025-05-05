@@ -16,11 +16,15 @@ figure_file_type = '.pdf';
 
 addpath(func_dir);
 
-if ~exist(ind_figure_path,'dir'), mkdir(ind_figure_path); end
-addpath(ind_figure_path);
+if save_ind_figures
+    if ~exist(ind_figure_path,'dir'), mkdir(ind_figure_path); end
+    addpath(ind_figure_path);
+end
 
-if ~exist(grp_figure_path,'dir'), mkdir(grp_figure_path); end
-addpath(grp_figure_path);
+if save_grp_figures
+    if ~exist(grp_figure_path,'dir'), mkdir(grp_figure_path); end
+    addpath(grp_figure_path);
+end
 
 if ~exist('init/','dir'), mkdir('init/'); end
 addpath('init/');
@@ -34,5 +38,3 @@ addpath('plotting/');
 if ~exist('tests/','dir'), mkdir('tests/'); end
 addpath([script_dir '/tests']);
 
-if ~exist('exploratory/','dir'), mkdir('exploratory/'); end
-addpath([script_dir '/exploratory']);
