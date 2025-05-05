@@ -110,7 +110,7 @@ elseif p.training && p.use_staircase
 
 elseif ~p.use_staircase
 
-    p.probe_offsets = linspace(3,15,7);
+    p.probe_offsets = round(linspace(0,15,7));
 
 end
 

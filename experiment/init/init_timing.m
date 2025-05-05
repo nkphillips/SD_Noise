@@ -9,12 +9,12 @@ lur003@ucsd.edu
 %}
 
 %% Define event durations
-
-t.test_dur = 0.5; % s;
-t.mask_dur = t.test_dur; % s
-t.delay_dur = t.test_dur;
-t.probe_dur = t.test_dur;
-t.response_dur_est = 2; % s
+% In seconds unless stated otherwise
+t.test_dur = 0.5; 
+t.mask_dur = 0.5; 
+t.delay_dur = 2; 
+t.probe_dur = 0.5;
+t.response_dur_est = 2; 
 
 t.trial_dur_est = sum([t.test_dur, t.mask_dur, t.delay_dur, t.response_dur_est]); % s
 

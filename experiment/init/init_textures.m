@@ -65,9 +65,7 @@ if generate_textures
                 end
                 
                 % Make orientation- and spatial frequency-bandpass filtered noise
-                % noise_texture = make_orientation_bp_filtered_img(base_noise, 0, p.orientation_bp_filter_width(j), w.ppd * 0.1);
-
-                noise_texture = bandpassFilterImg(base_noise, [180 - p.orientation_bp_filter_width(j), 180 + p.orientation_bp_filter_width(j)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
                 noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
 
                 % Ignore certain combos

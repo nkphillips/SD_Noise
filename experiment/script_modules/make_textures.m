@@ -39,5 +39,9 @@ for i = 1:size(stimuli.test_textures_made,1) % Contrasts
         end
     end
 end
+
+%% Make probe line
+
+stimuli.probe_line_made = Screen('MakeTexture', w.window, stimuli.probe_line);
  
 disp(['Elapsed time: ' num2str(toc) ' s'])

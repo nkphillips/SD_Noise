@@ -12,3 +12,4 @@ aperture_patch = CenterRectOnPoint([0 0 p.aperture_width_px p.aperture_height_px
 %% Noise textures
 
 noise_patch = CenterRectOnPoint([0 0 p.width_px p.height_px], w.centerX, w.centerY);
+probe_patch = CenterRectOnPoint([0 0 p.probe_length p.probe_length], w.centerX, w.centerY);
