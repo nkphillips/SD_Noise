@@ -11,15 +11,7 @@ lur003@ucsd.edu
 for n_trial = 1:size(p.trial_events,1)
 
     curr_test_orient = p.trial_events(n_trial, test_orientation_col, n_block); 
-
-    % Create rotated probe line
-    curr_probe_orient = corrected_probe_orientations(n_trial); 
-    curr_probe_orient_rad = deg2rad(curr_probe_orient);
-    curr_rotation = [cos(curr_probe_orient_rad), -sin(curr_probe_orient_rad); ...
-        sin(curr_probe_orient_rad), cos(curr_probe_orient_rad)];
-
-    curr_probe_line = curr_rotation * (stimuli.probe_line_base - [w.centerX; w.centerY]);
-    curr_probe_line = curr_probe_line + [w.centerX; w.centerY];
+    curr_probe_orient = p.trial_events(n_trial, probe_orientation_col, n_block);
 
     if curr_cond == 1
         curr_contrast = p.trial_events(n_trial, level_order_col, n_block);
@@ -36,7 +28,7 @@ for n_trial = 1:size(p.trial_events,1)
         disp(['Test Contrast: ' num2str(round(100*p.contrast(curr_contrast),2)) '%'])
         disp(['Test Filter Width: ' num2str(p.orientation_bp_filter_width(curr_filter_width)) '°'])
         disp(['Test Orientation: ' num2str(round(curr_test_orient,2)) '°'])
-        disp(['Probe Orientation: ' num2str(round(curr_probe_orient-90)) '°'])
+        disp(['Probe Orientation: ' num2str(round(curr_probe_orient,2)) '°'])
     end
 
     %% Draw Test orientation
@@ -61,7 +53,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, test_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.test_frames_count
-            % KbWait;
+            KbWait;
         end
 
     end
@@ -107,7 +99,7 @@ for n_trial = 1:size(p.trial_events,1)
     
     for n_frame = 1:frames.probe_frames_count
 
-       Screen('DrawLines', w.window, curr_probe_line, p.probe_thickness, p.probe_color);
+        Screen('DrawTexture',w.window, stimuli.probe_line_made, [], probe_patch, curr_probe_orient);
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
         Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
@@ -118,7 +110,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, probe_frames_onsets(n_frame));
         
         if p.disp_on && n_frame == frames.probe_frames_count
-            % KbWait;
+            KbWait;
         end
 
     end
