@@ -20,7 +20,7 @@ for subj = 1:num.subjs
     data_files = dir(curr_subj);
     data_file_names = {data_files.name};
 
-    data_file_names(~contains(data_file_names, which_setup) | contains(data_file_names, 'Training')) = [];
+    data_file_names(~contains(data_file_names, which_setup) | contains(data_file_names, {'Training', 'staircase'})) = [];
 
     %% Load data
 
@@ -31,10 +31,9 @@ for subj = 1:num.subjs
     for n_file = 1:num.runs(subj)
 
         load(data_file_names{n_file}); % loads run_info struct
+        disp([data_file_names{n_file} ' loaded']);
 
         all_runs{subj} = [all_runs{subj}, run_info];
-
-        num.trials_per_block{subj}(n_file,:) = run_info.p.num_trials_per_block;
 
         if n_file == 1 && subj == 1
 
@@ -42,6 +41,8 @@ for subj = 1:num.subjs
             % Info that is identical no matter the subject
 
             num.blocks = all_runs{subj}(n_file).p.num_blocks;
+            num.trials_per_block = all_runs{subj}(n_file).p.num_trials_per_block;
+            unique_probe_offsets = unique(all_runs{1}.p.trial_events(:,2) - all_runs{1}.p.trial_events(:,1));
 
         end
 
@@ -51,9 +52,6 @@ for subj = 1:num.subjs
 
     % Experimental info that varies with subjects
     num.runs(subj) = numel(all_runs{subj});
-    num.trials_per_cond_per_run{subj} = num.trials_per_block{subj} * (num.blocks/num.conds);
-    num.total_trials_per_cond{subj} = num.trials_per_cond_per_run{subj} * num.runs(subj);
-    num.total_trials{subj} = num.total_trials_per_cond{subj} * num.conds;
 
     cd('..')
 
