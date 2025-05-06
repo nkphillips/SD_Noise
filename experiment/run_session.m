@@ -1,7 +1,5 @@
 % run_session
 
-% Nice! Good luck!
-
 %% Clean and prepare workspace
 
 clc;
