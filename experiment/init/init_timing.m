@@ -36,7 +36,7 @@ t.exp_dur_est = round((p.num_trials * t.trial_dur_est + sum(t.iti_dur) + t.rest_
 
 %% Define noise sample update rate
 
-t.noise_sample_update_rate = 20; % Hz; default = 20
+t.noise_sample_update_rate = 10; % Hz; default = 20
 t.noise_sample_dur = 1/t.noise_sample_update_rate; % s
 
 %% Define frame rate and duration
