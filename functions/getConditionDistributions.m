@@ -6,7 +6,7 @@ function [counts] = getCondDist(p, behav_data, unique_probe_offsets, ind_figure_
     counts.probe_offset = cell(p.num_levels, p.num_levels, p.num_conds);
     counts.pCW_by_probe_offset = cell(p.num_levels, p.num_levels, p.num_conds, length(unique_probe_offsets));
 
-    save_fig = 1;
+    save_fig = 0;
     if save_fig
         fg = figure('Color', 'w');
         set(0, 'CurrentFigure', fg);
@@ -51,7 +51,7 @@ function [counts] = getCondDist(p, behav_data, unique_probe_offsets, ind_figure_
                     figure_name = ['Delta theta distribution (' num2str(p.num_trials_per_cond) ' trials per cond) Condition ' num2str(cond)];
 
                     subplot(p.num_levels, p.num_levels, prev_lvl + (curr_lvl-1)*p.num_levels);
-                    histogram(counts.delta_theta{prev_lvl, curr_lvl, cond},'BinWidth',2)
+                    histogram(counts.delta_theta{prev_lvl, curr_lvl, cond},'BinWidth',3)
 
                     % Format figure
                     title([num2str(prev_lvl) ' -> ' num2str(curr_lvl)]);
