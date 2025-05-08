@@ -42,7 +42,6 @@ for subj = 1:num.subjs
 
             num.blocks = all_runs{subj}(n_file).p.num_blocks;
             num.trials_per_block = all_runs{subj}(n_file).p.num_trials_per_block;
-            unique_probe_offsets = unique(all_runs{1}.p.trial_events(:,2) - all_runs{1}.p.trial_events(:,1));
 
         end
 
