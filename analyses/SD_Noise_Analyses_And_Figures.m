@@ -6,11 +6,13 @@ clc; close all; clear all;
 
 %% Toggles
 
-plot_ind = 1;
-plot_grp = 1;
+plot_ind = 0;
+plot_grp = 0;
+plot_spr = 1;
 
-save_ind_figures = 1;
+save_ind_figures = 0;
 save_grp_figures = 0;
+save_spr_figures = 1;
 
 estimate_response_bias = 1;
 estimate_sd_bias = 1;
@@ -20,10 +22,10 @@ toggles.disp_on = 1;
 %% Hard coded variables
 
 which_setup = '3329C_ASUS';
-analysis_date = '04.29.2025';
+analysis_date = '05.06.2025';
 
-subj_IDs = {'002'};  
-cond_names = {'contrast' 'filter'};
+subj_IDs = {'001', '002'};  
+cond_names = {'Contrast' 'Filter'};
 
 num.subjs = length(subj_IDs);
 num.conds = length(cond_names);
@@ -44,6 +46,8 @@ init_paths
 %% Load experiment runs
 
 load_matfiles
+
+unique_probe_offsets = unique(all_runs{1}(1).p.trial_events(:,2) - all_runs{1}(1).p.trial_events(:,1));
 
 %% Plot settings
 
@@ -68,7 +72,7 @@ figure_color = white;
 cond_colors = [green; blue; red];
 alpha_lvl = 0.75;
 
-% Calculate subplot dimensions
+% Calculate subplot dimensions 
 [subplotX, subplotY] = get_subplot_dimensions(num.subjs);
 
 %% Analyze behavioral data
