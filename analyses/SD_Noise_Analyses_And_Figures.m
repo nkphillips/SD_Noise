@@ -75,6 +75,19 @@ alpha_lvl = 0.75;
 % Calculate subplot dimensions 
 [subplotX, subplotY] = get_subplot_dimensions(num.subjs);
 
+%% Define model bounds and parameters
+
+p.fmincon_options = optimoptions('fmincon','Display','off');
+
+% Response bias model parameters
+p.response_bias_bounds = [20, 20; -20, 0]; % upper, lower bounds for mu and sigma
+p.guess_rate = 0.25; % Assuming guess rate is constant
+p.response_bias_init_params = [0, 1]; % initial parameters for mu and sigma
+
+% Serial dependence model parameters
+p.serial_dependence_bounds = [20, 1; 0, 0]; % upper, lower bounds for amplitude and w
+p.serial_dependence_init_params = [1, 0.5]; % initial parameters for amplitude and w
+
 %% Analyze behavioral data
 
 analyzeData
