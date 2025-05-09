@@ -15,13 +15,7 @@ analyzed_data.super = struct('performance_within_run',tmp_array,'performance_wit
 
 struct_fieldnames = fieldnames(analyzed_data.ind);
 
-%% Define response bias model parameters
-
-p.response_bias_bounds = [20, 10; -20, 0]; % upper, lower bounds for mu and sigma
-p.guess_rate = 0.25; % Assuming guess rate is constant
-p.fmincon_options = optimoptions('fmincon','Display','off');
-
-%% Initialize delta theta windows
+%% Initialize delta theta windows 
 
 delta_theta_window_width = 32;
 delta_theta_window_centers = (-180+delta_theta_window_width/2):(180-delta_theta_window_width/2);
@@ -200,19 +194,21 @@ for subj = 1:num.subjs
     analyzed_data.ind(subj).pCW_by_offset_delta_theta_sem(n_runs_with_data < 2) = NaN; % Set SEM to NaN if less than 2 data points
     % ------------------------------------------------------------------------------------
 
-    %% Fit model to pCW by probe offset for each delta theta bin
+    %% Fit response bias model to each delta theta bin
     
+    if toggles.disp_on, disp('Fitting response bias model to each delta theta bin...'); end
+
     % Initialize storage for fitted parameters per delta theta bin
     analyzed_data.ind(subj).mu_by_delta_theta = nan(num.levels, num.levels, num.conds, num.delta_theta_windows);
     analyzed_data.ind(subj).sigma_by_delta_theta = nan(num.levels, num.levels, num.conds, num.delta_theta_windows);
     analyzed_data.ind(subj).r2_by_delta_theta = nan(num.levels, num.levels, num.conds, num.delta_theta_windows);
 
     for prev_lvl = 1:num.levels
-        disp(['Previous LVL ' num2str(prev_lvl)]);
+        if toggles.disp_on, disp(['Previous LVL ' num2str(prev_lvl)]); end
         for curr_lvl = 1:num.levels
-            disp(['Current LVL ' num2str(curr_lvl)]);
+            if toggles.disp_on, disp(['Current LVL ' num2str(curr_lvl)]); end
             for cond = 1:num.conds
-                disp([cond_names{cond} ' Condition']);
+                if toggles.disp_on, disp([cond_names{cond} ' Condition']); end
                 
                 for offset_indx = 1:length(unique_probe_offsets)
                     analyzed_data.ind(subj).pCW_by_probe_offset_mean(prev_lvl, curr_lvl, cond, offset_indx) = mean(analyzed_data.ind(subj).pCW_by_probe_offset{prev_lvl, curr_lvl, cond, offset_indx},'omitnan');
@@ -220,7 +216,6 @@ for subj = 1:num.subjs
                 end
 
                 %% Fit model to pCW by probe offset for each delta theta bin
-
                 for delta_theta_window_indx = 1:num.delta_theta_windows
                     
                     curr_probe_offsets = unique_probe_offsets;
@@ -234,14 +229,14 @@ for subj = 1:num.subjs
 
                     % Skip fitting if there are NaN values (insufficient data for this bin)
                     if isempty(p_CW) % sum(~isnan(p_CW)) < 2 || any(isnan(p_CW))
-                        disp(['Not enough data for delta theta bin ' num2str(delta_theta_window_edges(1, delta_theta_window_indx)) ' to ' num2str(delta_theta_window_edges(2, delta_theta_window_indx)) '°']);
+                        if toggles.disp_on, disp(['Not enough data for delta theta bin ' num2str(delta_theta_window_edges(1, delta_theta_window_indx)) ' to ' num2str(delta_theta_window_edges(2, delta_theta_window_indx)) '°']); end
                         continue;
                     end
 
                     fixed_params{1} = [curr_probe_offsets, p_CW]; % Offsets and corresponding pCW
                     fixed_params{2} = p.guess_rate;
 
-                    response_bias = estimateResponseBias(fixed_params, p, toggles);
+                    response_bias = estimateResponseBias(p.response_bias_init_params, fixed_params, p);
 
                     mu = response_bias.params_est(1);
                     sigma = response_bias.params_est(2);
@@ -343,22 +338,28 @@ for cond = 1:num.conds
     end
 end
 
-% Fit model to pCW by probe offset for each delta theta bin for the super subject
+%
+
 analyzed_data.super.mu_by_delta_theta_window = nan(num.levels, num.levels, num.conds, num.delta_theta_windows);
 analyzed_data.super.sigma_by_delta_theta_window = nan(num.levels, num.levels, num.conds, num.delta_theta_windows);
 analyzed_data.super.r2_by_delta_theta_window = nan(num.levels, num.levels, num.conds, num.delta_theta_windows);
 
+analyzed_data.super.params_est = nan(num.levels, num.levels, num.conds, 2);
+analyzed_data.super.serial_dependence_r2 = nan(num.levels, num.levels, num.conds);
+analyzed_data.super.estimated_bias = nan(num.levels, num.levels, num.conds, length(-180:180));
+
 for cond = 1:num.conds
     % disp(['Super Subject: ' cond_names{cond} ' Condition']);
     
-    for delta_theta_window_indx = 1:num.delta_theta_windows % 1:round(num.delta_theta_windows/3):num.delta_theta_windows
+    for prev_lvl = 1:num.levels
+        % disp(['Super Subject: Previous LVL ' num2str(prev_lvl)]);
         
-        for prev_lvl = 1:num.levels
-            % disp(['Super Subject: Previous LVL ' num2str(prev_lvl)]);
+        for curr_lvl = 1:num.levels
+            % disp(['Super Subject: Current LVL ' num2str(curr_lvl)]);
             
-            for curr_lvl = 1:num.levels
-                % disp(['Super Subject: Current LVL ' num2str(curr_lvl)]);
-        
+            %
+            for delta_theta_window_indx = 1:num.delta_theta_windows % 1:round(num.delta_theta_windows/3):num.delta_theta_windows
+
                 curr_probe_offsets = unique_probe_offsets;
                 
                 % Extract pCW for the current delta theta window across all probe offsets for super subject
@@ -370,14 +371,14 @@ for cond = 1:num.conds
 
                 % Skip fitting if there are NaN values (insufficient data for this bin)
                 if isempty(p_CW) % sum(~isnan(p_CW)) < 2 || any(isnan(p_CW))
-                    disp(['Super Subject: Not enough data for delta theta bin ' num2str(delta_theta_window_edges(1, delta_theta_window_indx)) ' to ' num2str(delta_theta_window_edges(2, delta_theta_window_indx)) '°']);
+                    if toggles.disp_on, disp(['Super Subject: Not enough data for delta theta bin ' num2str(delta_theta_window_edges(1, delta_theta_window_indx)) ' to ' num2str(delta_theta_window_edges(2, delta_theta_window_indx)) '°']); end
                     continue;
                 end
 
                 fixed_params{1} = [curr_probe_offsets, p_CW]; % Offsets and corresponding pCW
                 fixed_params{2} = p.guess_rate;
                 
-                response_bias = estimateResponseBias(fixed_params, p, toggles);
+                response_bias = estimateResponseBias(p.response_bias_init_params, fixed_params, p);
                 
                 mu = response_bias.params_est(1);
                 sigma = response_bias.params_est(2);
@@ -387,6 +388,7 @@ for cond = 1:num.conds
                 analyzed_data.super.sigma_by_delta_theta_window(prev_lvl, curr_lvl, cond, delta_theta_window_indx) = sigma;
                 analyzed_data.super.r2_by_delta_theta_window(prev_lvl, curr_lvl, cond, delta_theta_window_indx) = r2;
                 
+                clear fixed_params
 
                 %% Plot response bias per delta theta window
                 %{
@@ -425,7 +427,32 @@ for cond = 1:num.conds
                 %}
 
             end
+            %}
 
+            %% Fit serial dependence model
+
+            curr_delta_theta = delta_theta_window_centers';
+            curr_mu = squeeze(analyzed_data.super.mu_by_delta_theta_window(prev_lvl, curr_lvl, cond, :));
+
+            rmv_rows = isnan(curr_mu);
+            curr_delta_theta(rmv_rows) = [];
+            curr_mu(rmv_rows) = [];
+
+            % Skip fitting if there are NaN values (insufficient data for this bin)
+            if isempty(curr_mu) 
+                if toggles.disp_on, disp('Super Subject: Not enough data for serial dependence model'); end
+                continue;
+            end
+
+            % Estimate serial dependence
+            fixed_params = [curr_delta_theta, curr_mu];
+            serial_dependence = estimateSerialDependence(p.serial_dependence_init_params, fixed_params, p);
+
+            analyzed_data.super.params_est(prev_lvl, curr_lvl, cond,:) = serial_dependence.params_est;
+            analyzed_data.super.serial_dependence_r2(prev_lvl, curr_lvl, cond) = serial_dependence.r2;
+            analyzed_data.super.estimated_bias(prev_lvl, curr_lvl, cond,:) = gaussianPrime(serial_dependence.params_est, -180:180);
+
+            clear fixed_params
         end
 
     end
@@ -434,11 +461,12 @@ for cond = 1:num.conds
 
     %
     if plot_spr 
+
+        figure_name = ['Super Performance ' cond_names{cond} ' by Delta Level'];
+
         for curr_lvl = 1:num.levels
             for prev_lvl = 1:num.levels
                 
-                figure_name = ['Super Performance ' cond_names{cond} ' by Delta Level'];
-
                 subplot(num.levels, num.levels, prev_lvl + (curr_lvl-1)*num.levels);
                 shadedErrorBar(delta_theta_window_centers, squeeze(analyzed_data.super.perf_by_delta_theta_window_mean(prev_lvl, curr_lvl, cond, :)), squeeze(analyzed_data.super.perf_by_delta_theta_window_sem(prev_lvl, curr_lvl, cond, :)),'lineprops', '-k');
 
@@ -446,20 +474,21 @@ for cond = 1:num.conds
                 if curr_lvl == 3, xlabel('\Delta \theta (°)'); end
                 if prev_lvl == 1, ylabel('Correct'); end
                 ylim([0, 1]);
-                xlim([-100 100]);
-                xticks(min(xlim):50:max(xlim));
+                xlim([-180 180]);
+                xticks(min(xlim):45:max(xlim));
                 line([min(xlim), max(xlim)], [0.5, 0.5], 'LineWidth', 1, 'Color', 'k');
                 box off
                 set(gca, 'TickDir', 'out');
 
             end
         end
+
+        if save_spr_figures
+            saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
+            disp(['Saved ' figure_name '.png']);
+        end
     end
 
-    if save_spr_figures
-        saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
-        disp(['Saved ' figure_name '.png']);
-    end
     %}
 
     %% Plot pCW as a function of delta theta for each level pair    
@@ -467,22 +496,23 @@ for cond = 1:num.conds
     %
     if plot_spr
 
+        figure_name = ['Super pCCW ' cond_names{cond} ' by Delta Level'];
+
         for prev_lvl = 1:num.levels
             for curr_lvl = 1:num.levels
 
-                figure_name = ['Super pCW ' cond_names{cond} ' by Delta Level'];
-
                 subplot(num.levels, num.levels, prev_lvl + (curr_lvl-1)*num.levels);
 
-                shadedErrorBar(delta_theta_window_centers, squeeze(analyzed_data.super.pCW_by_delta_theta_window_mean(prev_lvl, curr_lvl, cond, :)), squeeze(analyzed_data.super.pCW_by_delta_theta_window_sem(prev_lvl, curr_lvl, cond, :)),'lineprops', '-b');
+                % Plot 1 - pCW_mean for pCCW
+                shadedErrorBar(delta_theta_window_centers, 1 - squeeze(analyzed_data.super.pCW_by_delta_theta_window_mean(prev_lvl, curr_lvl, cond, :)), squeeze(analyzed_data.super.pCW_by_delta_theta_window_sem(prev_lvl, curr_lvl, cond, :)),'lineprops', '-b');
                 hold on;
                 
                 title([num2str(prev_lvl) ' -> ' num2str(curr_lvl)]);
                 if curr_lvl == 3, xlabel('\Delta \theta (°)'); end
-                if prev_lvl == 1, ylabel('p(Resp|CW)'); end
+                if prev_lvl == 1, ylabel('p(Resp|CCW)'); end
                 ylim([0, 1]);
-                xlim([-100 100]);
-                xticks(min(xlim):50:max(xlim));
+                xlim([-180 180]);
+                xticks(min(xlim):45:max(xlim));
                 line([min(xlim), max(xlim)], [0.5, 0.5], 'LineWidth', 1, 'Color', 'k');
 
                 box off
@@ -490,34 +520,36 @@ for cond = 1:num.conds
 
             end
         end
-
+        if save_spr_figures
+            saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
+            disp(['Saved ' figure_name '.png']);
+        end
     end
 
-    if save_spr_figures
-        saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
-        disp(['Saved ' figure_name '.png']);
-    end
+
     %}
 
     %% Plot response bias as a function of delta theta for each level pair
     %
     if plot_spr
 
+        figure_name = ['Super Response Bias ' cond_names{cond} ' by Delta Level'];
+
         for prev_lvl = 1:num.levels
             for curr_lvl = 1:num.levels
-
-                figure_name = ['Super Response Bias ' cond_names{cond} ' by Delta Level'];
 
                 subplot(num.levels, num.levels, prev_lvl + (curr_lvl-1)*num.levels);
 
                 plot(delta_theta_window_centers, squeeze(analyzed_data.super.mu_by_delta_theta_window(prev_lvl, curr_lvl, cond, :)), 'LineWidth', 1,'Color', 'g');
+                hold on;
+                plot(-180:180, squeeze(analyzed_data.super.estimated_bias(prev_lvl, curr_lvl, cond, :)), 'LineWidth', 1,'Color', 'k','LineStyle', '-');
 
                 title([num2str(prev_lvl) ' -> ' num2str(curr_lvl)]);
                 if curr_lvl == 3, xlabel('\Delta \theta (°)'); end
                 if prev_lvl == 1, ylabel('\mu'); end
                 ylim([-20 20]);
-                xlim([-100 100]);
-                xticks(min(xlim):50:max(xlim));
+                xlim([-180 180]);
+                xticks(min(xlim):45:max(xlim));
                 line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
 
                 box off
@@ -526,12 +558,52 @@ for cond = 1:num.conds
             end
         end
 
+        if save_spr_figures
+            saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
+            disp(['Saved ' figure_name '.png']);
+        end
+
     end
 
-    if save_spr_figures
-        saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
-        disp(['Saved ' figure_name '.png']);
+    %}
+
+    %% Plot Behavioral variance as a function of delta theta for each level pair
+    %
+    if plot_spr
+
+        for prev_lvl = 1:num.levels
+            for curr_lvl = 1:num.levels
+
+                figure_name = ['Super Behavioral Variance ' cond_names{cond} ' by Delta Level'];
+
+                subplot(num.levels, num.levels, prev_lvl + (curr_lvl-1)*num.levels);
+
+                plot(delta_theta_window_centers, squeeze(analyzed_data.super.sigma_by_delta_theta_window(prev_lvl, curr_lvl, cond, :)), 'LineWidth', 1,'Color', 'k');
+
+                title([num2str(prev_lvl) ' -> ' num2str(curr_lvl)]);
+                if curr_lvl == 3, xlabel('\Delta \theta (°)'); end
+                if prev_lvl == 1, ylabel('\sigma'); end
+                ylim([0 20]);
+                xlim([-180 180]);
+                xticks(min(xlim):45:max(xlim));
+                line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
+
+                box off
+                set(gca, 'TickDir', 'out');
+
+
+            end
+
+        end
+
+        if save_spr_figures
+            saveas(gcf, [spr_figure_path '/' figure_name '.png']); clf;
+            disp(['Saved ' figure_name '.png']);
+        end
+
     end
+
+
     %}
 
 end
