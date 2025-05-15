@@ -25,6 +25,7 @@ p.half_screen = 0;
 p.simulate_response = 0;
 p.training = 0;
 p.use_staircase = 0;
+p.longer_stim_dur = 0;
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
