@@ -11,10 +11,10 @@ lur003@ucsd.edu
 %% Define event durations
 % In seconds unless stated otherwise
 
-if mod(p.run_num, 2) == 0
-    t.test_dur = 0.5; 
-else
+if p.longer_stim_dur
     t.test_dur = 3; 
+else
+    t.test_dur = 0.5; 
 end
 
 t.mask_dur = 0.5; 
