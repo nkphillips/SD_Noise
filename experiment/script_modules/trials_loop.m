@@ -53,7 +53,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, test_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.test_frames_count
-            % KbWait;
+            %pause(3);
         end
 
     end
@@ -79,6 +79,10 @@ for n_trial = 1:size(p.trial_events,1)
         end
         Screen('Flip', w.window, mask_frames_onsets(n_frame));
 
+        if p.disp_on && n_frame == frames.mask_frames_count
+            %pause(3);
+        end
+
     end
     
     %% Delay period
@@ -92,6 +96,10 @@ for n_trial = 1:size(p.trial_events,1)
             delay_frames_onsets = frames.delay_frames_onsets + GetSecs;
         end
         Screen('Flip', w.window, delay_frames_onsets(n_frame));
+
+        if p.disp_on && n_frame == frames.delay_frames_count
+            %pause(3);
+        end
 
     end
     
@@ -112,7 +120,7 @@ for n_trial = 1:size(p.trial_events,1)
         Screen('Flip', w.window, probe_frames_onsets(n_frame));
         
         if p.disp_on && n_frame == frames.probe_frames_count
-            % KbWait;
+            %pause(3);
         end
 
     end

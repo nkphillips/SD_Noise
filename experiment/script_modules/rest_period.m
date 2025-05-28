@@ -30,6 +30,7 @@ end
 %% Optional rest
 
 tic;
+KbQueueFlush(p.device_number);
 while ~exit_rest
 
     % Draw Fixation

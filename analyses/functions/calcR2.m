@@ -1,4 +1,4 @@
-function R2 = compute_r_squared(y_observed, y_fitted)
+function R2 = calcR2(y_observed, y_fitted)
    
 % Calculate the mean of the observed data
 y_mean = mean(y_observed);

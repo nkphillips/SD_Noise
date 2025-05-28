@@ -25,6 +25,7 @@ p.half_screen = 0;
 p.simulate_response = 0;
 p.training = 0;
 p.use_staircase = 0;
+p.longer_stim_dur = 0;
 
 % Sync Test
 if sum(p.which_setup == [0 2]) > 0
@@ -39,7 +40,7 @@ p.subj_ID = '001';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
-dirs.functions_dir = '../functions'; addpath(dirs.functions_dir);
+dirs.functions_dir = 'functions'; addpath(dirs.functions_dir);
 dirs.data_dir = '../data'; 
 dirs.texture_dir = 'textures';
 

@@ -6,11 +6,13 @@ clc; close all; clear all;
 
 %% Toggles
 
-plot_ind = 1;
-plot_grp = 1;
+plot_ind = 0;
+plot_grp = 0;
+plot_spr = 1;
 
-save_ind_figures = 1;
+save_ind_figures = 0;
 save_grp_figures = 0;
+save_spr_figures = 1;
 
 estimate_response_bias = 1;
 estimate_sd_bias = 1;
@@ -20,10 +22,10 @@ toggles.disp_on = 1;
 %% Hard coded variables
 
 which_setup = '3329C_ASUS';
-analysis_date = '04.29.2025';
+analysis_date = '05.09.2025';
 
-subj_IDs = {'002'};  
-cond_names = {'contrast' 'filter'};
+subj_IDs = {'001', '002'};  
+cond_names = {'Contrast' 'Filter Width'};
 
 num.subjs = length(subj_IDs);
 num.conds = length(cond_names);
@@ -32,11 +34,6 @@ num.levels = 3;
 num.blocks_per_cond = num.blocks/num.conds;
 num.cond_combos = num.conds * num.levels;
 
-% Model fitting options
-options = optimoptions('fmincon');
-lower_bounds = [-15, 1]; % lower bounds for [mu, sigma]
-upper_bounds = [15, 20];
-
 %% Initialize paths
 
 init_paths
@@ -44,6 +41,8 @@ init_paths
 %% Load experiment runs
 
 load_matfiles
+
+unique_probe_offsets = unique(all_runs{1}(1).p.trial_events(:,2) - all_runs{1}(1).p.trial_events(:,1));
 
 %% Plot settings
 
@@ -68,8 +67,21 @@ figure_color = white;
 cond_colors = [green; blue; red];
 alpha_lvl = 0.75;
 
-% Calculate subplot dimensions
+% Calculate subplot dimensions 
 [subplotX, subplotY] = get_subplot_dimensions(num.subjs);
+
+%% Define model bounds and parameters
+
+p.fmincon_options = optimoptions('fmincon','Display','off');
+
+% Response bias model parameters
+p.response_bias_init_params = [0, 1]; % initial parameters for mu and sigma
+p.response_bias_bounds = [20, 20; -20, 0.5]; % upper; lower bounds for mu and sigma
+p.guess_rate = 0.25; % Assuming guess rate is constant
+
+% Serial dependence model parameters
+p.serial_dependence_init_params = [5, 20]; % initial parameters for amplitude and width_param
+p.serial_dependence_bounds = [20, 100; 1, 5]; % upper; lower bounds for amplitude and width_param
 
 %% Analyze behavioral data
 
