@@ -1,5 +1,5 @@
-function sem = calc_sem(data)
+function sem = calcSEM(data)
 
-    sem = std(data(:))/sqrt(length(data(:)));
+    sem = std(data(:),'omitnan')/sqrt(sum(~isnan(data(:))));
 
 end
