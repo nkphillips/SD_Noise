@@ -19,11 +19,11 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.which_setup = 1; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
-p.disp_on = 1;
-p.half_screen = 0;
+p.which_setup = 2; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.disp_on = 0;
+p.half_screen = 1;
 p.simulate_response = 0;
-p.training = 0;
+p.training = 1;
 p.use_staircase = 0;
 p.longer_stim_dur = 0;
 
@@ -36,7 +36,7 @@ end
 
 %% Set directories
 
-p.subj_ID = '002';
+p.subj_ID = '999';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
