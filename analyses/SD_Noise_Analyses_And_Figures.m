@@ -2,15 +2,17 @@
 
 %% Prepare workspace
 
-clc; close all; clear all;
+close all; 
+clear all; 
+clc; 
 
 %% Toggles
 
-plot_ind = 0;
+plot_ind = 1;
 plot_grp = 0;
 plot_spr = 1;
 
-save_ind_figures = 0;
+save_ind_figures = 1;
 save_grp_figures = 0;
 save_spr_figures = 1;
 
@@ -22,9 +24,9 @@ toggles.disp_on = 1;
 %% Hard coded variables
 
 which_setup = '3329C_ASUS';
-analysis_date = '05.09.2025';
+analysis_date = '07.22.2025';
 
-subj_IDs = {'001', '002'};  
+subj_IDs = {'001', '002' '003'};  
 cond_names = {'Contrast' 'Filter Width'};
 
 num.subjs = length(subj_IDs);
@@ -67,9 +69,6 @@ figure_color = white;
 cond_colors = [green; blue; red];
 alpha_lvl = 0.75;
 
-% Calculate subplot dimensions 
-[subplotX, subplotY] = get_subplot_dimensions(num.subjs);
-
 %% Define model bounds and parameters
 
 p.fmincon_options = optimoptions('fmincon','Display','off');
@@ -85,41 +84,10 @@ p.serial_dependence_bounds = [20, 100; 1, 5]; % upper; lower bounds for amplitud
 
 %% Analyze behavioral data
 
+tic;
 analyzeData
+disp(['Time taken to analyze data: ~' num2str(round(toc/60)) ' minutes']);
 
 %% Stats
 
 % test_performance
-
-%% plot info
-
-
-%% Subject Performance
-
-% if plot_ind
-
-%     fg  = figure('Color',figure_color);
-%     set(0, 'CurrentFigure', fg)
-
-%     for subj = 1:num.subjs
-
-%         plot_performance_ind
-
-%     end
-
-%     close(fg)
-
-% end
-
-%% Group Performance
-
-% if plot_grp
-
-%     fg  = figure('Color',figure_color);
-%     set(0, 'CurrentFigure', fg)
-
-%     plot_performance_grp
-
-%     close(fg)
-
-% end
