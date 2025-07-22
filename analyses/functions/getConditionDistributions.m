@@ -4,7 +4,7 @@ function counts = getConditionDistributions(p, behav_data, unique_probe_offsets)
     counts.lvl_pair_indices = cell(p.num_levels, p.num_levels, p.num_blocks_per_cond, p.num_conds);
     counts.delta_theta = cell(p.num_levels, p.num_levels, p.num_conds);
     counts.probe_offset = cell(p.num_levels, p.num_levels, p.num_conds);
-    counts.pCW_by_probe_offset = cell(p.num_levels, p.num_levels, p.num_conds, length(unique_probe_offsets));
+    counts.pCW_per_probe_offset = cell(p.num_levels, p.num_levels, p.num_conds, length(unique_probe_offsets));
 
     for cond = 1:p.num_conds
         
@@ -29,7 +29,7 @@ function counts = getConditionDistributions(p, behav_data, unique_probe_offsets)
                             counts.probe_offset{prev_lvl, curr_lvl, cond} = [counts.probe_offset{prev_lvl, curr_lvl, cond}, probe_offset];
 
                             offset_indx = find(unique_probe_offsets == probe_offset);
-                            counts.pCW_by_probe_offset{prev_lvl, curr_lvl, cond, offset_indx} = [counts.pCW_by_probe_offset{prev_lvl, curr_lvl, cond, offset_indx}, behav_data.response(n_trial, curr_blocks(n_block)) == 2];
+                            counts.pCW_per_probe_offset{prev_lvl, curr_lvl, cond, offset_indx} = [counts.pCW_per_probe_offset{prev_lvl, curr_lvl, cond, offset_indx}, behav_data.response(n_trial, curr_blocks(n_block)) == 2];
 
                             counts.lvl_pair_count(prev_lvl, curr_lvl, cond) = counts.lvl_pair_count(prev_lvl, curr_lvl, cond) + 1;
                             counts.lvl_pair_indices{prev_lvl, curr_lvl, n_block, cond} = [counts.lvl_pair_indices{prev_lvl, curr_lvl, n_block, cond}, n_trial];
