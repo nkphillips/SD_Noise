@@ -10,6 +10,11 @@ function y = calcDoG(x, params)
     
     c = sqrt(2)/exp(-0.5);
     
+    % Normalize parameter shape: accept row or column vector for single set
+    if isvector(params)
+        params = params(:)'; % force row vector [A, w, b]
+    end
+
     if size(params, 1) == 1
         % Single parameter case (current usage)
         A = params(1);
