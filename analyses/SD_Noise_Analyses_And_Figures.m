@@ -1,4 +1,4 @@
-%%% SD_Noise_Analyses_And_Figures_v2
+%%% SD_Noise_Analyses_And_Figures
 
 %% Prepare workspace
 
@@ -12,6 +12,7 @@ toggles.parallelization = 1;
 toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
 toggles.disp_on = 1;
 toggles.save_estimates = 1;
+toggles.bootstrap_super = 1; % enable bootstrap CIs for super-subject
 
 %% Plot settings
 
@@ -44,6 +45,10 @@ plt_settings.colors.gray = [128 128 128]/255;
 plt_settings.figure_color = plt_settings.colors.white;
 plt_settings.alpha_lvl = 0.75;
 plt_settings.fg_type = 'pdf';
+
+%% Bootstrap settings
+bootstrap.B = 200;
+bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
 
@@ -201,6 +206,19 @@ p.sd_objective = toggles.sd_objective; % 'nll' or 'sse' for serial dependence es
 if strcmp(p.sd_objective, 'sse')
     p.sd_init_params = p.sd_init_params(1:3);
     p.sd_bounds = p.sd_bounds(:, 1:3);
+end
+
+%% Optional bootstrap CIs for super-subject windowed metrics
+
+if isfield(toggles, 'bootstrap_super') && toggles.bootstrap_super
+    if toggles.disp_on
+        disp(' ');
+        disp('Bootstrapping super-subject windowed metrics...');
+    end
+    [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, bootstrap, toggles);
+else
+    rb_ci = struct();
+    perf_ci = struct();
 end
 
 %% Setup parallelization
@@ -526,7 +544,11 @@ if plt_settings.plot_sup_figures
     
     %% Performance (percent correct and percent CCW)
 
-    plotPerformance(delta_theta_centers, delta_theta_windows.all.responses, delta_theta_windows.all.probe_offsets, p, plt_settings, 'Super Subj');
+    if isfield(perf_ci, 'pc_lo')
+        plotPerformance(delta_theta_centers, delta_theta_windows.all.responses, delta_theta_windows.all.probe_offsets, p, plt_settings, 'Super Subj', perf_ci);
+    else
+        plotPerformance(delta_theta_centers, delta_theta_windows.all.responses, delta_theta_windows.all.probe_offsets, p, plt_settings, 'Super Subj');
+    end
     clf(gcf);
 
     %% Response bias
@@ -552,7 +574,14 @@ if plt_settings.plot_sup_figures
                 set(0, 'CurrentFigure', fg);
 
                 % Pass condition info to plotResponseBias for color selection
-                plotResponseBias(delta_theta_centers, squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :,1)), plt_settings, cond);
+                mu = squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :, 1));
+                if isfield(rb_ci, 'mu_lo')
+                    mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
+                    mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
+                    plotResponseBias(delta_theta_centers, mu, plt_settings, cond, mu_lo, mu_hi);
+                else
+                    plotResponseBias(delta_theta_centers, mu, plt_settings, cond);
+                end
                 
                 % Format figure
                 axis square;
@@ -644,7 +673,14 @@ if plt_settings.plot_sup_figures
                 sd_params = squeeze(sd.all.params_est(prev_lvl, curr_lvl, cond, 1:3));
                 
                 % Plot response bias with DoG curve
-                plotResponseBias(delta_theta_centers, squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :, 1)), plt_settings, cond);
+                mu = squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :, 1));
+                if isfield(rb_ci, 'mu_lo')
+                    mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
+                    mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
+                    plotResponseBias(delta_theta_centers, mu, plt_settings, cond, mu_lo, mu_hi);
+                else
+                    plotResponseBias(delta_theta_centers, mu, plt_settings, cond);
+                end
                 
                 % Plot DoG curve from existing estimates
                 if ~isempty(sd_params)
