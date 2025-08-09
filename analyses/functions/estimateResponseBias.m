@@ -9,12 +9,12 @@
 % Outputs:
 %   start_params, start_nll, params_est, nll, exit_flag
 
-function [start_params, start_nll, params_est, nll, exit_flag] = estimateResponseBias_optimized(fixed_params, p)
+function [start_params, start_nll, params_est, nll, exit_flag] = estimateResponseBias(fixed_params, p)
 
-    %% Grid search for starting parameters using optimized version
+    %% Grid search for starting parameters
 
-    start_params = gridSearchResponseBias_optimized(p.rb_init_params, fixed_params, 'coarse', p);
-    [start_params, start_nll] = gridSearchResponseBias_optimized(start_params, fixed_params, 'fine', p);
+    start_params = gridSearchResponseBias(p.rb_init_params, fixed_params, 'coarse', p);
+    [start_params, start_nll] = gridSearchResponseBias(start_params, fixed_params, 'fine', p);
     free_params = start_params;
 
     %% Define the model function handle
