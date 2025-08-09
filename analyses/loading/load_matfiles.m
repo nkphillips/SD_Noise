@@ -15,7 +15,7 @@ for subj = 1:num.subjs
 
     %% Find subject data
 
-    curr_subj = subj_IDs{subj};
+    curr_subj = p.subj_IDs{subj};
 
     data_files = dir(curr_subj);
     data_file_names = {data_files.name};
