@@ -42,7 +42,7 @@ function result = processSerialDependenceTask(task_data, p, previous_results)
     end
     
     % Run estimation with smart initialization
-    [start_params, start_metric, params_est, final_metric, exit_flag] = estimateSerialDependence_optimized(raw_data, p, init_params);
+    [start_params, start_metric, params_est, final_metric, exit_flag] = estimateSerialDependence(raw_data, p, init_params);
     
     % Package results
     result.start_params = start_params;
@@ -51,4 +51,5 @@ function result = processSerialDependenceTask(task_data, p, previous_results)
     result.final_metric = final_metric;
     result.exit_flag = exit_flag;
     result.condition_info = condition_info;
+    
 end 
