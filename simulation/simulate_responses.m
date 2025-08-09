@@ -11,8 +11,10 @@ function [responses, correct] = simulate_responses(p)
 
         probe_offset = p.trial_events(:, 2, n_block) - p.trial_events(:, 1, n_block);
 
-        % Get response bias from serial dependence 
+        % Get response bias from serial dependence (orientation difference wrapped to [-90, 90])
         % delta_theta = p.trial_events(1:end-1,1,n_block) - p.trial_events(2:end,1,n_block);
+        % delta_theta(delta_theta > 90) = delta_theta(delta_theta > 90) - 180;
+        % delta_theta(delta_theta < -90) = delta_theta(delta_theta < -90) + 180;
         % bias = nan(length(delta_theta),1);
         % for n = 1:length(delta_theta)
         %     curr_level = p.trial_events(n+1,end,n_block);
