@@ -1,14 +1,31 @@
-function sse = calcResponseBiasFit(free_params, fixed_params)
+% calcResponseBiasFit  
+% 
+% This function calculates the negative log-likelihood of the response bias model.
+% 
+% Inputs:
+%   free_params: [mu, sigma]
+%   fixed_params: [probe_offsets, responses]
+%   guess_rate: the guess rate of the subject
+% 
+% Outputs:
+%   nll: the negative log-likelihood of the response bias model
 
-    x = fixed_params{1}(:,1);
-    p_CW = fixed_params{1}(:,2);
-    guess_rate = fixed_params{2};
+function nll = calcResponseBiasFit(free_params, fixed_params, guess_rate)
 
+    %% Extract parameters 
+
+    probe_offsets = fixed_params(:,1);
+    responses = fixed_params(:,2);
+    
     mu = free_params(1);
     sigma = free_params(2);
 
-    p_CW_est = calc_pCW(x, mu, sigma, guess_rate);
+    %% Calculate pCW
 
-    sse = calcSSE(p_CW, p_CW_est);
+    p_CW = calc_pCW(probe_offsets, mu, sigma, guess_rate);
+
+    %% Calculate NLL
+
+    nll = calcNLL(responses, p_CW);
 
 end
