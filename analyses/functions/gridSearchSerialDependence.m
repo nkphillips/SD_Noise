@@ -51,8 +51,6 @@ function [best_params, best_nll] = gridSearchSerialDependence(init_params, fixed
             init_fwhm = 1.6651 / init_params(2);
             fwhm_lb = max(1.6651/p.sd_bounds(1,2), init_fwhm/2);
             fwhm_ub = min(1.6651/p.sd_bounds(2,2), init_fwhm*1.5);
-            w_lb = 1.6651 / fwhm_ub;
-            w_ub = 1.6651 / fwhm_lb;
 
             % Fixed resolution per request
             search_steps = 50;
