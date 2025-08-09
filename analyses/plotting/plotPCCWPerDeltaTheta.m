@@ -39,7 +39,7 @@ for cond = 1:num.conds
             if curr_lvl == num.levels, xlabel('\Delta \theta (°)'); end
             if prev_lvl == 1, ylabel('p(Resp|CCW)'); end
             ylim([0, 1]);
-            xlim([-180 180]);
+            xlim([-90 90]);
             xticks(min(xlim):45:max(xlim));
             line([min(xlim), max(xlim)], [0.5, 0.5], 'LineWidth', 1, 'Color', 'k');
             box off;
