@@ -3,3 +3,4 @@
 *.asv
 .vscode/launch.json
 *.png
+/papers
