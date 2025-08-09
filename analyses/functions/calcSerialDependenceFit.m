@@ -1,13 +1,45 @@
-function sse = calcSerialDependenceFit(free_params, fixed_params)
+% calcSerialDependenceFit
+% 
+% Calculates metric (SSE or NLL) for serial dependence model
+% 
+% Inputs:
+%   free_params: [amplitude, width, baseline]
+%   fixed_params: [probe_offsets, responses, delta_thetas]
+%   p: parameter struct (expects p.sd_objective and p.guess_rate)
+% 
+% Outputs:
+%   metric: the sum of squared errors or negative log-likelihood
 
-    delta_theta = fixed_params(:,1);
-    measured_bias = fixed_params(:,2);
+function metric = calcSerialDependenceFit(free_params, fixed_params, p)
 
+    %% Extract parameters
+    
     amplitude = free_params(1);
-    w = free_params(2);
+    width = free_params(2);
+    baseline = free_params(3);
+    if isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'nll')
+        sigma = free_params(4);
+    else
+        sigma = [];
+    end
 
-    estimated_bias = gaussianPrime([amplitude, w], delta_theta);
+    %% Extract trial data
+    
+    probe_offsets = fixed_params(:,1);
+    responses = fixed_params(:,2);
+    delta_thetas = fixed_params(:,3);
 
-    sse = calcSSE(measured_bias, estimated_bias);
+    %% Calculate predicted bias using DoG
+    
+    predicted_bias = calcDoG(delta_thetas, [amplitude, width, baseline]);
 
-end
+    %% Calculate metric
+
+    if isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'sse')
+        metric = calcSSE(responses, predicted_bias);
+    else
+        p_CW = calc_pCW(probe_offsets, predicted_bias, sigma, p.guess_rate);
+        metric = calcNLL(responses, p_CW);
+    end
+    
+end 
