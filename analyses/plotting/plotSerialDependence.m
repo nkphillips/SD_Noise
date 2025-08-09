@@ -5,13 +5,12 @@
 % Inputs:
 % p: parameters
 % plt_settings: plotting settings
-% fg_title: figure title
 % sd: serial dependence estimates
 
 % Outputs:
 % fg: figure handle
 
-function plotSerialDependence(sd_data, param_index, param_name, p, plt_settings, fg_title)
+function plotSerialDependence(sd_data, param_index, param_name, p, plt_settings)
     % plotSerialDependence - Create heatmap of serial dependence parameters
     %
     % This function creates a heatmap visualization of serial dependence parameters
@@ -23,7 +22,6 @@ function plotSerialDependence(sd_data, param_index, param_name, p, plt_settings,
     %   param_name - string name of parameter for title
     %   p - parameter struct
     %   plt_settings - plotting settings struct
-    %   fg_title - figure title
     
     % Extract the parameter data
     param_data = squeeze(sd_data(:,:,:,param_index)); % [prev_lvl, curr_lvl, cond]
@@ -105,20 +103,7 @@ function plotSerialDependence(sd_data, param_index, param_name, p, plt_settings,
         
         % Set axis properties
         axis square;
-        set(gca, 'TickDir', 'out', 'LineWidth', plt_settings.line_width);
+        set(gca, 'TickDir', 'out', 'LineWidth', plt_settings.line_width, 'Box', 'off');
     end
-    
-    % Add overall title
-    sgtitle([fg_title ': ' param_name], 'FontSize', 14, 'FontWeight', 'bold');
-    
-    % Adjust layout for better spacing
-    set(gcf, 'Color', plt_settings.figure_color);
-    
-    % Improve subplot spacing
-    for i = 1:num_conds
-        subplot(1, num_conds, i);
-        set(gca, 'Box', 'on', 'LineWidth', plt_settings.line_width);
-    end
-    
     
 end
