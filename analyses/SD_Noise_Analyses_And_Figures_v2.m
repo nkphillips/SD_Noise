@@ -9,7 +9,7 @@ clc;
 %% Toggles
 
 toggles.parallelization = 1;
-toggles.sd_objective = 'nll'; % minimize 'nll' or 'sse' for serial dependence estimation
+toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
 toggles.disp_on = 1;
 toggles.save_estimates = 1;
 
@@ -523,6 +523,11 @@ end
 %% Plot results
 
 if plt_settings.plot_sup_figures
+    
+    %% Performance (percent correct and percent CCW)
+
+    plotPerformance(delta_theta_centers, delta_theta_windows.all.responses, delta_theta_windows.all.probe_offsets, p, plt_settings, 'Super Subj');
+    clf(gcf);
 
     %% Response bias
 
