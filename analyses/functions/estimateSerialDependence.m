@@ -1,31 +1,44 @@
-function serial_dependence = estimateSerialDependence(init_params, fixed_params, p)
+% estimateSerialDependence
+%
+% Serial dependence estimation with smart initialization
+%
+% Inputs:
+%   raw_data: [probe_offsets, responses, delta_thetas]
+%   p: parameter structure
+%   init_params: initial parameters
+%
+% Outputs:
+%   start_params: starting parameters from grid search
+%   start_metric: negative log-likelihood or SSE at start
+%   params_est: estimated parameters
+%   final_metric: final negative log-likelihood or SSE
+%   exit_flag: optimization exit flag
+
+function [start_params, start_metric, params_est, final_metric, exit_flag] = estimateSerialDependence(raw_data, p, init_params)
 
     %% Grid search for starting parameters
 
-    start_params = gridSearchSerialDependence(init_params, fixed_params, 'coarse', p.serial_dependence_bounds);
-    [start_params, start_sse] = gridSearchSerialDependence(start_params, fixed_params, 'fine', p.serial_dependence_bounds);
+    start_params = gridSearchSerialDependence(init_params, raw_data, 'coarse', p);
+    [start_params, start_metric] = gridSearchSerialDependence(start_params, raw_data, 'fine', p);
     free_params = start_params;
 
-    %% Define the model function handle
-
-    serial_dependence_model = @(free_params) calcSerialDependenceFit(free_params, fixed_params);
+    %% Unified model function handle based on objective (single entry point)
+    
+    sd_model = @(free_params) calcSerialDependenceFit(free_params, raw_data, p);
     
     %% Fit the model
 
-    [params_est, sse, exit_flag] = fmincon(serial_dependence_model, free_params, [], [], [], [], p.serial_dependence_bounds(2,:), p.serial_dependence_bounds(1,:), [], p.fmincon_options);
+    % Ensure bounds match the parameter count implied by objective
+    if isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'sse')
+        % SSE: [A, w, b]
+        ub = p.sd_bounds(1, 1:3);
+        lb = p.sd_bounds(2, 1:3);
+    else
+        % NLL: [A, w, b, sigma]
+        ub = p.sd_bounds(1, :);
+        lb = p.sd_bounds(2, :);
+    end
+    
+    [params_est, final_metric, exit_flag] = fmincon(sd_model, free_params, [], [], [], [], lb, ub, [], p.fmincon_options);
 
-    %% Evaluate the model
-
-    estimated_bias = gaussianPrime(params_est, fixed_params(:,1));
-    r2 = calcR2(fixed_params(:,2), estimated_bias);
-
-    %% Compile serial dependence
-
-    serial_dependence.start_params = start_params;
-    serial_dependence.start_sse = start_sse;
-    serial_dependence.params_est = params_est;
-    serial_dependence.sse = sse;
-    serial_dependence.r2 = r2;
-    serial_dependence.exit_flag = exit_flag;
-
-end
+end 
