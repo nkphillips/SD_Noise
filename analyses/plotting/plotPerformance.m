@@ -4,7 +4,7 @@
 % each condition (Contrast, Precision). Accepts generic 4D cells so it can be
 % used for super-subject, group, or individual subjects depending on input.
 
-function plotPerformance(delta_theta_centers, responses_cell, probe_offsets_cell, p, plt_settings, fg_prefix)
+function plotPerformance(delta_theta_centers, responses_cell, probe_offsets_cell, p, plt_settings, fg_prefix, perf_ci)
 
 
     metrics = { 'Percent Correct', 'Percent CCW' };
@@ -14,6 +14,7 @@ function plotPerformance(delta_theta_centers, responses_cell, probe_offsets_cell
     if nargin < 6 || isempty(fg_prefix)
         fg_prefix = 'Performance';
     end
+    have_ci = (nargin >= 7) && ~isempty(perf_ci);
 
     % For each metric, compute a global y-limit across ALL conditions and subplots,
     % then plot each condition using that shared y-limit. This allows direct
@@ -109,7 +110,33 @@ function plotPerformance(delta_theta_centers, responses_cell, probe_offsets_cell
                         plot_color = plt_settings.colors.green;
                     end
 
-                    plot(delta_theta_centers, y_vals, 'LineWidth', plt_settings.line_width, 'Color', plot_color);
+                    if have_ci
+                        % Select corresponding CI arrays
+                        pc_lo = []; pc_hi = []; pccw_lo = []; pccw_hi = [];
+                        if m_idx == 1 && isfield(perf_ci, 'pc_lo') && isfield(perf_ci, 'pc_hi')
+                            pc_lo = squeeze(perf_ci.pc_lo(prev_lvl, curr_lvl, cond, :));
+                            pc_hi = squeeze(perf_ci.pc_hi(prev_lvl, curr_lvl, cond, :));
+                        elseif m_idx == 2 && isfield(perf_ci, 'pccw_lo') && isfield(perf_ci, 'pccw_hi')
+                            pccw_lo = squeeze(perf_ci.pccw_lo(prev_lvl, curr_lvl, cond, :));
+                            pccw_hi = squeeze(perf_ci.pccw_hi(prev_lvl, curr_lvl, cond, :));
+                        end
+
+                        if m_idx == 1 && ~isempty(pc_lo)
+                            err_upper = pc_hi(:)' - y_vals(:)';
+                            err_lower = y_vals(:)' - pc_lo(:)';
+                            err = [err_upper; err_lower];
+                            shadedErrorBar(delta_theta_centers(:)', y_vals(:)', err, 'lineProps', {'-','Color', plot_color, 'LineWidth', plt_settings.line_width}, 'transparent', true, 'patchSaturation', 0.5);
+                        elseif m_idx == 2 && ~isempty(pccw_lo)
+                            err_upper = pccw_hi(:)' - y_vals(:)';
+                            err_lower = y_vals(:)' - pccw_lo(:)';
+                            err = [err_upper; err_lower];
+                            shadedErrorBar(delta_theta_centers(:)', y_vals(:)', err, 'lineProps', {'-','Color', plot_color, 'LineWidth', plt_settings.line_width}, 'transparent', true, 'patchSaturation', 0.5);
+                        else
+                            plot(delta_theta_centers, y_vals, 'LineWidth', plt_settings.line_width, 'Color', plot_color);
+                        end
+                    else
+                        plot(delta_theta_centers, y_vals, 'LineWidth', plt_settings.line_width, 'Color', plot_color);
+                    end
 
                     % Title with actual values
                     if cond == 1
