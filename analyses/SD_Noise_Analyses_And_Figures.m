@@ -47,7 +47,8 @@ plt_settings.alpha_lvl = 0.75;
 plt_settings.fg_type = 'pdf';
 
 %% Bootstrap settings
-bootstrap.B = 200;
+
+bootstrap.B = 5;
 bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
@@ -215,7 +216,12 @@ if isfield(toggles, 'bootstrap_super') && toggles.bootstrap_super
         disp(' ');
         disp('Bootstrapping super-subject windowed metrics...');
     end
+    bs_start_time = tic;
     [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, bootstrap, toggles);
+    bs_duration = toc(bs_start_time);
+    if toggles.disp_on
+        disp(['✓ Bootstrapping completed in ~' num2str(round(bs_duration/60, 1)) ' minutes (' num2str(round(bs_duration, 1)) ' s)']);
+    end
 else
     rb_ci = struct();
     perf_ci = struct();
@@ -778,6 +784,9 @@ if toggles.disp_on
     disp(['Total time: ~' num2str(round(overall_duration/60, 1)) ' minutes']);
     disp(['Response bias: ' num2str(num_tasks) ' tasks completed (~' num2str(round(rb_duration/60, 1)) ' min)']);
     disp(['Serial dependence: ' num2str(num_sd_tasks) ' tasks completed (~' num2str(round(sd_duration/60, 1)) ' min)']);
+    if exist('bs_duration','var') && toggles.bootstrap_super
+        disp(['Bootstrapping: B = ' num2str(bootstrap.B) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
+    end
     disp('================================');
 end
 
