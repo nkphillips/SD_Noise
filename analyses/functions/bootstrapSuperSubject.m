@@ -65,71 +65,38 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
         disp(['Bootstrapping super-subject (windows with data): ' num2str(numel(tasks)) ' windows, B = ' num2str(B)]);
     end
 
-    % Loop over tasks, bootstrap within each window
-    for it = 1:numel(tasks)
+    % Prepare task list for parallel/sequential processing
+    num_tasks = numel(tasks);
+    results = cell(num_tasks, 1);
+
+    if isfield(toggles,'parallelization') && toggles.parallelization && num_tasks > 1
+        % Use the unified chunking infrastructure for consistency
+        task_list = cell(num_tasks,1);
+        for it = 1:num_tasks
+            task_list{it} = tasks(it);
+        end
+        num_chunks = min(p.num_chunks, num_tasks);
+        [results, ~] = processTasksInChunks(task_list, num_chunks, true, @processBootstrapWindowTask, toggles, p, bootstrap, toggles);
+    else
+        for it = 1:num_tasks
+            results{it} = processBootstrapWindowTask(tasks(it), p, bootstrap, toggles);
+        end
+    end
+
+    % Write results back into CI arrays
+    for it = 1:num_tasks
         prev_lvl = tasks(it).prev;
         curr_lvl = tasks(it).curr;
         cond     = tasks(it).cond;
         iw       = tasks(it).win;
-        po       = tasks(it).po;
-        y        = tasks(it).y;
-
-        n = numel(y);
-        if n == 0
-            continue
-        end
-
-        mu_b   = nan(B,1);
-        pc_b   = nan(B,1);
-        pccw_b = nan(B,1);
-
-        for b = 1:B
-            idx = randi(n, n, 1);
-            po_b = po(idx);
-            y_b  = y(idx);
-
-            % Fit response bias to bootstrap sample
-            try
-                [~, ~, params_est_b] = estimateResponseBias([po_b, y_b], p);
-                mu_b(b) = params_est_b(1);
-            catch
-                mu_b(b) = NaN;
-            end
-
-            % Performance metrics
-            try
-                is_correct = (y_b == (po_b > 0));
-                pc_b(b) = 100 * mean(is_correct);
-            catch
-                pc_b(b) = NaN;
-            end
-            try
-                pccw_b(b) = 100 * mean(1 - y_b);
-            catch
-                pccw_b(b) = NaN;
-            end
-        end
-
-        % Compute CI percentiles, omit NaNs
-        mu_clean = mu_b(~isnan(mu_b));
-        if ~isempty(mu_clean)
-            q = prctile(mu_clean, prc);
-            rb_ci.mu_lo(prev_lvl, curr_lvl, cond, iw) = q(1);
-            rb_ci.mu_hi(prev_lvl, curr_lvl, cond, iw) = q(2);
-        end
-
-        pc_clean = pc_b(~isnan(pc_b));
-        if ~isempty(pc_clean)
-            q = prctile(pc_clean, prc);
-            perf_ci.pc_lo(prev_lvl, curr_lvl, cond, iw) = q(1);
-            perf_ci.pc_hi(prev_lvl, curr_lvl, cond, iw) = q(2);
-        end
-
-        pccw_clean = pccw_b(~isnan(pccw_b));
-        if ~isempty(pccw_clean)
-            q = prctile(pccw_clean, prc);
-            perf_ci.pccw_lo(prev_lvl, curr_lvl, cond, iw) = q(1);
-            perf_ci.pccw_hi(prev_lvl, curr_lvl, cond, iw) = q(2);
+        r = results{it};
+        if ~isempty(r)
+            rb_ci.mu_lo(prev_lvl, curr_lvl, cond, iw) = r.mu_lo;
+            rb_ci.mu_hi(prev_lvl, curr_lvl, cond, iw) = r.mu_hi;
+            perf_ci.pc_lo(prev_lvl, curr_lvl, cond, iw) = r.pc_lo;
+            perf_ci.pc_hi(prev_lvl, curr_lvl, cond, iw) = r.pc_hi;
+            perf_ci.pccw_lo(prev_lvl, curr_lvl, cond, iw) = r.pccw_lo;
+            perf_ci.pccw_hi(prev_lvl, curr_lvl, cond, iw) = r.pccw_hi;
         end
     end
 
