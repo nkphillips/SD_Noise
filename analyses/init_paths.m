@@ -7,6 +7,7 @@ script_dir = pwd;
 data_dir = '../data';
 func_dir = 'functions';
 estimates_path = 'estimates/';
+reports_path = 'reports/';
 
 figures_folder = 'figures/';
 plt_settings.ind_figure_path = [figures_folder 'subjects/' analysis_date];
@@ -48,5 +49,10 @@ addpath([script_dir '/tests']);
 % Ensure estimates directory exists
 if ~exist(estimates_path, 'dir')
     mkdir(estimates_path);
+end
+
+% Ensure reports directory exists
+if ~exist(reports_path, 'dir')
+    mkdir(reports_path);
 end
 

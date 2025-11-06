@@ -42,7 +42,6 @@ function [all_results, task_indices] = processTasksInChunks(task_list, num_chunk
             
             % Process each task in the chunk
             for i_task = 1:length(chunk_tasks)
-                task_idx = chunk_start + i_task - 1;
                 
                 % Call the processing function with the task and additional arguments
                 if isempty(varargin)
@@ -62,10 +61,8 @@ function [all_results, task_indices] = processTasksInChunks(task_list, num_chunk
         end
         
         % Combine results from all chunks
-        for i_chunk = 1:actual_num_chunks
-            chunk_start = chunk_output(i_chunk).start_idx;
-            chunk_end = chunk_output(i_chunk).end_idx;
-            all_results(chunk_start:chunk_end) = chunk_output(i_chunk).results;
+        for ic = 1:actual_num_chunks
+            all_results(chunk_output(ic).start_idx:chunk_output(ic).end_idx) = chunk_output(ic).results;
         end
         
     else
@@ -78,7 +75,6 @@ function [all_results, task_indices] = processTasksInChunks(task_list, num_chunk
             
             % Process each task in the chunk
             for i_task = 1:length(chunk_tasks)
-                task_idx = chunk_start + i_task - 1;
                 
                 % Call the processing function with the task and additional arguments
                 if isempty(varargin)
@@ -88,7 +84,7 @@ function [all_results, task_indices] = processTasksInChunks(task_list, num_chunk
                 end
                 
                 % Store result directly
-                all_results{task_idx} = result;
+                all_results{chunk_start + i_task - 1} = result;
             end
         end
     end
@@ -97,4 +93,7 @@ function [all_results, task_indices] = processTasksInChunks(task_list, num_chunk
     if nargout > 1
         task_indices = (1:num_tasks)';
     end
+    
+    % (Removed nested progress update function)
+    
 end 
