@@ -155,7 +155,7 @@ for cond = 1:num_conds
 
     marker_colors = repmat(base_color, size(param_data,1),1) .* [1 0.70 0.25]';
 
-    % Get y min and max
+    % Get local y min and max
     local_min = min(cond_data(:));
     local_max = max(cond_data(:));
     if local_min == local_max
@@ -164,9 +164,21 @@ for cond = 1:num_conds
         local_max = local_max + pad;
     end
 
+    % Get global y min and max
+    global_min = min(param_data(:));
+    global_max = max(param_data(:));
+    if global_min == global_max
+        pad = max(abs(global_min), 1) * eps;
+        global_min = global_min - pad;
+        global_max = global_max + pad;
+    end
+
     % Round to multiples of 5
     local_min = floor(local_min / 5) * 5;
     local_max = ceil(local_max / 5) * 5;
+
+    global_min = floor(global_min / 5) * 5;
+    global_max = ceil(global_max / 5) * 5;
 
     % Plot data
     subplot(1, num_conds, cond)
@@ -198,6 +210,7 @@ for cond = 1:num_conds
     ylabel(param_name)
 
     ylim([local_min local_max])
+    ylim([global_min global_max])
 
     axis square;
     set(gca, 'TickDir', 'out', 'LineWidth', plt_settings.line_width, 'Box', 'off');

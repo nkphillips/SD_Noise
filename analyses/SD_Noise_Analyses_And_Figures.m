@@ -12,7 +12,7 @@ toggles.parallelization = 1;
 toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
 toggles.disp_on = 1;
 toggles.save_estimates = 1;
-toggles.bootstrap_super = 0; % enable bootstrap CIs for super-subject
+toggles.bootstrap_super = 1; % enable bootstrap CIs for super-subject
 
 %% Setup parallelization
 
