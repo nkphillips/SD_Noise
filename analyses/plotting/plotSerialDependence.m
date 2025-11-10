@@ -185,10 +185,11 @@ for cond = 1:num_conds
 
     x = 1:3;
     y = fliplr(cond_data)';
+    hold on
 
     for i = 1:size(y,2)
-        scatter(x, y(:,i), 50, 'MarkerFaceColor', marker_colors(i,:), 'MarkerEdgeColor', [1 1 1], 'MarkerFaceAlpha', 0.75)
-        hold on
+        plot(x, y(:,i), '-', 'Color', marker_colors(i,:), 'LineWidth', plt_settings.line_width, 'HandleVisibility', 'off')
+        scatter(x, y(:,i), 50, 'MarkerFaceColor', marker_colors(i,:), 'MarkerEdgeColor', [1 1 1], 'MarkerFaceAlpha', 0.75, 'LineWidth', plt_settings.line_width)
     end
 
     % Format figure

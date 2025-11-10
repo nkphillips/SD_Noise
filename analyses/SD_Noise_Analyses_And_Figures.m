@@ -63,12 +63,12 @@ plt_settings.sd_colorbar_global = 0; % Serial dependence grids colorbar scaling:
 
 %% Bootstrap settings
 
-bootstrap.B = 25;
+bootstrap.B = 10;
 bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
 
-if plt_settings.plot_ind_figures || plt_settings.plot_sup_figures
+if plt_settings.plot_ind_figures || plt_settings.plot_grp_figures || plt_settings.plot_sup_figures
     fg = figure('Visible','on','Color','w');
     set(0,'CurrentFigure',fg);
 end
@@ -102,6 +102,8 @@ base_ind_figure_path = plt_settings.ind_figure_path;
 base_grp_figure_path = plt_settings.grp_figure_path;
 base_sup_figure_path = plt_settings.sup_figure_path;
 base_estimates_path = estimates_path;
+
+%% Analyze data
 
 % Define n-back conditions
 n_back_conditions = [1, 2, 3];
@@ -247,6 +249,8 @@ for i_n_back = 1:length(n_back_conditions)
 
     %%% Serial dependence model parameters %%%
     p.sd_init_params = [1, 0.1, 0, 1]; % [amplitude, width (1/deg), baseline, sigma]
+    sd_mu_lb = 1;
+    sd_mu_ub = p.rb_bounds(1,1);
 
     % Set width bounds via FWHM bounds (more interpretable), then convert to w = 1.6651 / FWHM
     fwhm_min_deg = 8;
@@ -254,7 +258,7 @@ for i_n_back = 1:length(n_back_conditions)
     w_lb = 1.6651 / fwhm_max_deg;
     w_ub = 1.6651 / fwhm_min_deg;
 
-    p.sd_bounds = [p.rb_bounds(1,1), w_ub, 5, p.rb_bounds(1,2); 4, w_lb, -5, p.rb_bounds(2,2)]; % [upper; lower]; default = [p.rb_bounds(1,1), w_ub, 5, p.rb_bounds(1,2); 4, w_lb, -5, p.rb_bounds(2,2)]
+    p.sd_bounds = [sd_mu_ub, w_ub, 5, p.rb_bounds(1,2); sd_mu_lb, w_lb, -5, p.rb_bounds(2,2)]; % [upper; lower]; default = [p.rb_bounds(1,1), w_ub, 5, p.rb_bounds(1,2); 4, w_lb, -5, p.rb_bounds(2,2)]
     p.sd_objective = toggles.sd_objective; % 'nll' or 'sse' for serial dependence estimation
 
     if strcmp(p.sd_objective, 'sse')
@@ -583,9 +587,8 @@ for i_n_back = 1:length(n_back_conditions)
         disp('==========================================');
     end
 
-    %% Plot results
 
-    %% Subject-level performance plots
+    %% Subject-level plots
     if plt_settings.plot_ind_figures
 
         if toggles.disp_on
@@ -616,7 +619,7 @@ for i_n_back = 1:length(n_back_conditions)
         end
     end
 
-    %% Group-level performance plots
+    %% Group-level plots
     if plt_settings.plot_grp_figures
 
         if toggles.disp_on
@@ -637,7 +640,7 @@ for i_n_back = 1:length(n_back_conditions)
         end
     end
 
-    %% Super-subject level performance plots
+    %% Super-subject level plots
     
     if plt_settings.plot_sup_figures
 
