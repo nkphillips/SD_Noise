@@ -222,7 +222,7 @@ for cond = 1:num_conds
             % Asymmetric error bars per point
             yneg = max(0, y(:,i) - lo_y(:,i));
             ypos = max(0, hi_y(:,i) - y(:,i));
-            errorbar(x, y(:,i), yneg, ypos, 'Color', marker_colors(i,:)*0.8, 'CapSize', 0, 'LineStyle', 'none', 'LineWidth', plt_opts.line_width);
+            errorbar(x, y(:,i), yneg, ypos, 'Color', marker_colors(i,:)*0.8, 'CapSize', 0, 'LineStyle', 'none', 'LineWidth', plt_opts.line_width, 'HandleVisibility', 'off');
         end
     end
 
