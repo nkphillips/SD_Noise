@@ -1,6 +1,6 @@
 % makeDeltaThetaWindows
 
-function [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, plt_settings, n_back)
+function [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, plt_opts, n_back)
 
 %% Initialize structure
 

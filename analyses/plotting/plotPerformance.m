@@ -3,7 +3,7 @@
 % num.levels x num.levels grid (rows = previous level, cols = current level), for
 % each condition (Contrast, Precision). Uses pre-computed performance arrays.
 
-function plotPerformance(delta_theta_centers, performance_array, pCW_array, p, plt_settings, fg_prefix, perf_ci, save_path, save_flag)
+function plotPerformance(delta_theta_centers, performance_array, pCW_array, p, plt_opts, fg_prefix, perf_ci, save_path, save_flag)
 
 
 metrics = { 'Percent Correct', 'Percent CCW' };
@@ -83,9 +83,9 @@ for m_idx = 1:numel(metrics)
 
                 % Choose color by condition
                 if cond == 1
-                    plot_color = plt_settings.colors.blue;
+                    plot_color = plt_opts.colors.blue;
                 else
-                    plot_color = plt_settings.colors.green;
+                    plot_color = plt_opts.colors.green;
                 end
 
                 if have_ci
@@ -103,17 +103,17 @@ for m_idx = 1:numel(metrics)
                         err_upper = pc_hi(:)' - y_vals(:)';
                         err_lower = y_vals(:)' - pc_lo(:)';
                         err = [err_upper; err_lower];
-                        shadedErrorBar(delta_theta_centers(:)', y_vals(:)', err, 'lineProps', {'-','Color', plot_color, 'LineWidth', plt_settings.line_width}, 'transparent', true, 'patchSaturation', 0.5);
+                        shadedErrorBar(delta_theta_centers(:)', y_vals(:)', err, 'lineProps', {'-','Color', plot_color, 'LineWidth', plt_opts.line_width}, 'transparent', true, 'patchSaturation', 0.5);
                     elseif m_idx == 2 && ~isempty(pccw_lo)
                         err_upper = pccw_hi(:)' - y_vals(:)';
                         err_lower = y_vals(:)' - pccw_lo(:)';
                         err = [err_upper; err_lower];
-                        shadedErrorBar(delta_theta_centers(:)', y_vals(:)', err, 'lineProps', {'-','Color', plot_color, 'LineWidth', plt_settings.line_width}, 'transparent', true, 'patchSaturation', 0.5);
+                        shadedErrorBar(delta_theta_centers(:)', y_vals(:)', err, 'lineProps', {'-','Color', plot_color, 'LineWidth', plt_opts.line_width}, 'transparent', true, 'patchSaturation', 0.5);
                     else
-                        plot(delta_theta_centers, y_vals, 'LineWidth', plt_settings.line_width, 'Color', plot_color);
+                        plot(delta_theta_centers, y_vals, 'LineWidth', plt_opts.line_width, 'Color', plot_color);
                     end
                 else
-                    plot(delta_theta_centers, y_vals, 'LineWidth', plt_settings.line_width, 'Color', plot_color);
+                    plot(delta_theta_centers, y_vals, 'LineWidth', plt_opts.line_width, 'Color', plot_color);
                 end
 
                 % Title with actual values
@@ -153,14 +153,14 @@ for m_idx = 1:numel(metrics)
                     end
                 end
 
-                set(gca, 'TickDir', 'out', 'TickLength', [plt_settings.tick_length, plt_settings.tick_length]);
+                set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
                 box off;
                 hold on;
             end
         end
 
         if save_flag
-            saveas(gcf, fullfile(save_path, [fg_name '.' plt_settings.fg_type]));
+            saveas(gcf, fullfile(save_path, [fg_name '.' plt_opts.fg_type]));
         end
     end
 end

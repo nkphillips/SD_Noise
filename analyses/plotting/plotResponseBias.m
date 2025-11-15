@@ -1,44 +1,52 @@
-function plotResponseBias(delta, mu, plt_settings, cond, mu_lo, mu_hi)
+function plotResponseBias(delta, mu, plt_opts, cond, mu_lo, mu_hi, baseline)
 
-    %% Plot response bias data
-    
-    % Optionally plot shaded CIs if provided
-    if nargin >= 6 && ~isempty(mu_lo) && ~isempty(mu_hi)
-        % Plot shaded CIs only where we have finite bounds
-        delta = delta(:)';
-        mu = mu(:)';
-        mu_lo = mu_lo(:)';
-        mu_hi = mu_hi(:)';
-        idx = isfinite(mu) & isfinite(mu_lo) & isfinite(mu_hi);
-        if any(idx)
-            err_upper = mu_hi(idx) - mu(idx);
-            err_lower = mu(idx) - mu_lo(idx);
-            err = [err_upper; err_lower];
-            if cond == 1
-                lineProps = {'-','Color', plt_settings.colors.blue, 'LineWidth', plt_settings.line_width};
-                lineColor = plt_settings.colors.blue;
-            else
-                lineProps = {'-','Color', plt_settings.colors.green, 'LineWidth', plt_settings.line_width};
-                lineColor = plt_settings.colors.green;
-            end
-            shadedErrorBar(delta(idx), mu(idx), err, 'lineProps', lineProps, 'transparent', true, 'patchSaturation', 0.5);
-            hold on;
-            % Also overlay the full line for context
-            plot(delta, mu, 'LineWidth', plt_settings.line_width, 'Color', lineColor);
-            hold on;
-            return
+if nargin < 5
+    mu_lo = [];
+    mu_hi = [];
+end
+if nargin < 7
+    baseline = [];
+end
+
+% Optionally subtract baseline (b) if toggle is on and baseline provided
+    if isfield(plt_opts, 'rb_subtract_baseline') && plt_opts.rb_subtract_baseline && ~isempty(baseline)
+    mu = mu - baseline;
+    if ~isempty(mu_lo) && ~isempty(mu_hi)
+        mu_lo = mu_lo - baseline;
+        mu_hi = mu_hi - baseline;
+    end
+end
+
+if nargin >= 6 && ~isempty(mu_lo) && ~isempty(mu_hi)
+    delta = delta(:)';
+    mu = mu(:)';
+    mu_lo = mu_lo(:)';
+    mu_hi = mu_hi(:)';
+    idx = isfinite(mu) & isfinite(mu_lo) & isfinite(mu_hi);
+    if any(idx)
+        err_upper = mu_hi(idx) - mu(idx);
+        err_lower = mu(idx) - mu_lo(idx);
+        err = [err_upper; err_lower];
+        if cond == 1
+                lineProps = {'-','Color', plt_opts.colors.blue, 'LineWidth', plt_opts.line_width};
+                lineColor = plt_opts.colors.blue;
+        else
+                lineProps = {'-','Color', plt_opts.colors.green, 'LineWidth', plt_opts.line_width};
+                lineColor = plt_opts.colors.green;
         end
-        % If no finite CIs, fall through to plain line plot below
+        shadedErrorBar(delta(idx), mu(idx), err, 'lineProps', lineProps, 'transparent', true, 'patchSaturation', 0.5);
+        hold on;
+            plot(delta, mu, 'LineWidth', plt_opts.line_width, 'Color', lineColor);
+        hold on;
+        return
     end
+end
 
-    % Use different colors for different conditions
-    if cond == 1
-        % Contrast condition - blue
-        plot(delta, mu, 'LineWidth', plt_settings.line_width, 'Color', plt_settings.colors.blue);
-    elseif cond == 2
-        % Precision condition - green
-        plot(delta, mu, 'LineWidth', plt_settings.line_width, 'Color', plt_settings.colors.green);
-    end
+if cond == 1
+        plot(delta, mu, 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.blue);
+elseif cond == 2
+        plot(delta, mu, 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.green);
+end
 
-    hold on;
+hold on;
 end
