@@ -28,38 +28,39 @@ end
 
 %% Plot settings
 
-plt_settings.plot_ind_figures = 0;
-plt_settings.plot_grp_figures = 0;
-plt_settings.plot_sup_figures = 1;
+plt_opts.plot_ind_figures = 0;
+plt_opts.plot_grp_figures = 0;
+plt_opts.plot_sup_figures = 1;
 
-plt_settings.save_ind_figures = 0;
-plt_settings.save_grp_figures = 0;
-plt_settings.save_sup_figures = 1;
+plt_opts.save_ind_figures = 0;
+plt_opts.save_grp_figures = 0;
+plt_opts.save_sup_figures = 1;
 
-plt_settings.axis_square = 1;
+plt_opts.axis_square = 1;
 
-plt_settings.tick_length = 0.020;
-plt_settings.line_width = 1;
-plt_settings.marker_size = 0;
-plt_settings.marker_size_scatter = 50;
-plt_settings.marker_size_bin = 5;
-plt_settings.marker_size_polarplot = 350;
+plt_opts.tick_length = 0.020;
+plt_opts.line_width = 1;
+plt_opts.marker_size = 0;
+plt_opts.marker_size_scatter = 50;
+plt_opts.marker_size_bin = 5;
+plt_opts.marker_size_polarplot = 350;
 
-plt_settings.colors.blue = [38 71 237]/255;
-plt_settings.colors.red = [204 0 0]/255;
-plt_settings.colors.green = [0 153 0]/255;
-plt_settings.colors.black = [0 0 0];
-plt_settings.colors.white = [1 1 1];
-plt_settings.colors.purple = [102 51 204]/255;
-plt_settings.colors.orange = [255 128 0]/255;
-plt_settings.colors.yellow = [242 214 53]/255;
-plt_settings.colors.gray = [128 128 128]/255;
+plt_opts.colors.blue = [38 71 237]/255;
+plt_opts.colors.red = [204 0 0]/255;
+plt_opts.colors.green = [0 153 0]/255;
+plt_opts.colors.black = [0 0 0];
+plt_opts.colors.white = [1 1 1];
+plt_opts.colors.purple = [102 51 204]/255;
+plt_opts.colors.orange = [255 128 0]/255;
+plt_opts.colors.yellow = [242 214 53]/255;
+plt_opts.colors.gray = [128 128 128]/255;
 
-plt_settings.figure_color = plt_settings.colors.white;
-plt_settings.alpha_lvl = 0.75;
-plt_settings.fg_type = 'pdf';
+plt_opts.figure_color = plt_opts.colors.white;
+plt_opts.alpha_lvl = 0.75;
+plt_opts.fg_type = 'pdf';
 
-plt_settings.sd_colorbar_global = 0; % Serial dependence grids colorbar scaling: 1=global min/max across conditions, 0=per-subplot
+plt_opts.sd_colorbar_global = 0; % Serial dependence grids colorbar scaling: 1=global min/max across conditions, 0=per-subplot
+plt_opts.rb_subtract_baseline = 0; % Response bias plot: subtract DoG baseline (b) if provided
 
 %% Bootstrap settings
 
@@ -68,7 +69,7 @@ bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
 
-if plt_settings.plot_ind_figures || plt_settings.plot_grp_figures || plt_settings.plot_sup_figures
+if plt_opts.plot_ind_figures || plt_opts.plot_grp_figures || plt_opts.plot_sup_figures
     fg = figure('Visible','on','Color','w');
     set(0,'CurrentFigure',fg);
 end
@@ -78,7 +79,7 @@ end
 which_setup = '3329C_ASUS';
 analysis_date = datestr(now, 'mm.dd.yyyy'); % automatically pull current date from system
 
-p.subj_IDs = {'001', '002' '003'}; %{'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013'};
+p.subj_IDs = {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013'};
 p.cond_names = {'Contrast' 'Precision'};
 
 % Define contrast and precision values for axis labels
@@ -92,21 +93,21 @@ num.levels = 3;
 num.blocks_per_cond = num.blocks/num.conds;
 num.cond_combos = num.conds * num.levels;
 
+% Define n-back conditions
+n_back_conditions = [1];
+
 %% Initialize paths and load experiment runs
 
 init_paths
 load_matfiles
 
 % Store base paths before the loop
-base_ind_figure_path = plt_settings.ind_figure_path;
-base_grp_figure_path = plt_settings.grp_figure_path;
-base_sup_figure_path = plt_settings.sup_figure_path;
+base_ind_figure_path = plt_opts.ind_figure_path;
+base_grp_figure_path = plt_opts.grp_figure_path;
+base_sup_figure_path = plt_opts.sup_figure_path;
 base_estimates_path = estimates_path;
 
 %% Analyze data
-
-% Define n-back conditions
-n_back_conditions = [1, 2, 3];
 
 for i_n_back = 1:length(n_back_conditions)
 
@@ -122,15 +123,15 @@ for i_n_back = 1:length(n_back_conditions)
     % Create and set paths for the current n_back condition
     n_back_folder = [num2str(n_back) '_back'];
 
-    plt_settings.ind_figure_path = fullfile(base_ind_figure_path, n_back_folder);
-    plt_settings.grp_figure_path = fullfile(base_grp_figure_path, n_back_folder);
-    plt_settings.sup_figure_path = fullfile(base_sup_figure_path, n_back_folder);
+    plt_opts.ind_figure_path = fullfile(base_ind_figure_path, n_back_folder);
+    plt_opts.grp_figure_path = fullfile(base_grp_figure_path, n_back_folder);
+    plt_opts.sup_figure_path = fullfile(base_sup_figure_path, n_back_folder);
     estimates_path = fullfile(base_estimates_path, analysis_date, n_back_folder);
 
     % Create directories if they don't exist
-    if plt_settings.save_ind_figures && ~exist(plt_settings.ind_figure_path, 'dir'), mkdir(plt_settings.ind_figure_path); end
-    if plt_settings.save_grp_figures && ~exist(plt_settings.grp_figure_path, 'dir'), mkdir(plt_settings.grp_figure_path); end
-    if plt_settings.save_sup_figures && ~exist(plt_settings.sup_figure_path, 'dir'), mkdir(plt_settings.sup_figure_path); end
+    if plt_opts.save_ind_figures && ~exist(plt_opts.ind_figure_path, 'dir'), mkdir(plt_opts.ind_figure_path); end
+    if plt_opts.save_grp_figures && ~exist(plt_opts.grp_figure_path, 'dir'), mkdir(plt_opts.grp_figure_path); end
+    if plt_opts.save_sup_figures && ~exist(plt_opts.sup_figure_path, 'dir'), mkdir(plt_opts.sup_figure_path); end
     if toggles.save_estimates && ~exist(estimates_path, 'dir'), mkdir(estimates_path); end
 
     %% Count trials across all subjects
@@ -236,7 +237,7 @@ for i_n_back = 1:length(n_back_conditions)
 
     num.delta_theta_windows = length(delta_theta_centers);
 
-    [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, plt_settings, n_back);
+    [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, plt_opts, n_back);
 
     %% Define model bounds and parameters
 
@@ -589,7 +590,7 @@ for i_n_back = 1:length(n_back_conditions)
 
 
     %% Subject-level plots
-    if plt_settings.plot_ind_figures
+    if plt_opts.plot_ind_figures
 
         if toggles.disp_on
             disp(' ');
@@ -600,8 +601,8 @@ for i_n_back = 1:length(n_back_conditions)
             subj_prefix = ['S' p.subj_IDs{subj}];
 
             % Create subject-specific directory if needed
-            subj_figure_path = fullfile(plt_settings.ind_figure_path, subj_prefix);
-            if plt_settings.save_ind_figures && ~exist(subj_figure_path, 'dir')
+            subj_figure_path = fullfile(plt_opts.ind_figure_path, subj_prefix);
+            if plt_opts.save_ind_figures && ~exist(subj_figure_path, 'dir')
                 mkdir(subj_figure_path);
             end
 
@@ -609,8 +610,8 @@ for i_n_back = 1:length(n_back_conditions)
             plotPerformance(delta_theta_centers, ...
                 delta_theta_windows.ind(subj).performance, ...
                 delta_theta_windows.ind(subj).pCW, ...
-                p, plt_settings, subj_prefix, [], ...
-                subj_figure_path, plt_settings.save_ind_figures);
+                p, plt_opts, subj_prefix, [], ...
+                subj_figure_path, plt_opts.save_ind_figures);
             clf(fg);
         end
 
@@ -620,7 +621,7 @@ for i_n_back = 1:length(n_back_conditions)
     end
 
     %% Group-level plots
-    if plt_settings.plot_grp_figures
+    if plt_opts.plot_grp_figures
 
         if toggles.disp_on
             disp(' ');
@@ -631,8 +632,8 @@ for i_n_back = 1:length(n_back_conditions)
         plotPerformance(delta_theta_centers, ...
             delta_theta_windows.grp.performance, ...
             delta_theta_windows.grp.pCW, ...
-            p, plt_settings, 'Group', [], ...
-            plt_settings.grp_figure_path, plt_settings.save_grp_figures);
+            p, plt_opts, 'Group', [], ...
+            plt_opts.grp_figure_path, plt_opts.save_grp_figures);
         clf(fg);
 
         if toggles.disp_on
@@ -641,12 +642,12 @@ for i_n_back = 1:length(n_back_conditions)
     end
 
     %% Super-subject level plots
-    
-    if plt_settings.plot_sup_figures
+
+    if plt_opts.plot_sup_figures
 
         %% Delta theta counts
-        
-        plotDeltaThetaCount(all_delta_thetas, num, p, plt_settings);
+
+        plotDeltaThetaCount(all_delta_thetas, num, p, plt_opts);
 
         %% Performance (percent correct and percent CCW)
 
@@ -658,9 +659,9 @@ for i_n_back = 1:length(n_back_conditions)
         end
 
         if isfield(perf_ci, 'pc_lo')
-            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, plt_settings, 'Super Subj', perf_ci, plt_settings.sup_figure_path, plt_settings.save_sup_figures);
+            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, plt_opts, 'Super Subj', perf_ci, plt_opts.sup_figure_path, plt_opts.save_sup_figures);
         else
-            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, plt_settings, 'Super Subj', [], plt_settings.sup_figure_path, plt_settings.save_sup_figures);
+            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, plt_opts, 'Super Subj', [], plt_opts.sup_figure_path, plt_opts.save_sup_figures);
         end
         clf(fg);
 
@@ -686,14 +687,21 @@ for i_n_back = 1:length(n_back_conditions)
                     subplot(num.levels, num.levels, curr_lvl + (prev_lvl-1)*num.levels);
                     set(0, 'CurrentFigure', fg);
 
+                    % Get DoG parameters from serial dependence analysis for baseline subtraction
+                    sd_params = squeeze(sd.all.params_est(prev_lvl, curr_lvl, cond, 1:3));
+                    baseline = [];
+                    if ~isempty(sd_params) && ~any(isnan(sd_params))
+                        baseline = sd_params(3);
+                    end
+
                     % Pass condition info to plotResponseBias for color selection
                     mu = squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :, 1));
                     if isfield(rb_ci, 'mu_lo')
                         mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
                         mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
-                        plotResponseBias(delta_theta_centers, mu, plt_settings, cond, mu_lo, mu_hi);
+                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, mu_lo, mu_hi, baseline);
                     else
-                        plotResponseBias(delta_theta_centers, mu, plt_settings, cond);
+                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, [], [], baseline);
                     end
 
                     % Format figure
@@ -716,7 +724,7 @@ for i_n_back = 1:length(n_back_conditions)
                         ylabel('Bias (°)');
                     end
 
-                    set(gca, 'TickDir', 'out', 'TickLength', [plt_settings.tick_length, plt_settings.tick_length]);
+                    set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
                     xlim([-90 90]);
                     line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
                     line([0, 0], [p.rb_bounds(2,1), p.rb_bounds(1,1)], 'LineWidth', 1, 'Color', 'k');
@@ -730,8 +738,8 @@ for i_n_back = 1:length(n_back_conditions)
             end
 
             % Save figure
-            if plt_settings.save_sup_figures
-                saveas(fg, fullfile(plt_settings.sup_figure_path, [fg_name '.' plt_settings.fg_type]));
+            if plt_opts.save_sup_figures
+                saveas(fg, fullfile(plt_opts.sup_figure_path, [fg_name '.' plt_opts.fg_type]));
             end
 
             clf(fg);
@@ -748,8 +756,27 @@ for i_n_back = 1:length(n_back_conditions)
             num_params_to_plot = 4;
         end
 
+        % Optional bootstrap CIs for SD parameters
+        if ~isfield(toggles, 'bootstrap_sd')
+            toggles.bootstrap_sd = 1;
+        end
+        if toggles.bootstrap_sd
+            if toggles.disp_on
+                disp(' ');
+                disp('Bootstrapping serial dependence parameters for super subject...');
+            end
+            bs_sd_start_time = tic;
+            sd_ci = bootstrapSerialDependence(delta_theta_windows, delta_theta_centers, num, p, rb, bootstrap, toggles);
+            bs_sd_duration = toc(bs_sd_start_time);
+            if toggles.disp_on
+                disp(['✓ SD bootstrapping completed in ~' num2str(round(bs_sd_duration/60, 1)) ' minutes (' num2str(round(bs_sd_duration, 1)) ' s)']);
+            end
+        else
+            sd_ci = struct(); sd_ci.lo = []; sd_ci.hi = [];
+        end
+
         for param_idx = 1:num_params_to_plot
-            plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, p, plt_settings, fg);
+            plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, p, plt_opts, fg, sd_ci.lo, sd_ci.hi);
         end
 
         %% Response bias with best-fit DoG curves
@@ -776,15 +803,19 @@ for i_n_back = 1:length(n_back_conditions)
 
                     % Get DoG parameters from serial dependence analysis
                     sd_params = squeeze(sd.all.params_est(prev_lvl, curr_lvl, cond, 1:3));
+                    baseline = [];
+                    if ~isempty(sd_params) && ~any(isnan(sd_params))
+                        baseline = sd_params(3);
+                    end
 
                     % Plot response bias with DoG curve
                     mu = squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :, 1));
                     if isfield(rb_ci, 'mu_lo')
                         mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
                         mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
-                        plotResponseBias(delta_theta_centers, mu, plt_settings, cond, mu_lo, mu_hi);
+                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, mu_lo, mu_hi, baseline);
                     else
-                        plotResponseBias(delta_theta_centers, mu, plt_settings, cond);
+                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, [], [], baseline);
                     end
 
                     % Plot DoG curve from existing estimates
@@ -797,13 +828,18 @@ for i_n_back = 1:length(n_back_conditions)
                         delta_smooth = linspace(-90, 90, 100);
                         dog_fit = calcDoG(delta_smooth, dog_params);
 
+                        % Subtract baseline from DoG curve if toggle is on (to match demeaned data)
+                        if isfield(plt_opts, 'rb_subtract_baseline') && plt_opts.rb_subtract_baseline
+                            dog_fit = dog_fit - dog_params(3);
+                        end
+
                         % Plot DoG fit with dashed line
                         if cond == 1
                             % Contrast condition - dashed blue
-                            plot(delta_smooth, dog_fit, '--', 'LineWidth', plt_settings.line_width, 'Color', plt_settings.colors.black);
+                            plot(delta_smooth, dog_fit, '--', 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.black);
                         elseif cond == 2
                             % Precision condition - dashed green
-                            plot(delta_smooth, dog_fit, '--', 'LineWidth', plt_settings.line_width, 'Color', plt_settings.colors.black);
+                            plot(delta_smooth, dog_fit, '--', 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.black);
                         end
 
                         % Annotate amplitude and FWHM (bottom-right)
@@ -813,7 +849,7 @@ for i_n_back = 1:length(n_back_conditions)
                         text(0.95, 0.10, sprintf('A = %.2f°\nFWHM = %.1f°\nb = %.2f°', amp_est, fwhm_est, dog_params(3)), ...
                             'Units', 'normalized', 'HorizontalAlignment', 'right', ...
                             'VerticalAlignment', 'bottom', 'FontWeight', 'normal', 'FontSize', 8, ...
-                            'Color', plt_settings.colors.black);
+                            'Color', plt_opts.colors.black);
                     end
 
                     % Format figure
@@ -836,7 +872,7 @@ for i_n_back = 1:length(n_back_conditions)
                         ylabel('Bias (°)');
                     end
 
-                    set(gca, 'TickDir', 'out', 'TickLength', [plt_settings.tick_length, plt_settings.tick_length]);
+                    set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
                     xlim([-90 90]);
                     line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
                     line([0, 0], [p.rb_bounds(2,1), p.rb_bounds(1,1)], 'LineWidth', 1, 'Color', 'k');
@@ -849,7 +885,7 @@ for i_n_back = 1:length(n_back_conditions)
                         text(0.05, 0.90, sprintf('R^2 = %.2f', curr_r2), ...
                             'Units', 'normalized', 'HorizontalAlignment', 'left', ...
                             'VerticalAlignment', 'top', 'FontWeight', 'normal', 'FontSize', 8, ...
-                            'Color', plt_settings.colors.black);
+                            'Color', plt_opts.colors.black);
                     end
                     box off;
                     hold on;
@@ -858,8 +894,8 @@ for i_n_back = 1:length(n_back_conditions)
             end
 
             % Save figure
-            if plt_settings.save_sup_figures
-                saveas(fg, fullfile(plt_settings.sup_figure_path, [fg_name '.' plt_settings.fg_type]));
+            if plt_opts.save_sup_figures
+                saveas(fg, fullfile(plt_opts.sup_figure_path, [fg_name '.' plt_opts.fg_type]));
             end
 
             clf(fg);
