@@ -78,7 +78,7 @@ end
 which_setup = '3329C_ASUS';
 analysis_date = datestr(now, 'mm.dd.yyyy'); % automatically pull current date from system
 
-p.subj_IDs = {'001', '002' '003'}; %{'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013'};
+p.subj_IDs = {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013'};
 p.cond_names = {'Contrast' 'Precision'};
 
 % Define contrast and precision values for axis labels
