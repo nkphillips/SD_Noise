@@ -11,9 +11,9 @@
 %   delta_thetas_cell - 3D or 4D cell of delta-thetas, as described above
 %   p                 - parameter struct; expects fields: num.levels, num.conds,
 %                       contrast, precision, cond_names
-%   plt_settings      - plotting settings; expects fields: colors, line_width,
+%   plt_opts      - plotting settings; expects fields: colors, line_width,
 %                       tick_length
-function plotDeltaThetaCount(all_delta_thetas, num, p, plt_settings)
+function plotDeltaThetaCount(all_delta_thetas, num, p, plt_opts)
 %plotDeltaThetaCount Plots histograms of delta thetas for super subject.
 
     %% Generate histogram of delta thetas
@@ -35,7 +35,7 @@ function plotDeltaThetaCount(all_delta_thetas, num, p, plt_settings)
     end
 
     % Plot
-    if plt_settings.plot_sup_figures
+    if plt_opts.plot_sup_figures
         for cond = 1:num.conds
 
             fg_name = ['Super Subj Delta Thetas ' p.cond_names{cond}];
@@ -77,10 +77,10 @@ function plotDeltaThetaCount(all_delta_thetas, num, p, plt_settings)
                         ylabel('Count');
                     end
                     
-                    set(gca, 'TickDir', 'out', 'TickLength', [plt_settings.tick_length, plt_settings.tick_length]);
+                    set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
                     xlim([-90 90]);
                     ylim([0, max_y]);
-                    line([0, 0], [0, max_y], 'LineWidth', plt_settings.line_width, 'Color', plt_settings.colors.black);
+                    line([0, 0], [0, max_y], 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.black);
                     box off;
                     hold on;
 
@@ -88,8 +88,8 @@ function plotDeltaThetaCount(all_delta_thetas, num, p, plt_settings)
             end
 
             % Save figure
-            if plt_settings.save_sup_figures
-                saveas(gcf, fullfile(plt_settings.sup_figure_path, [fg_name '.' plt_settings.fg_type]));
+            if plt_opts.save_sup_figures
+                saveas(gcf, fullfile(plt_opts.sup_figure_path, [fg_name '.' plt_opts.fg_type]));
             end
 
             clf(gcf);

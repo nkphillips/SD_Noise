@@ -6,3 +6,5 @@
 /papers
 /analyses/figures
 /analyses/reports
+*.pdf
+*.txt

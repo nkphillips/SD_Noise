@@ -1,5 +1,5 @@
 %%% detection_staircase
-% 2 staircases per inducer SF that begin at the min and max contrast value
+% 2 staircases per condition
 
 n_block = 0;
 
