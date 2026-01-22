@@ -69,9 +69,11 @@
 %% assignment: simulate contrast staircase
 
 % 1. simulate responses (1 = correct, 0 = wrong)
+%       you can use datasample()    
 % 2. simulate staircase (simulating stimulus values for every trial)
 %   init_contrast = 0.9;
 %   max_contrast = 0.9;
 %   init_step_size_contrast = 0.1;
+%   
 % 3. plot staircase: stimulus contrast as a function of trial
 
