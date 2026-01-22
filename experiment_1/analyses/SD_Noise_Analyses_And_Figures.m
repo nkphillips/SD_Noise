@@ -13,6 +13,7 @@ toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence es
 toggles.disp_on = 1;
 toggles.save_estimates = 1;
 toggles.bootstrap_super = 1; % enable bootstrap CIs for super-subject
+toggles.bootstrap_sd = 1; % enable bootstrap CIs for serial dependence (computed pre-plot)
 
 %% Setup parallelization
 
@@ -267,24 +268,6 @@ for i_n_back = 1:length(n_back_conditions)
         p.sd_bounds = p.sd_bounds(:, 1:3);
     end
 
-    %% Optional bootstrap CIs for super-subject windowed metrics
-
-    if isfield(toggles, 'bootstrap_super') && toggles.bootstrap_super
-        if toggles.disp_on
-            disp(' ');
-            disp('Bootstrapping super-subject windowed metrics...');
-        end
-        bs_start_time = tic;
-        [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, bootstrap, toggles);
-        bs_duration = toc(bs_start_time);
-        if toggles.disp_on
-            disp(['✓ Bootstrapping completed in ~' num2str(round(bs_duration/60, 1)) ' minutes (' num2str(round(bs_duration, 1)) ' s)']);
-        end
-    else
-        rb_ci = struct();
-        perf_ci = struct();
-    end
-
     %% Estimate response bias
 
     if toggles.disp_on, disp(' '); disp('Estimating response bias for super subject...'); end
@@ -414,6 +397,24 @@ for i_n_back = 1:length(n_back_conditions)
         end
         disp('=====================================');
 
+    end
+
+    %% Optional bootstrap CIs for super-subject windowed metrics
+
+    if isfield(toggles, 'bootstrap_super') && toggles.bootstrap_super
+        if toggles.disp_on
+            disp(' ');
+            disp('Bootstrapping super-subject windowed metrics...');
+        end
+        bs_start_time = tic;
+        [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, bootstrap, toggles);
+        bs_duration = toc(bs_start_time);
+        if toggles.disp_on
+            disp(['✓ Bootstrapping completed in ~' num2str(round(bs_duration/60, 1)) ' minutes (' num2str(round(bs_duration, 1)) ' s)']);
+        end
+    else
+        rb_ci = struct();
+        perf_ci = struct();
     end
 
     %% Estimate serial dependence
@@ -588,6 +589,25 @@ for i_n_back = 1:length(n_back_conditions)
         disp('==========================================');
     end
 
+    %% Optional bootstrap CIs for serial dependence
+    if ~isfield(toggles, 'bootstrap_sd')
+        toggles.bootstrap_sd = 1;
+    end
+    if toggles.bootstrap_sd
+        if toggles.disp_on
+            disp(' ');
+            disp('Bootstrapping serial dependence parameters for super subject...');
+        end
+        bs_sd_start_time = tic;
+        sd_ci = bootstrapSerialDependence(delta_theta_windows, delta_theta_centers, num, p, rb, bootstrap, toggles);
+        bs_sd_duration = toc(bs_sd_start_time);
+        if toggles.disp_on
+            disp(['✓ SD bootstrapping completed in ~' num2str(round(bs_sd_duration/60, 1)) ' minutes (' num2str(round(bs_sd_duration, 1)) ' s)']);
+        end
+    else
+        sd_ci = struct(); sd_ci.lo = []; sd_ci.hi = [];
+    end
+
 
     %% Subject-level plots
     if plt_opts.plot_ind_figures
@@ -754,25 +774,6 @@ for i_n_back = 1:length(n_back_conditions)
         else
             param_names = {'Amplitude', 'Width', 'Baseline', 'Sigma'};
             num_params_to_plot = 4;
-        end
-
-        % Optional bootstrap CIs for SD parameters
-        if ~isfield(toggles, 'bootstrap_sd')
-            toggles.bootstrap_sd = 1;
-        end
-        if toggles.bootstrap_sd
-            if toggles.disp_on
-                disp(' ');
-                disp('Bootstrapping serial dependence parameters for super subject...');
-            end
-            bs_sd_start_time = tic;
-            sd_ci = bootstrapSerialDependence(delta_theta_windows, delta_theta_centers, num, p, rb, bootstrap, toggles);
-            bs_sd_duration = toc(bs_sd_start_time);
-            if toggles.disp_on
-                disp(['✓ SD bootstrapping completed in ~' num2str(round(bs_sd_duration/60, 1)) ' minutes (' num2str(round(bs_sd_duration, 1)) ' s)']);
-            end
-        else
-            sd_ci = struct(); sd_ci.lo = []; sd_ci.hi = [];
         end
 
         for param_idx = 1:num_params_to_plot

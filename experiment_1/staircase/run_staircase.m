@@ -1,4 +1,4 @@
-%%% run_staircase
+% run_staircase
 
 %% 
 close all; clear all; clc
