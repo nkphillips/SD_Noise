@@ -17,3 +17,16 @@ else
 end
 
 end
+
+% staircase rule (2-up-1-down)
+if t == 1
+    if resp(t) == 1
+        contrast(t+1) = contrast(t) - step;  % harder
+    else
+        contrast(t+1) = contrast(t) + step;  % easier
+    end
+elseif resp(t-1) == 1 && resp(t) == 1
+    contrast(t+1) = contrast(t) - step;  % harder
+else
+    contrast(t+1) = contrast(t) + step;  % easier
+end

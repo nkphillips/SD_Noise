@@ -11,6 +11,8 @@
 
 %% Set directories 
 
+dirs.script_dir = pwd;
+dirs.functions_dir = '../analyses/functions'; addpath(dirs.functions_dir);
 
 %% Setup devices and display, open window
 
@@ -81,10 +83,16 @@
 
 %% STEP 1: RESPONSE SIMULATION (contrast)
 
-n_trials = 1000;
+n_trials = 50;
+
+probe_offsets = round(linspace(0,15,7));
+
+offsets = datasample(probe_offsets, n_trials);
+offsets = offsets .* datasample([-1 1], n_trials);
 
 contrast = zeros(n_trials,1);
 resp     = zeros(n_trials,1);   % 1 = correct, 0 = wrong
+button_press = zeros(n_trials,1); % 1 = CW, 0 = CCW
 
 contrast(1) = 0.9;
 step = 0.1;
@@ -92,32 +100,48 @@ min_contrast = 0.05;
 max_contrast = 0.9;
 
 pCorrect = 0.75;   % fixed performance level (explicit assumption)
+mu = 0;
+sigma = 3;
+num_correct = 0;
 
 for t = 1:n_trials-1
 
-    % simulate response using datasample weightssp
-    resp(t) = datasample([1 0], 1, 'Weights', [pCorrect, 1-pCorrect]);
+    probe_offset = offsets(t);
+    correct_resp = probe_offset > 0; % 1 = positive (CW), 0 = negative (CCW)
 
-    % staircase rule (2-up-1-down)
-    if t == 1
-        if resp(t) == 1
-            contrast(t+1) = contrast(t) - step;  % harder
-        else
-            contrast(t+1) = contrast(t) + step;  % easier
-        end
-    elseif resp(t-1) == 1 && resp(t) == 1
-        contrast(t+1) = contrast(t) - step;  % harder
+    p_CW = calc_pCW(probe_offset, mu, sigma, 0.1);
+    button_press(t) = rand() < p_CW; % 1 = CW, 0 = CCW
+
+    resp(t) = button_press(t) == correct_resp;
+
+    % simulate response using datasample weightssp
+    % resp(t) = datasample([1 0], 1, 'Weights', [pCorrect, 1-pCorrect]);
+    
+    if resp(t) == 1
+        num_correct = num_correct + 1;
     else
+        num_correct = 0;
         contrast(t+1) = contrast(t) + step;  % easier
     end
+
+     % staircase rule (2-up-1-down)
+     if num_correct == 2
+         contrast(t+1) = contrast(t) - step;  % harder
+         num_correct = 0;
+     end
 
     % clamp
     contrast(t+1) = min(max(contrast(t+1),min_contrast),max_contrast);
 end
 
 figure;
-plot(contrast,'LineWidth',1.5)
-xlabel('Trial')
+yyaxis left
+plot(1:n_trials,contrast,'LineWidth',1.5,'Marker','.')
 ylabel('Contrast')
+ylim([0 1])
+yyaxis right
+scatter(1:n_trials,resp,100,'LineWidth',1.5, 'Marker','.')
+ylabel('Response (1=correct, 0=incorrect)')
+xlabel('Trial')
 title('Simulated contrast staircase')
 grid on
