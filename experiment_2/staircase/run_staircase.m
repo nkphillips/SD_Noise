@@ -69,11 +69,55 @@
 %% assignment: simulate contrast staircase
 
 % 1. simulate responses (1 = correct, 0 = wrong)
+% check datasample() weights argument
 %       you can use datasample()    
 % 2. simulate staircase (simulating stimulus values for every trial)
 %   init_contrast = 0.9;
 %   max_contrast = 0.9;
 %   init_step_size_contrast = 0.1;
+% Have staircase end after certain amount of reversals
 %   
 % 3. plot staircase: stimulus contrast as a function of trial
 
+%% STEP 1: RESPONSE SIMULATION (contrast)
+
+n_trials = 1000;
+
+contrast = zeros(n_trials,1);
+resp     = zeros(n_trials,1);   % 1 = correct, 0 = wrong
+
+contrast(1) = 0.9;
+step = 0.1;
+min_contrast = 0.05;
+max_contrast = 0.9;
+
+pCorrect = 0.75;   % fixed performance level (explicit assumption)
+
+for t = 1:n_trials-1
+
+    % simulate response using datasample weightssp
+    resp(t) = datasample([1 0], 1, 'Weights', [pCorrect, 1-pCorrect]);
+
+    % staircase rule (2-up-1-down)
+    if t == 1
+        if resp(t) == 1
+            contrast(t+1) = contrast(t) - step;  % harder
+        else
+            contrast(t+1) = contrast(t) + step;  % easier
+        end
+    elseif resp(t-1) == 1 && resp(t) == 1
+        contrast(t+1) = contrast(t) - step;  % harder
+    else
+        contrast(t+1) = contrast(t) + step;  % easier
+    end
+
+    % clamp
+    contrast(t+1) = min(max(contrast(t+1),min_contrast),max_contrast);
+end
+
+figure;
+plot(contrast,'LineWidth',1.5)
+xlabel('Trial')
+ylabel('Contrast')
+title('Simulated contrast staircase')
+grid on
