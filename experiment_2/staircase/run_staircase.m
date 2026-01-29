@@ -90,20 +90,25 @@ probe_offsets = round(linspace(0,15,7));
 offsets = datasample(probe_offsets, n_trials);
 offsets = offsets .* datasample([-1 1], n_trials);
 
-contrast = zeros(n_trials,1);
-resp     = zeros(n_trials,1);   % 1 = correct, 0 = wrong
+contrast = nan(n_trials,1);
+resp     = nan(n_trials,1);   % 1 = correct, 0 = wrong
 button_press = zeros(n_trials,1); % 1 = CW, 0 = CCW
 
 contrast(1) = 0.9;
 step = 0.1;
+min_step = 0.01;
+max_step = 0.1;
+step_tracker = nan;
 min_contrast = 0.05;
 max_contrast = 0.9;
 
-pCorrect = 0.75;   % fixed performance level (explicit assumption)
 mu = 0;
-sigma = 3;
+sigma = 0.5;
 num_correct = 0;
 
+perc_correct = 0.75;
+% run 3 staircases for 3 levels? Start with a staircase to get general
+% contrast range. 
 for t = 1:n_trials-1
 
     probe_offset = offsets(t);
@@ -113,21 +118,30 @@ for t = 1:n_trials-1
     button_press(t) = rand() < p_CW; % 1 = CW, 0 = CCW
 
     resp(t) = button_press(t) == correct_resp;
-
-    % simulate response using datasample weightssp
-    % resp(t) = datasample([1 0], 1, 'Weights', [pCorrect, 1-pCorrect]);
     
     if resp(t) == 1
         num_correct = num_correct + 1;
-    else
+    elseif resp(t) == 0
         num_correct = 0;
+        if ~isnan(step_tracker) && step_tracker == -1
+            step = step/2;
+            step = min(max(step,min_step),max_step);
+        end 
+        step_tracker = 1;
         contrast(t+1) = contrast(t) + step;  % easier
     end
 
      % staircase rule (2-up-1-down)
      if num_correct == 2
-         contrast(t+1) = contrast(t) - step;  % harder
          num_correct = 0;
+         if ~isnan(step_tracker) && step_tracker == 1
+            step = step/2;
+            step = min(max(step,min_step),max_step);
+         end 
+         step_tracker = -1;
+         contrast(t+1) = contrast(t) - step;  % harder
+     elseif num_correct == 1
+         contrast(t+1) = contrast(t);
      end
 
     % clamp
