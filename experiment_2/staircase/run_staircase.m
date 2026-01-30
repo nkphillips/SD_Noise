@@ -84,6 +84,7 @@ probe_offsets = round(linspace(0,15,7));
 
 offsets = datasample(probe_offsets, n_trials);
 offsets = offsets .* datasample([-1 1], n_trials);
+correct_ans = offsets > 0;
 
 contrast = nan(n_trials,1);
 resp     = nan(n_trials,1);   % 1 = correct, 0 = wrong
@@ -104,8 +105,7 @@ sigma = 0.5;
 
 num_correct = 0;
 
-% run 3 staircases for 3 levels? Start with a staircase to get general
-% contrast range.
+
 for t = 1:n_trials-1
 
     probe_offset = offsets(t);
