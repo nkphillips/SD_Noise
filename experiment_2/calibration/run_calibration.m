@@ -88,22 +88,46 @@ p.filter_width_min = 2;
 p.filter_width_max = 80;
 p.calibration_filter_width_levels = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 
-%% Calibration loop
+%% Define stimulus sequences
+% feature 1 = contrast
+% feature 2 = filter width
+% 
+% useful functions:
 % datasample
-% randi 
-% repmat 
+% randi
+% repmat
 % nan
 
 presentation_order = nan(p.num_trials_per_feature, 2); % matrix of indices. whatever approach you use, this var should store the order for both contrast and filter width sequences
 responses = nan(p.num_reps, p.num_levels, 2); % page 1: contrast, page 2: filter width
 
-for feature = 1:2 
-    
-    % whatever your solution, make sure you have p.num_reps of a given lvl
-    datasample(p.calibration_contrast_levels, , 'Replace', false)
-
+for feature = 1:2
+    tmp = repmat(1:p.num_levels, p.num_reps, 1);
+    presentation_order(:,feature) = datasample(tmp(:), p.num_trials_per_feature, 'Replace', false);
 end
 
+%% Calibration loop
+
+for feature = 1:2
+    for trial = 1:p.num_trials_per_feature
+        
+        % which level to index
+        curr_lvl = presentation_order(trial,feature);
+
+        % first indx in responses needs to point to which trial of the curr lvl it is
+        curr_trial_lvl = nan;
+    
+        % use level index to pull the current stimulus we need to show
+        curr_stimulus = stimuli(:,:,curr_lvl,feature); % 4-d array
+
+        % record response (responses = nan(p.num_reps, p.num_levels, 2);)
+        curr_response = 1;
+        responses(curr_lvl_trial, curr_lvl, feature) = curr_response;
+        
+        % evaluate response
+
+    end
+end
 
 %% Estimate psychometric function
 
