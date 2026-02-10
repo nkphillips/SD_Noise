@@ -11,7 +11,7 @@ w.window = PsychImaging('OpenWindow', w.use_screen, w.bg_color, [0 0 w.screen_wi
 
 if ~p.half_screen
     HideCursor;
-    commandwindow; 
+    commandwindow;
 end
 
 %% Enable alpha blending
@@ -22,8 +22,8 @@ Screen('BlendFunction', w.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 w.DefaultCLUT = Screen('ReadNormalizedGammaTable', w.window);
 
-if p.which_setup == 1 && w.gamma_correct 
-    
+if p.which_setup == 1 && w.gamma_correct
+
     load([dirs.monitor_cal_dir '/corrected_gamma_table_' p.display_setup '.mat'])
     w.CorrectedCLUT = corrected_gamma.table * 255;
     Screen('LoadCLUT', w.window, w.CorrectedCLUT);
@@ -32,8 +32,8 @@ end
 
 %% Define center coordinates
 
-w.centerX = w.screen_width_px/2; 
-w.centerY = w.screen_height_px/2; 
+w.centerX = w.screen_width_px/2;
+w.centerY = w.screen_height_px/2;
 
 %% Text settings
 

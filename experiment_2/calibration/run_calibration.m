@@ -88,42 +88,62 @@ p.filter_width_min = 2;
 p.filter_width_max = 80;
 p.calibration_filter_width_levels = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 
+%% Create stimuli textures
+
+init_calibration_textures
+
 %% Define stimulus sequences
 % feature 1 = contrast
 % feature 2 = filter width
-% 
+%
 % useful functions:
 % datasample
 % randi
 % repmat
 % nan
 
-presentation_order = nan(p.num_trials_per_feature, 2); % matrix of indices. whatever approach you use, this var should store the order for both contrast and filter width sequences
-responses = nan(p.num_reps, p.num_levels, 2); % page 1: contrast, page 2: filter width
+p.num_features = 2;
 
-for feature = 1:2
+presentation_order = nan(p.num_trials_per_feature, p.num_features); % matrix of indices. whatever approach you use, this var should store the order for both contrast and filter width sequences
+responses = nan(p.num_reps, p.num_levels, p.num_features); % page 1: contrast, page 2: filter width
+
+for feature = 1:p.num_features
     tmp = repmat(1:p.num_levels, p.num_reps, 1);
     presentation_order(:,feature) = datasample(tmp(:), p.num_trials_per_feature, 'Replace', false);
 end
 
+%% Make stimuli
+
+stimuli_made = nan(p.num_levels, p.num_noise_samples, p.num_features);
+
+for feature = 1:num.features
+
+    % Screen('MakeTexture')
+
+end
+
 %% Calibration loop
 
-for feature = 1:2
+trial_counter = zeros(1,p.num_levels);
+
+for feature = 1:p.num_features
     for trial = 1:p.num_trials_per_feature
-        
+
         % which level to index
         curr_lvl = presentation_order(trial,feature);
 
         % first indx in responses needs to point to which trial of the curr lvl it is
-        curr_trial_lvl = nan;
-    
+        trial_counter(curr_lvl) = trial_counter(curr_lvl) + 1;
+        curr_lvl_count = trial_counter(curr_lvl);
+
         % use level index to pull the current stimulus we need to show
-        curr_stimulus = stimuli(:,:,curr_lvl,feature); % 4-d array
+        % curr_stimulus = stimuli_made(curr_lvl, curr_noise_lvl, feature); % 3d array of textures / images
 
         % record response (responses = nan(p.num_reps, p.num_levels, 2);)
-        curr_response = 1;
-        responses(curr_lvl_trial, curr_lvl, feature) = curr_response;
-        
+        curr_response = 1; % can be 1 or 2 (left or right; CCW or CW)
+        responses(curr_lvl_count, curr_lvl, feature) = curr_response;
+
+
         % evaluate response
 
     end
