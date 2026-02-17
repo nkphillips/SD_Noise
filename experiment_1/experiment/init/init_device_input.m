@@ -10,39 +10,24 @@ p.device_number = 0;
 [Kb_indices, product_names, ~] = GetKeyboardIndices;
 
 switch p.which_setup
-
     case 0 % If using Macbook
-
-        p.device_string = 'Apple Internal Keyboard / Trackpad'; % Macbook
-        %     p.device_string =  'USB-HID Keyboard'; % external keyboard
-
-        % Define keypress numbers
-        p.keypress_numbers = [KbName('1!') KbName('2@')];
-
-        % Assign trigger key
-        p.trigger_key = KbName('Space');
-
-    case 1 % If using 3329C
-
+        p.device_string = 'Apple Internal Keyboard / Trackpad';
+    case 1 % If using 3329B
+        p.device_string = '';
+    case 2 % If using 3329C
         p.device_string = 'LiteOn Lenovo Traditional USB Keyboard';
-
-        % Define keypress numbers
-        p.keypress_numbers = [KbName('1!') KbName('2@')];
-
-        % Assign trigger key
-        p.trigger_key = KbName('Space');
-
-    case 2 % If using S32D850
-
-        p.device_string =  'USB-HID Keyboard'; % external keyboard
-
-        % Define keypress numbers
-        p.keypress_numbers = [KbName('1!') KbName('2@')];
-
-        % Assign trigger key
-        p.trigger_key = KbName('Space');
-
+    case 3 % If using 3329D
+        p.device_string = 'Dell Dell USB Keyboard';
+    case 4 % If using S32D850
+        p.device_string =  'USB-HID Keyboard';
 end
+
+
+% Define keypress numbers
+p.keypress_numbers = [KbName('1!') KbName('2@')];
+
+% Assign trigger key
+p.trigger_key = KbName('Space');
 
 %% Scan for device number
 

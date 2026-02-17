@@ -22,10 +22,10 @@ Screen('BlendFunction', w.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 w.DefaultCLUT = Screen('ReadNormalizedGammaTable', w.window);
 
-if p.which_setup == 1 && w.gamma_correct
+if any(p.which_setup == [1 2 3]) && w.gamma_correct
 
     load([dirs.monitor_cal_dir '/corrected_gamma_table_' p.display_setup '.mat'])
-    w.CorrectedCLUT = corrected_gamma.table * 255;
+    w.CorrectedCLUT = repmat(corrected_gamma.chosen_table,1,3) * 255;
     Screen('LoadCLUT', w.window, w.CorrectedCLUT);
 
 end
