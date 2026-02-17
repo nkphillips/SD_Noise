@@ -19,11 +19,11 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.which_setup = 3; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
+p.which_setup = 2; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
 p.disp_on = 0;
 p.half_screen = 0;
 p.simulate_response = 1;
-p.training = 0;
+p.training = 1;
 p.use_staircase = 0;
 p.longer_stim_dur = 0;
 
