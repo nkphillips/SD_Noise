@@ -13,7 +13,7 @@ switch p.which_setup
     case 0 % If using Macbook
         p.device_string = 'Apple Internal Keyboard / Trackpad';
     case 1 % If using 3329B
-        p.device_string = '';
+        p.device_string = 'Dell Dell USB Keyboard';
     case 2 % If using 3329C
         p.device_string = 'LiteOn Lenovo Traditional USB Keyboard';
     case 3 % If using 3329D
