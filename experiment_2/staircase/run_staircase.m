@@ -1,12 +1,41 @@
 % run_staircase
 % experiment 2
 
-%% Prepare workspace
+%% Clean and prepare workspace
+
+clc;
+clear all; %#ok<CLALL>
+close all
+
+commandwindow; % force cursor to command window
+% Priority(1); % Set MATLAB/Psychtoolbox to "high" priority level
+
+% Grab date
+t.the_date = datestr(now, 'yyyymmdd'); % Grab today's date
+t.the_time = datestr(now,'HHMM'); % Grab current time
+
+% Generate unique seed for random number generator (rng)
+t.my_rng_seed = sum(100*clock);
+rng(t.my_rng_seed);
 
 
 
 %% Toggles
 
+p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.disp_on = 0;
+p.half_screen = 1;
+p.simulate_response = 0;
+p.training = 0;
+p.use_staircase = 0;
+p.longer_stim_dur = 0;
+
+% Sync Test
+if sum(p.which_setup == [0 2]) > 0
+    Screen('Preference', 'SkipSyncTests', 1); % Set to 1 if running on macOS
+else
+    Screen('Preference', 'SkipSyncTests', 0);
+end
 
 
 %% Set directories
@@ -14,8 +43,39 @@
 dirs.script_dir = pwd;
 dirs.functions_dir = '../analyses/functions'; addpath(dirs.functions_dir);
 
+
+p.subj_ID = '999';
+
+dirs.project_dir = '../'; addpath(dirs.project_dir);
+dirs.script_dir = pwd;
+dirs.functions_dir = 'functions'; addpath(dirs.functions_dir);
+dirs.data_dir = '../data'; 
+dirs.texture_dir = 'textures';
+
+if exist(dirs.data_dir,'dir') == 0
+    mkdir(dirs.data_dir);
+end
+
+if exist(dirs.texture_dir,'dir') == 0
+    mkdir(dirs.texture_dir);
+end
+
+addpath(dirs.data_dir);
+addpath(dirs.texture_dir);
+
+dirs.init_dir = 'init'; addpath(dirs.init_dir);
+dirs.modules_dir = 'script_modules'; addpath(dirs.modules_dir);
+dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
+
+if p.which_setup == 1
+    dirs.monitor_cal_dir = '/home/serenceslabexp/Desktop/MonitorCalibration/GammaTables'; addpath(dirs.monitor_cal_dir);
+end
+
 %% Setup devices and display, open window
 
+init_device_input
+init_display
+open_window
 
 
 %% Loading screen
@@ -76,7 +136,100 @@ free_params = sim_psych_func_params;
 fixed_params = contrast_vals;
 sim_psych_func = calcPsychometricFunction(free_params, fixed_params);
 
-%% STEP 2: RESPONSE SIMULATION (contrast)
+%% Init Textures: Toggles 
+
+textures_filename = ['SD_Noise_textures_' p.display_setup '.mat'];
+
+if ~exist([dirs.texture_dir '/' textures_filename], 'file')
+    generate_textures = 1;
+    save_textures = 1;
+else
+    generate_textures = 0;
+    save_textures = 0;
+end
+
+if p.training
+    save_textures = 0;
+end
+
+%% Aperture
+% alpha level for aperture:
+% 0 = completely transparent (the texture of the aperture is invisible)
+% 255 = completely opaque (the texture of the aperture dominates)
+
+aperture = create_circular_aperture(p.aperture_width_px, p.aperture_height_px, p.aperture_radius_px); % texture size, radius of circle
+% figure, subplot(1,2,1), imshow(aperture)
+
+aperture = imgaussfilt(aperture, 0.1 * w.ppd);
+% subplot(1,2,2), imshow(aperture)
+aperture_texture(:,:,1) = ones(size(aperture)) * w.gray;
+aperture_texture(:,:,2) = aperture * 255; 
+
+% figure, imshow(aperture_texture(:,:,2), [0 255])
+
+%% Generate textures 
+
+if generate_textures
+
+    disp('Generating stimuli...')
+
+    % Preallocate textures
+    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
+    p.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
+    p.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
+
+    for i = 1:size(noise_textures, 3) % Contrasts
+        for j = 1:size(noise_textures, 4) % Filter widths
+            for k = 1:size(noise_textures, 5) % Samples
+                
+                base_noise = create_noise_texture(p.height_px, p.width_px);
+                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
+                base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
+                
+                if j == 1
+                    stimuli.mask_textures(:,:,i,k) = base_noise;
+                end
+                
+                % Make orientation- and spatial frequency-bandpass filtered noise
+                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
+
+                % Ignore certain combos
+                if i > 1 && j > 1
+                    continue
+                end
+
+                stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast
+
+            end
+        end
+    end
+
+else
+    load([dirs.texture_dir '/' textures_filename]);
+    stimuli = textures;
+    clear textures;
+
+end
+
+disp(['Elapsed time: ' num2str(toc) ' s'])
+
+%% Calibration Loop
+
+%Participants perform blocks of an orientation discrimination task.
+%Loop through each feature, using feature as an index (e.g., 1 or 2)
+%Within a block of trials, the contrast or filter width is randomly changing from trial to trial.
+%For every trial, participants perform orientation discrimination task with a pseudorandom probe offset (see experiment_1/experiment/script_modules/experiment and trials_loop)
+%Present test stimulus
+%Present mask
+%Present delay
+%Present probe line
+%Response period 
+%Responses need to be stored with respect to feature and level 
+%Inter-trial interval (ITI; i.e., small delay in between trials)
+
+
+%% STEP 2: Response Simulation (contrast)
 
 n_trials = 60;
 
@@ -200,3 +353,11 @@ ylabel('Response probability');
 title('Psychometric function');
 box off;
 set(gca, 'TickDir', 'out');
+
+%% Turn off Kb and restore display
+
+KbQueueStop(p.device_number);
+if p.which_setup == 1 && w.gamma_correct 
+    Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
+end
+sca; ShowCursor;
