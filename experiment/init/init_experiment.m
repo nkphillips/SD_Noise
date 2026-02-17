@@ -2,7 +2,12 @@
 
 %% Loading screen
 
-loading_text = ['Loading experiment run ' num2str(p.run_num) ' ...'];
+if p.training
+    loading_text = ['Loading training run ' num2str(p.run_num) ' ...'];
+else
+    loading_text = ['Loading experiment run ' num2str(p.run_num) ' ...'];
+end
+
 loading_text_boundary = Screen('TextBounds', w.window, loading_text);
 loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
 

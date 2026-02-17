@@ -4,7 +4,7 @@
 
 clc;
 clear all; %#ok<CLALL>
-close all
+close all;
 
 commandwindow; % force cursor to command window
 % Priority(1); % Set MATLAB/Psychtoolbox to "high" priority level
@@ -36,7 +36,7 @@ end
 
 %% Set directories
 
-p.subj_ID = '001';
+p.subj_ID = '015';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
@@ -204,4 +204,7 @@ KbQueueStop(p.device_number);
 if p.which_setup == 1 && w.gamma_correct 
     Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
 end
-sca; ShowCursor;
+
+Priority(0);
+Screen('CloseAll'); 
+ShowCursor;
