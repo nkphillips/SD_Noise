@@ -3,3 +3,8 @@
 *.asv
 .vscode/launch.json
 *.png
+/papers
+/analyses/figures
+/analyses/reports
+*.pdf
+*.txt
