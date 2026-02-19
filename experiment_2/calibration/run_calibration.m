@@ -62,9 +62,147 @@ end
 
 %% Set device and display; open window
 
-init_device_input
-init_display
-open_window
+%init_device_input
+%init_display
+%open_window
+
+%% Initialize device input
+
+% Enable unified mode of KbName, so KbName accepts identical key names on
+% all operating systems:
+KbName('UnifyKeyNames');
+
+%% Define device and relevant keys
+
+p.device_number = 0;
+[Kb_indices, product_names, ~] = GetKeyboardIndices;
+
+switch p.which_setup
+
+    case 0 % If using Macbook
+
+        p.device_string = 'Apple Internal Keyboard / Trackpad'; % Macbook
+        %     p.device_string =  'USB-HID Keyboard'; % external keyboard
+
+        % Define keypress numbers
+        p.keypress_numbers = [KbName('1!') KbName('2@')];
+
+        % Assign trigger key
+        p.trigger_key = KbName('Space');
+
+    case 1 % If using 3329C
+
+        p.device_string = 'LiteOn Lenovo Traditional USB Keyboard';
+
+        % Define keypress numbers
+        p.keypress_numbers = [KbName('1!') KbName('2@')];
+
+        % Assign trigger key
+        p.trigger_key = KbName('Space');
+
+    case 2 % If using S32D850
+
+        p.device_string =  'USB-HID Keyboard'; % external keyboard
+
+        % Define keypress numbers
+        p.keypress_numbers = [KbName('1!') KbName('2@')];
+
+        % Assign trigger key
+        p.trigger_key = KbName('Space');
+
+end
+
+%% Scan for device number
+
+for i = 1:length(product_names)
+    if strcmp(product_names{i}, p.device_string)
+        p.device_number = Kb_indices(i);
+        break;
+    end
+end
+
+%% Error if no device is found
+
+if p.device_number == 0
+    error('No device by that name was detected');
+end
+
+%% Turn on keyboard input
+
+KbQueueCreate(p.device_number);
+KbQueueStart(p.device_number);
+
+%% Initialize display parameters
+% Ideal distance: 1 cm equals 1 visual degree at 57 cm
+
+screens = Screen('Screens'); % Grab the available screens
+
+%% Set screen parameters
+
+if p.which_setup == 0 % Macbook
+
+    p.display_setup = 'Macbook';
+
+    w.use_screen = min(screens); % If there are two or more displays, 'min' should grab the most internal display.
+    w.view_distance = 57; % in centimeters, cm
+    w.screen_width = 30; % cm
+    w.screen_width_px = 1512; % in pixels, px
+    w.screen_height_px = 982; % px
+
+elseif p.which_setup == 1 % 3329C_ASUS
+
+    p.display_setup = '3329C_ASUS';
+
+    w.use_screen = 0;
+    w.gamma_correct = 1;
+    w.view_distance = 42; % cm; default = 42
+    w.screen_width = 58; % cm
+    w.screen_width_px = 2560; % px
+    w.screen_height_px = 1440; % px
+
+elseif p.which_setup == 2 % S32D850
+
+    p.display_setup = 'S32D850';
+
+    w.use_screen = min(screens); % If there are two or more displays, 'max' should grab the most external display.
+    w.view_distance = 57; % in centimeters, cm
+    w.screen_width = 70.8; % cm
+    w.screen_width_px = 2560; % in pixels, px
+    w.screen_height_px = 1440; % px
+
+end
+
+%% Calculate visual angle of the display, pixels per degree of visual angle, size of a pixel, and Nyquist frequency
+
+screen_length = w.screen_width;
+screen_length_px = w.screen_width_px;
+
+w.visual_angle = 2 * atan2d(screen_length/2,  w.view_distance); % Visual angle of the whole screen in degrees
+w.ppd = screen_length_px/w.visual_angle; % Pixels per degree of visual angle
+w.px_size = screen_length/screen_length_px; % size of pixel in cm
+w.f_Nyquist = 1/(2*w.px_size);
+
+%% Half screen
+
+if p.half_screen
+    w.view_distance = 57; % in centimeters, cm
+    w.screen_width_px = w.screen_width_px/2; % in pixels, px
+    w.screen_height_px = w.screen_height_px/2; % px
+end
+
+%% Define the background color
+
+w.gray = 127; % halfway point between 0–254 (255 elements total)
+w.bg_color = w.gray;
+
+%% Define other colors
+
+w.white = [255 255 255];
+w.black = [0 0 0];
+w.red = [255 0 0];
+w.green = [0 255 0];
+w.blue =  [0 0 255];
+
 
 %% Probe offset magnitudes
 
