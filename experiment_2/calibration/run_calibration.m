@@ -203,6 +203,42 @@ w.red = [255 0 0];
 w.green = [0 255 0];
 w.blue =  [0 0 255];
 
+%% Open Window
+
+w.window = PsychImaging('OpenWindow', w.use_screen, w.bg_color, [0 0 w.screen_width_px w.screen_height_px]);
+
+if ~p.half_screen
+    HideCursor;
+    commandwindow;
+end
+
+%% Enable alpha blending
+
+Screen('BlendFunction', w.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+%% Load CLUT
+
+w.DefaultCLUT = Screen('ReadNormalizedGammaTable', w.window);
+
+if p.which_setup == 1 && w.gamma_correct
+
+    load([dirs.monitor_cal_dir '/corrected_gamma_table_' p.display_setup '.mat'])
+    w.CorrectedCLUT = corrected_gamma.table * 255;
+    Screen('LoadCLUT', w.window, w.CorrectedCLUT);
+
+end
+
+%% Define center coordinates
+
+w.centerX = w.screen_width_px/2;
+w.centerY = w.screen_height_px/2;
+
+%% Text settings
+
+Screen('TextStyle', w.window, 1); % 0=normal, 1=bold, 2=italic
+Screen('TextSize', w.window, 18);
+
+
 
 %% Probe offset magnitudes
 
@@ -213,6 +249,8 @@ p.probe_offsets = round(linspace(0,15,7));
 exit_session = 0;
 
 %% Define stimuli parameters
+
+
 
 p.num_levels = 10;
 p.num_reps = 30;
@@ -226,9 +264,131 @@ p.filter_width_min = 2;
 p.filter_width_max = 80;
 p.calibration_filter_width_levels = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 
+
+p.num_noise_samples = 10;   % noise exemplars per level
+
+
 %% Create stimuli textures
 
-init_calibration_textures
+%init_calibration_textures
+
+%%% init_textures
+
+tic
+
+%% Texture Toggles
+
+textures_filename = ['SD_Noise_textures_' p.display_setup '.mat'];
+
+if ~exist([dirs.texture_dir '/' textures_filename], 'file')
+    generate_textures = 1;
+    save_textures = 1;
+else
+    generate_textures = 0;
+    save_textures = 0;
+end
+
+if p.training
+    save_textures = 0;
+end
+
+
+% --- Calibration aliases so init_textures-style code runs ---
+p.training = 0; % prevent undefined variable error
+
+p.contrast = p.calibration_contrast_levels;
+p.orientation_bp_filter_width = p.calibration_filter_width_levels;
+
+p.num_test_samples = p.num_noise_samples;  % match naming used in init_textures
+
+
+
+%% Aperture
+% alpha level for aperture:
+% 0 = completely transparent (the texture of the aperture is invisible)
+% 255 = completely opaque (the texture of the aperture dominates)
+
+aperture = create_circular_aperture(p.aperture_width_px, p.aperture_height_px, p.aperture_radius_px); % texture size, radius of circle
+% figure, subplot(1,2,1), imshow(aperture)
+
+aperture = imgaussfilt(aperture, 0.1 * w.ppd);
+% subplot(1,2,2), imshow(aperture)
+aperture_texture(:,:,1) = ones(size(aperture)) * w.gray;
+aperture_texture(:,:,2) = aperture * 255; 
+
+% figure, imshow(aperture_texture(:,:,2), [0 255])
+
+%% Generate textures 
+
+if generate_textures
+
+    disp('Generating stimuli...')
+
+    % Preallocate textures
+    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
+    p.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
+    p.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
+
+    for i = 1:size(noise_textures, 3) % Contrasts
+        for j = 1:size(noise_textures, 4) % Filter widths
+            for k = 1:size(noise_textures, 5) % Samples
+                
+                base_noise = create_noise_texture(p.height_px, p.width_px);
+                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
+                base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
+                
+                if j == 1
+                    stimuli.mask_textures(:,:,i,k) = base_noise;
+                end
+                
+                % Make orientation- and spatial frequency-bandpass filtered noise
+                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
+
+                % Ignore certain combos
+                if i > 1 && j > 1
+                    continue
+                end
+
+                stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast
+
+            end
+        end
+    end
+
+else
+    load([dirs.texture_dir '/' textures_filename]);
+    stimuli = textures;
+    clear textures;
+
+end
+
+disp(['Elapsed time: ' num2str(toc) ' s'])
+
+
+%% CHAT RECOMMENDS ADDING THE FOLLOWING: Convert generated images to PTB textures (handles you can draw)
+
+stimuli.test_tex = nan(size(stimuli.test_textures,3), size(stimuli.test_textures,4), size(stimuli.test_textures,5));
+
+for i = 1:size(stimuli.test_textures,3) % contrast index
+    for j = 1:size(stimuli.test_textures,4) % filter width index
+        for k = 1:size(stimuli.test_textures,5) % sample index
+
+            img = stimuli.test_textures(:,:,i,j,k);
+
+            if any(isnan(img(:)))
+                continue
+            end
+
+            % PTB expects uint8 or double in [0 1]. Your textures look like 0-255.
+            img_uint8 = uint8(img);
+
+            stimuli.test_tex(i,j,k) = Screen('MakeTexture', w.window, img_uint8);
+        end
+    end
+end
+
+
 
 %% Define stimulus sequences
 % feature 1 = contrast
@@ -241,9 +401,13 @@ init_calibration_textures
 % nan
 
 p.num_features = 2;
+p.feature_name   = {'contrast','filter_width'};
 
 presentation_order = nan(p.num_trials_per_feature, p.num_features); % matrix of indices. whatever approach you use, this var should store the order for both contrast and filter width sequences
 responses = nan(p.num_reps, p.num_levels, p.num_features); % page 1: contrast, page 2: filter width
+
+probe_offset_used = nan(p.num_trials_per_feature, p.num_features);
+
 
 for feature = 1:p.num_features
     tmp = repmat(1:p.num_levels, p.num_reps, 1);
@@ -254,7 +418,7 @@ end
 
 stimuli_made = nan(p.num_levels, p.num_noise_samples, p.num_features);
 
-for feature = 1:num.features
+for feature = 1:num_features
 
     % Screen('MakeTexture')
 
@@ -284,6 +448,31 @@ for feature = 1:p.num_features
 
         % evaluate response
 
+    end
+end
+
+
+
+
+
+% Might break feature 2 indexing, CHAT recommends...
+for feature = 1:p.num_features
+
+    trial_counter = zeros(1,p.num_levels);  % reset per feature
+
+    for trial = 1:p.num_trials_per_feature
+        curr_lvl = presentation_order(trial,feature);
+        trial_counter(curr_lvl) = trial_counter(curr_lvl) + 1;
+        curr_lvl_count = trial_counter(curr_lvl);
+
+
+        curr_offset = datasample(p.probe_offsets, 1);
+        probe_offset_used(trial, feature) = curr_offset;
+
+
+        % store response
+        curr_response = 1; % placeholder
+        responses(curr_lvl_count, curr_lvl, feature) = curr_response;
     end
 end
 
