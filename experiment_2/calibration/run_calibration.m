@@ -19,13 +19,13 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.which_setup = 0; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
 p.disp_on = 0;
 p.half_screen = 1;
 p.simulate_response = 0;
 
 % Sync Test
-if sum(p.which_setup == [0 2]) > 0
+if ~any(p.which_setup == 1:3)
     Screen('Preference', 'SkipSyncTests', 1); % Set to 1 if running on macOS
 else
     Screen('Preference', 'SkipSyncTests', 0);
@@ -52,12 +52,12 @@ end
 addpath(dirs.data_dir);
 addpath(dirs.texture_dir);
 
-dirs.init_dir = 'init'; addpath(dirs.init_dir);
-dirs.modules_dir = 'script_modules'; addpath(dirs.modules_dir);
+dirs.init_dir = '../experiment/init'; addpath(dirs.init_dir);
+dirs.modules_dir = '../experiment/script_modules'; addpath(dirs.modules_dir);
 dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
 
-if p.which_setup == 1
-    dirs.monitor_cal_dir = '/home/serenceslabexp/Desktop/MonitorCalibration/GammaTables'; addpath(dirs.monitor_cal_dir);
+if any(p.which_setup == 1:3)
+    dirs.monitor_cal_dir = '/home/serenceslabexp/Documents/MonitorCalibration/GammaTables'; addpath(dirs.monitor_cal_dir);
 end
 
 %% Set device and display; open window
@@ -88,9 +88,11 @@ p.filter_width_min = 2;
 p.filter_width_max = 80;
 p.calibration_filter_width_levels = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 
+p.num_noise_samples = 20;
+
 %% Create stimuli textures
 
-init_calibration_textures
+stimuli = createCalibrationTextures(p, dirs, w);
 
 %% Define stimulus sequences
 % feature 1 = contrast
@@ -112,15 +114,40 @@ for feature = 1:p.num_features
     presentation_order(:,feature) = datasample(tmp(:), p.num_trials_per_feature, 'Replace', false);
 end
 
-%% Make stimuli
+%% Make all stimuli
 
-stimuli_made = nan(p.num_levels, p.num_noise_samples, p.num_features);
+% fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
+stimuli.aperture_made = Screen('MakeTexture', w.window, stimuli.aperture_texture);
 
-for feature = 1:num.features
+stimuli.test_textures_made = nan(p.num_levels, p.num_noise_samples, p.num_features);
+stimuli.mask_textures_made = nan(length(p.contrast), p.num_mask_samples);
 
-    % Screen('MakeTexture')
+for c = 1:p.num_levels % contrast lvl
+    for fw = 1:p.num_levels % filter width
+        for s = 1:p.num_noise_samples % noise sample
 
+            % Ignore certain combos
+            if c > 1 && fw > 1
+                continue
+            end
+
+            stimuli.test_textures_made(c, fw, s) = Screen('MakeTexture', w.window, stimuli.test_textures(:,:,c, fw, s));
+
+            if fw == 1
+                stimuli.mask_textures_made(c, s) = Screen('MakeTexture', w.window, stimuli.mask_textures(:,:,c,s));
+            end
+
+        end
+    end
 end
+
+%% Make probe line
+% Where is stimuli.probe_line made in experiment_1?
+% If it isn't made here, write code below that generates the probe_line
+
+stimuli.probe_line_made = Screen('MakeTexture', w.window, stimuli.probe_line);
+
+disp(['Elapsed time: ' num2str(toc) ' s'])
 
 %% Calibration loop
 
