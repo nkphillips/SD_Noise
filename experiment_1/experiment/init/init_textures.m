@@ -40,11 +40,11 @@ aperture = create_circular_aperture(p.aperture_width_px, p.aperture_height_px, p
 aperture = imgaussfilt(aperture, 0.1 * w.ppd);
 % subplot(1,2,2), imshow(aperture)
 aperture_texture(:,:,1) = ones(size(aperture)) * w.gray;
-aperture_texture(:,:,2) = aperture * 255; 
+aperture_texture(:,:,2) = aperture * 255;
 
 % figure, imshow(aperture_texture(:,:,2), [0 255])
 
-%% Generate textures 
+%% Generate textures
 
 if generate_textures
 
@@ -58,23 +58,23 @@ if generate_textures
     for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Filter widths
             for k = 1:size(noise_textures, 5) % Samples
-                
-                base_noise = create_noise_texture(p.height_px, p.width_px);
-                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
-                base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
-                
-                if j == 1
-                    stimuli.mask_textures(:,:,i,k) = base_noise;
-                end
-                
-                % Make orientation- and spatial frequency-bandpass filtered noise
-                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
-                noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
 
                 % Ignore certain combos
                 if i > 1 && j > 1
                     continue
                 end
+
+                base_noise = create_noise_texture(p.height_px, p.width_px);
+                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
+                base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
+
+                if j == 1
+                    stimuli.mask_textures(:,:,i,k) = base_noise;
+                end
+
+                % Make orientation- and spatial frequency-bandpass filtered noise
+                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
 
                 stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast
 
