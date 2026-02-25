@@ -26,6 +26,9 @@ if p.training
     save_textures = 0;
 end
 
+
+
+
 %% Aperture
 % alpha level for aperture:
 % 0 = completely transparent (the texture of the aperture is invisible)
