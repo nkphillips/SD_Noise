@@ -59,10 +59,10 @@ p.num_mask_samples = 20;
 
 %% Define probe line 
 
-p.probe_length = round(2 * w.ppd);
+p.probe_length = round(p.aperture_radius_px/2);
 if ~mod(p.probe_length, 2), p.probe_length = p.probe_length + 1; end
 
-p.probe_thickness = round(w.ppd * 0.05);
+p.probe_thickness = round(w.ppd * 0.03);
 if ~mod(p.probe_thickness, 2), p.probe_thickness = p.probe_thickness + 1; end
 
 probe_line = ones(p.probe_length) * w.gray;
