@@ -1,0 +1,96 @@
+%%% createCalibrationTextures
+
+%{
+
+Written by Luis D. Ramirez
+UCSD
+lur003@ucsd.edu
+
+%}
+
+function stimuli = createCalibrationTextures(p, dirs, w)
+
+tic
+
+%% Toggles
+
+textures_filename = ['SD_Noise_calibration_textures_' p.display_setup '.mat'];
+textures_path = [dirs.texture_dir '/' textures_filename];
+
+if ~exist(textures_path, 'file')
+    generate_textures = 1;
+    save_textures = 1;
+else
+    generate_textures = 0;
+    save_textures = 0;
+end
+
+%% Aperture
+% alpha level for aperture:
+% 0 = completely transparent (the texture of the aperture is invisible)
+% 255 = completely opaque (the texture of the aperture dominates)
+
+aperture = create_circular_aperture(p.aperture_width_px, p.aperture_height_px, p.aperture_radius_px); % texture size, radius of circle
+% figure, subplot(1,2,1), imshow(aperture)
+
+aperture = imgaussfilt(aperture, 0.1 * w.ppd);
+% subplot(1,2,2), imshow(aperture)
+aperture_texture(:,:,1) = ones(size(aperture)) * w.gray;
+aperture_texture(:,:,2) = aperture * 255;
+
+stimuli.aperture_texture = aperture_texture;
+
+% figure, imshow(aperture_texture(:,:,2), [0 255])
+
+%% Generate textures
+
+if generate_textures
+
+    disp('Generating stimuli...')
+
+    % Preallocate textures
+    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+    stimuli.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+    stimuli.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
+
+    for i = 1:size(noise_textures, 3) % Contrasts
+        for j = 1:size(noise_textures, 4) % Orientation filter widths
+            for k = 1:size(noise_textures, 5) % Samples
+
+                % Ignore certain combos
+                if i > 1 && j > 1
+                    continue
+                end
+
+                % Create base noise (used as a mask)
+                base_noise = create_noise_texture(p.height_px, p.width_px);
+                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
+                base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
+
+                if j == 1
+                    stimuli.mask_textures(:,:,i,k) = base_noise;
+                end
+
+                % Make orientation- and spatial frequency-bandpass filtered noise
+                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
+
+                stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast
+
+            end
+        end
+    end
+
+    % Use save_textures to save textures
+    % write code here for saving
+
+else
+    load(textures_path);
+    stimuli = textures;
+    clear textures;
+
+end
+
+disp(['Elapsed time: ' num2str(toc) ' s'])
+
+end
