@@ -22,10 +22,6 @@ else
     save_textures = 0;
 end
 
-if p.training
-    save_textures = 0;
-end
-
 %% Aperture
 % alpha level for aperture:
 % 0 = completely transparent (the texture of the aperture is invisible)
@@ -48,9 +44,9 @@ if generate_textures
     disp('Generating stimuli...')
 
     % Preallocate textures
-    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
-    p.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
-    p.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
+    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+    stimuli.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+    stimuli.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
 
     for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Orientation filter widths
