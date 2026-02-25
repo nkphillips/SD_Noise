@@ -80,7 +80,6 @@ open_window
 
 %% Loading screen
 
-
 %% Define stimulus
 % For precision (ie filter width), we could use a template noise sample.
 %       staircase
@@ -97,35 +96,12 @@ open_window
 % lvl 3 = 65%
 % (or we do linspace(lvl_1_perf, lvl_3_perf, num_lvls))
 
-%%% Staircase goal:
-% Each condition x level we use 2 staircases, a. 2-down 1-up, b. 3-down 1-up.
-% Since we're assuming level 1 contrast and precision, the objective is to get contrast and precision levels for levels 2 and 3.
 
-%%% Staircase mechanics
-% contrast_init_step_size = 0.1;
-% precision_init_step_size = 10;
+%%% Mechanics
 % num_trials = 60;
 % probe_offsets = round(linspace(0,15,7)); % ie  [0 3 5 8 10 13 15];
-%
-% Ignore first few reversals; after this ignoring window, start halving the step size when a reversal is detected
-% When the max number of reversals are detected, stop the staircase.
 
 
-%% assignment: simulate contrast staircase
-
-% 1. simulate responses (1 = correct, 0 = wrong)
-% check datasample() weights argument
-%       you can use datasample()
-% 2. simulate staircase (simulating stimulus values for every trial)
-% staircase a: 2-down 1-up
-% staircase b: 3-down 1-up
-% the staircases are randomly interleaved.
-%   init_contrast = 0.9;
-%   max_contrast = 0.9;
-%   init_step_size_contrast = 0.1;
-% Have staircase end after certain amount of trials (eg., 60 trials, but usually are good with ~40 trials)
-%
-% 3. plot staircase: stimulus contrast as a function of trial
 
 %% STEP 1: Simulate psychometric function (contrast)
 
