@@ -15,18 +15,26 @@ if p.which_setup == 0 % Macbook
     w.screen_width_px = 1512; % in pixels, px
     w.screen_height_px = 982; % px
 
-elseif p.which_setup == 1 % 3329C_ASUS
+elseif any(p.which_setup == 1:3) % ASUS
 
-    p.display_setup = '3329C_ASUS';
-
+    switch p.which_setup 
+        case 1
+            p.display_setup = '3329B_ASUS';
+	    w.view_distance = 43; % cm; default = 43
+        case 2
+            p.display_setup = '3329C_ASUS';
+            w.view_distance = 44.5; % cm; default = 44.5
+        case 3
+            p.display_setup = '3329D_ASUS';
+            w.view_distance = 42; % cm; default = 42
+    end
     w.use_screen = 0;
     w.gamma_correct = 1;
-    w.view_distance = 42; % cm; default = 42
     w.screen_width = 58; % cm
     w.screen_width_px = 2560; % px
     w.screen_height_px = 1440; % px
 
-elseif p.which_setup == 2 % S32D850
+elseif p.which_setup == 4 % S32D850
 
     p.display_setup = 'S32D850';
 
