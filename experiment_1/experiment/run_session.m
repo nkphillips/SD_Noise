@@ -4,7 +4,7 @@
 
 clc;
 clear all; %#ok<CLALL>
-close all
+close all;
 
 commandwindow; % force cursor to command window
 % Priority(1); % Set MATLAB/Psychtoolbox to "high" priority level
@@ -19,16 +19,16 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-p.which_setup = 0; % 0 = MacBook, 1 = 3329C_ASUS, 2 = S32D850
+p.which_setup = 2; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
 p.disp_on = 0;
-p.half_screen = 1;
+p.half_screen = 0;
 p.simulate_response = 0;
-p.training = 0;
+p.training = 1;
 p.use_staircase = 0;
 p.longer_stim_dur = 0;
 
 % Sync Test
-if sum(p.which_setup == [0 2]) > 0
+if ~any(p.which_setup == 1:3)
     Screen('Preference', 'SkipSyncTests', 1); % Set to 1 if running on macOS
 else
     Screen('Preference', 'SkipSyncTests', 0);
@@ -59,8 +59,8 @@ dirs.init_dir = 'init'; addpath(dirs.init_dir);
 dirs.modules_dir = 'script_modules'; addpath(dirs.modules_dir);
 dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
 
-if p.which_setup == 1
-    dirs.monitor_cal_dir = '/home/serenceslabexp/Desktop/MonitorCalibration/GammaTables'; addpath(dirs.monitor_cal_dir);
+if any(p.which_setup == 1:3)
+    dirs.monitor_cal_dir = '/home/serenceslabexp/Documents/MonitorCalibration/GammaTables'; addpath(dirs.monitor_cal_dir);
 end
 
 %% Set device and display; open window
@@ -204,4 +204,7 @@ KbQueueStop(p.device_number);
 if p.which_setup == 1 && w.gamma_correct 
     Screen('LoadNormalizedGammaTable', w.window, w.DefaultCLUT);
 end
-sca; ShowCursor;
+
+Priority(0);
+Screen('CloseAll'); 
+ShowCursor;
