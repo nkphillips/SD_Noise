@@ -38,8 +38,8 @@ p.subj_ID = '999';
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
 dirs.functions_dir = 'functions'; addpath(dirs.functions_dir);
-dirs.data_dir = '../data';
-dirs.texture_dir = 'textures';
+dirs.data_dir = '../data'; addpath(dirs.data_dir);
+dirs.texture_dir = 'textures'; addpath(dirs.texture_dir);
 
 if exist(dirs.data_dir,'dir') == 0
     mkdir(dirs.data_dir);
@@ -62,9 +62,11 @@ end
 
 %% Set device and display; open window
 
-%init_device_input
-%init_display
+init_device_input
+init_display
 %open_window
+
+init_stimuli_params
 
 %% Initialize device input
 
@@ -250,8 +252,6 @@ exit_session = 0;
 
 %% Define stimuli parameters
 
-
-
 p.num_levels = 10;
 p.num_reps = 30;
 p.num_trials_per_feature = p.num_levels * p.num_reps;
@@ -264,7 +264,6 @@ p.filter_width_min = 2;
 p.filter_width_max = 80;
 p.calibration_filter_width_levels = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 
-<<<<<<< HEAD
 p.num_noise_samples = 10;   % noise exemplars per level
 
 %% Texture Toggles
@@ -283,12 +282,7 @@ p.contrast = p.calibration_contrast_levels;
 p.orientation_bp_filter_width = p.calibration_filter_width_levels;
 
 
-%% Generate textures
-=======
-p.num_noise_samples = 20;
-
 %% Create stimuli textures
->>>>>>> c316d0b90c77f64796622402fd220e7c162b1446
 
 stimuli = createCalibrationTextures(p, dirs, w);
 
@@ -337,8 +331,6 @@ for feature = 1:p.num_features
     presentation_order(:,feature) = datasample(tmp(:), p.num_trials_per_feature, 'Replace', false);
 end
 
-<<<<<<< HEAD
-=======
 %% Make all stimuli
 
 % fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
@@ -374,7 +366,6 @@ stimuli.probe_line_made = Screen('MakeTexture', w.window, stimuli.probe_line);
 
 disp(['Elapsed time: ' num2str(toc) ' s'])
 
->>>>>>> c316d0b90c77f64796622402fd220e7c162b1446
 %% Calibration loop
 
 trial_counter = zeros(1,p.num_levels);

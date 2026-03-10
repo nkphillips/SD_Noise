@@ -22,19 +22,18 @@ p.width_px = round(p.aperture_radius_px*2 + w.ppd);
 
 %% Define contrasts
 
-p.contrast = [0.9 0.5 0.25]; % high contrast, medium, low; unit: % Michelson contrast
+p.contrast = []; % high contrast, medium, low; unit: Michelson contrast; this is loaded in from calibration
 
 if p.training
-    p.contrast = p.contrast(1); 
+    p.contrast = 0.9; 
 end
 
 %% Define orientation and spatial frequency bandpass filter widths
 
-% p.orientation_bp_filter_width = [1 5 10]; % low noise, medium, high ; unit: °
-p.orientation_bp_filter_width = [2 40 80]; % low noise, medium, high ; unit: °
+p.orientation_bp_filter_width = []; % low noise, medium, high ; unit: °; this is loaded in from calibration
 
 if p.training
-    p.orientation_bp_filter_width = p.orientation_bp_filter_width(1);   
+    p.orientation_bp_filter_width = 2;   
 end
 
 p.sf_bp_filter_cutoffs = [1 4]; % unit: cycles/degree

@@ -81,13 +81,16 @@ if generate_textures
         end
     end
 
-    % Use save_textures to save textures
-    % write code here for saving
+    %% Save textures in correct folder
+    if save_textures
+        save(textures_path, 'stimuli', '-v7.3');
+    end
+
+    % !!! Use save_textures, textures_path to save textures !!! <-----
+    % write code here for saving <-----
 
 else
-    load(textures_path);
-    stimuli = textures;
-    clear textures;
+    load(textures_path, 'stimuli');
 
 end
 
