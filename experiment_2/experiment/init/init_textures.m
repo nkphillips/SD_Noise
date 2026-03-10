@@ -1,4 +1,4 @@
-%%% createCalibrationTextures
+%%% init_textures
 
 %{
 
@@ -8,13 +8,18 @@ lur003@ucsd.edu
 
 %}
 
-function stimuli = createCalibrationTextures(p, dirs, w)
+function stimuli = init_textures(p, dirs, w)
 
 tic
 
 %% Toggles
 
-textures_filename = ['SD_Noise_calibration_textures_' p.display_setup '.mat'];
+if p.calibration
+    textures_filename = ['SD_Noise_Exp2_Calibration_textures_' p.display_setup '.mat'];
+else
+    textures_filename = ['SD_Noise_Exp2_S' p.subj_ID '_textures_' p.display_setup '.mat'];
+end
+
 textures_path = [dirs.texture_dir '/' textures_filename];
 
 if ~exist(textures_path, 'file')
@@ -51,7 +56,7 @@ if generate_textures
     % Preallocate textures
     noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
     stimuli.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
-    stimuli.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_mask_samples);
+    stimuli.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_noise_samples);
 
     for i = 1:size(noise_textures, 3) % Contrasts
         for j = 1:size(noise_textures, 4) % Orientation filter widths
@@ -72,7 +77,7 @@ if generate_textures
                 end
 
                 % Make orientation- and spatial frequency-bandpass filtered noise
-                noise_texture = bandpassFilterImg(base_noise, [round(180 - p.orientation_bp_filter_width(j)/2), floor(180 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = bandpassFilterImg(base_noise, [round(90 - p.orientation_bp_filter_width(j)/2), floor(90 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
                 noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
 
                 stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast
@@ -81,15 +86,14 @@ if generate_textures
         end
     end
 
-    %% Save textures in correct folder
+    %% Save textures
+
     if save_textures
         save(textures_path, 'stimuli', '-v7.3');
     end
 
-    % !!! Use save_textures, textures_path to save textures !!! <-----
-    % write code here for saving <-----
-
 else
+
     load(textures_path, 'stimuli');
 
 end

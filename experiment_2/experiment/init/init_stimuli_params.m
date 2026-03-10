@@ -1,6 +1,6 @@
 %%% Initialize stimulus parameters
 
-%{   
+%{
 
 Written by Luis D. Ramirez
 UCSD
@@ -20,20 +20,31 @@ p.aperture_radius_px = round(w.ppd * 3);
 p.height_px = round(p.aperture_radius_px*2 + w.ppd);
 p.width_px = round(p.aperture_radius_px*2 + w.ppd);
 
-%% Define contrasts
-
-p.contrast = []; % high contrast, medium, low; unit: Michelson contrast; this is loaded in from calibration
+%% Define contrast and filter width levels
 
 if p.training
-    p.contrast = 0.9; 
-end
-
-%% Define orientation and spatial frequency bandpass filter widths
-
-p.orientation_bp_filter_width = []; % low noise, medium, high ; unit: °; this is loaded in from calibration
-
-if p.training
-    p.orientation_bp_filter_width = 2;   
+    p.contrast = 0.9;
+    p.orientation_bp_filter_width = 2;
+elseif p.calibration
+    p.num_levels = 10;
+    p.contrast_min = 0.05;
+    p.contrast_max = 0.9;
+    p.contrast = round(logspace(log10(p.contrast_min), log10(p.contrast_max), p.num_levels),2);
+    
+    p.filter_width_min = 2;
+    p.filter_width_max = 80;
+    p.orientation_bp_filter_width = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
+else
+    calib_file = [dirs.data_dir '/' p.subj_ID '/S' p.subj_ID '_calibrated_levels.mat'];
+    if exist(calib_file, 'file')
+        load(calib_file, 'calib');
+        p.num_levels = length(calib.target_levels);
+        p.contrast = calib.contrast_levels;
+        p.orientation_bp_filter_width = calib.filter_width_levels;
+        disp(['Loaded calibrated levels for S' p.subj_ID]);
+    else
+        error(['Calibration file not found for S' p.subj_ID '. Run fit_calibration.m first!']);
+    end
 end
 
 p.sf_bp_filter_cutoffs = [1 4]; % unit: cycles/degree
@@ -53,10 +64,11 @@ p.orientation_max = 179;
 
 %% Define number of noise samples
 
-p.num_test_samples = 20;
-p.num_mask_samples = 20;
+p.num_noise_samples = 20;
 
-%% Define probe line 
+%% Define probe
+
+p.probe_offsets = round(linspace(0,15,7));
 
 p.probe_length = round(2 * w.ppd);
 if ~mod(p.probe_length, 2), p.probe_length = p.probe_length + 1; end
@@ -68,6 +80,6 @@ probe_line = ones(p.probe_length) * w.gray;
 
 start_col = round(p.probe_length/2) - floor(p.probe_thickness/2);
 end_col = round(p.probe_length/2) + floor(p.probe_thickness/2);
-probe_line(:, start_col:end_col) = 0; 
+probe_line(:, start_col:end_col) = 0;
 
 stimuli.probe_line = probe_line;
