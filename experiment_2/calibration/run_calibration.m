@@ -283,7 +283,7 @@ p.contrast = p.calibration_contrast_levels;
 p.orientation_bp_filter_width = p.calibration_filter_width_levels;
 
 
-%% Generate textures 
+%% Generate textures
 =======
 p.num_noise_samples = 20;
 
