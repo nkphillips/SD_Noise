@@ -22,10 +22,9 @@ rng(t.my_rng_seed);
 p.which_setup = 0; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
 p.disp_on = 0;
 p.half_screen = 1;
-p.simulate_response = 0;
+p.simulate_response = 1;
 p.training = 0;
 p.calibration = 1;
-p.longer_stim_dur = 0;
 
 % Sync Test
 if ~any(p.which_setup == 1:3)
