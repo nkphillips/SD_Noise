@@ -36,7 +36,7 @@ p.num_features = numel(p.feature_name);
 if p.training
     p.num_blocks = p.num_features;
 elseif p.calibration
-    p.num_blocks = 6;
+    p.num_blocks = 8;
 else
     p.num_blocks = 6;
     while mod(p.num_blocks, p.num_features) ~= 0, p.num_blocks = input(['Error! Number of blocks must be a multiple of ' num2str(p.num_features) '. Please enter a multiple of 2: ']); end
@@ -54,26 +54,18 @@ end
 
 if p.training
     % Note that the number of levels for each condition in training is 1
-    p.num_trials_per_feature = 20; % Default = 20
+    p.num_trials_per_lvl_per_block = 20; % Default = 20
 elseif p.calibration
-    p.num_trials_per_feature = 30; % Default = 30
+    p.num_trials_per_lvl_per_block = 16; % Based on 90m session recommendation
 else
-    p.num_trials_per_feature = 40; % Default = 40
+    p.num_trials_per_lvl_per_block = 40; % Default = 40
 end
 
 %% Generate level order, orientations, correct response
 
 for n_block = 1:p.num_blocks
 
-    if p.feature_order(n_block) == 1
-
-        level_order = BalanceFactors(p.num_trials_per_feature, 1, 1:p.num_levels);
-
-    elseif p.feature_order(n_block) == 2
-
-        level_order = BalanceFactors(p.num_trials_per_feature, 1, 1:p.num_levels);
-
-    end
+    level_order = BalanceFactors(p.num_trials_per_lvl_per_block, 1, 1:p.num_levels);
 
     if n_block == 1
         p.num_trials_per_block = length(level_order);

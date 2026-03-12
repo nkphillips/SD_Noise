@@ -33,7 +33,7 @@ frames.test_noise_sample_update(1:frames.noise_sample_update_frames_count:end) =
 num_sample_updates = sum(frames.test_noise_sample_update);
 frames.test_noise_sample_update_seq = nan(p.num_trials_per_block, num_sample_updates, p.num_blocks);
 for n_block = 1:p.num_blocks
-    frames.test_noise_sample_update_seq(:,:,n_block) = gen_unique_seq([p.num_trials_per_block, num_sample_updates], 1:p.num_test_samples, p.num_test_samples/2);
+    frames.test_noise_sample_update_seq(:,:,n_block) = gen_unique_seq([p.num_trials_per_block, num_sample_updates], 1:p.num_noise_samples, p.num_noise_samples/2);
 end
 
 % Generate template for frame onset times
@@ -49,7 +49,7 @@ frames.mask_noise_sample_update(1:frames.noise_sample_update_frames_count:end) =
 num_sample_updates = sum(frames.mask_noise_sample_update);
 frames.mask_noise_sample_update_seq = nan(p.num_trials_per_block, num_sample_updates, p.num_blocks);
 for n_block = 1:p.num_blocks
-    frames.mask_noise_sample_update_seq(:,:,n_block) = gen_unique_seq([p.num_trials_per_block, num_sample_updates], 1:p.num_mask_samples, p.num_mask_samples/2);
+    frames.mask_noise_sample_update_seq(:,:,n_block) = gen_unique_seq([p.num_trials_per_block, num_sample_updates], 1:p.num_noise_samples, p.num_noise_samples/2);
 end
 
 frames.mask_frames_onsets = 0:t.frame_dur:t.mask_dur-t.frame_dur;

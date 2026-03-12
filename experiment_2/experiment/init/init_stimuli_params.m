@@ -26,11 +26,11 @@ if p.training
     p.contrast = 0.9;
     p.orientation_bp_filter_width = 2;
 elseif p.calibration
-    p.num_levels = 10;
+    p.num_levels = 7;
     p.contrast_min = 0.05;
     p.contrast_max = 0.9;
     p.contrast = round(logspace(log10(p.contrast_min), log10(p.contrast_max), p.num_levels),2);
-    
+
     p.filter_width_min = 2;
     p.filter_width_max = 80;
     p.orientation_bp_filter_width = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
@@ -54,7 +54,7 @@ p.sf_bp_filter_cutoffs = [1 4]; % unit: cycles/degree
 if length(p.orientation_bp_filter_width) == length(p.contrast)
     p.num_levels = length(p.contrast);
 else
-    disp('Condition levels do not match in length!');
+    error('Condition levels do not match in length!');
 end
 
 %% Define orientations
@@ -76,10 +76,4 @@ if ~mod(p.probe_length, 2), p.probe_length = p.probe_length + 1; end
 p.probe_thickness = round(w.ppd * 0.05);
 if ~mod(p.probe_thickness, 2), p.probe_thickness = p.probe_thickness + 1; end
 
-probe_line = ones(p.probe_length) * w.gray;
 
-start_col = round(p.probe_length/2) - floor(p.probe_thickness/2);
-end_col = round(p.probe_length/2) + floor(p.probe_thickness/2);
-probe_line(:, start_col:end_col) = 0;
-
-stimuli.probe_line = probe_line;

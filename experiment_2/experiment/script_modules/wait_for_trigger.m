@@ -8,7 +8,7 @@ Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_
 Screen('Flip', w.window);
 
 %% Start screen
-    
+
 start_screen_text = ['Press ' KbName(p.trigger_key) ' to begin.'];
 start_screen_text_boundary = Screen('TextBounds', w.window, start_screen_text);
 start_screen_text_patch = CenterRectOnPoint(start_screen_text_boundary, w.centerX, w.centerY);
@@ -22,28 +22,28 @@ disp('Waiting for trigger...')
 trigger_pressed = 0;
 
 if ~p.simulate_response
-    
+
     while ~trigger_pressed
-        
+
         % Check for response
         [key_pressed, ~, first_press] = KbCheck(p.device_number);
         which_press = find(first_press);
-        
+
         if key_pressed && which_press(1) == p.trigger_key
             trigger_pressed = 1;
         end
-        
+
     end
-    
+
     t.trigger_time_stamp = GetSecs;
-    
+
 end
 
 disp('Trigger detected!')
 
 %% Draw Fixation
 
-Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
 Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 Screen('Flip', w.window);
 WaitSecs(2);

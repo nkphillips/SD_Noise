@@ -75,7 +75,7 @@ while n_trial <= p.num_trials_per_block
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch)
 
         % Draw Fixation
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 
         % Flip
@@ -96,7 +96,7 @@ while n_trial <= p.num_trials_per_block
     while GetSecs - response_start < t.response_dur
 
         % Draw fixation
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 
         % Flip
@@ -237,7 +237,7 @@ while n_trial <= p.num_trials_per_block
             Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch)
 
             % Draw fixation
-            Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+            Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
             Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 
             % Flip
@@ -251,7 +251,7 @@ while n_trial <= p.num_trials_per_block
         end
 
         % Draw fixation
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
         Screen('Flip', w.window);
         WaitSecs(t.gap_after_adapt);

@@ -15,10 +15,15 @@ for n_trial = 1:size(p.trial_events,1)
 
     if curr_feature == 1
         curr_contrast = p.trial_events(n_trial, level_order_col, n_block);
+
+        % In contrast blocks, we want filter width to be at the easiest level (narrowest filter)
+        % For filter width, index 1 is ALWAYS the easiest (2 degrees during calib, and sorted ascending during main)
         curr_filter_width = 1;
 
     elseif curr_feature == 2
-        curr_contrast = 1; 
+
+        curr_contrast = p.num_levels; % best contrast is always the last value
+
         curr_filter_width = p.trial_events(n_trial, level_order_col, n_block);
 
     end
@@ -44,13 +49,14 @@ for n_trial = 1:size(p.trial_events,1)
 
         Screen('DrawTexture', w.window, stimuli.test_textures_made(curr_contrast, curr_filter_width, curr_noise_sample), [], noise_patch, curr_test_orient);
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch, curr_test_orient);
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch);
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
         if n_frame == 1
             test_frames_onsets = frames.test_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, test_frames_onsets(n_frame)); % add output of flip
+        [exe_timing.test_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.test_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.test_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.test_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, test_frames_onsets(n_frame)); % add output of flip
 
         if p.disp_on && n_frame == frames.test_frames_count
             %pause(3);
@@ -71,13 +77,14 @@ for n_trial = 1:size(p.trial_events,1)
 
         Screen('DrawTexture', w.window, stimuli.mask_textures_made(curr_contrast, curr_noise_sample), [], noise_patch);
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch);
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
         if n_frame == 1
             mask_frames_onsets = frames.mask_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, mask_frames_onsets(n_frame));
+        [exe_timing.mask_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.mask_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.mask_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.mask_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, mask_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.mask_frames_count
             %pause(3);
@@ -89,13 +96,14 @@ for n_trial = 1:size(p.trial_events,1)
 
     for n_frame = 1:frames.delay_frames_count
 
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch);
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
         if n_frame == 1
             delay_frames_onsets = frames.delay_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, delay_frames_onsets(n_frame));
+        [exe_timing.delay_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.delay_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.delay_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.delay_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, delay_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.delay_frames_count
             %pause(3);
@@ -111,13 +119,14 @@ for n_trial = 1:size(p.trial_events,1)
 
         Screen('DrawTexture',w.window, stimuli.probe_line_made, [], probe_patch, curr_probe_orient);
         Screen('DrawTexture', w.window, stimuli.aperture_made, [], aperture_patch);
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch);
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
         if n_frame == 1
             probe_frames_onsets = frames.probe_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, probe_frames_onsets(n_frame));
+        [exe_timing.probe_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.probe_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.probe_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.probe_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, probe_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.probe_frames_count
             %pause(3);
@@ -133,7 +142,7 @@ for n_trial = 1:size(p.trial_events,1)
 
     while no_response_recorded
 
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch);
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch);
         Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch);
 
         Screen('Flip', w.window);

@@ -20,11 +20,11 @@ rng(t.my_rng_seed);
 %% Toggles
 
 p.which_setup = 0; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
-p.disp_on = 0;
+p.disp_on = 1;
 p.half_screen = 1;
 p.simulate_response = 1;
-p.training = 0;
-p.calibration = 1;
+p.training = 1;
+p.calibration = 0;
 
 % Sync Test
 if ~any(p.which_setup == 1:3)
@@ -80,8 +80,6 @@ open_window
 
 %% Initialize trackers
 
-num_runs_to_complete = 1;
-n_run = 1;
 exit_session = 0; % default: 0
 
 %% Session loop
@@ -99,51 +97,8 @@ while ~exit_session
     % Enter experiment
     run_info = run_experiment(p, w, dirs);
 
-    % Rest between runs / All done screen
-    if n_run ~= num_runs_to_complete
-
-        % Rest text
-        rest_text = ['Run ' num2str(n_run) ' of ' num2str(num_runs_to_complete) ' done! ' ...
-            'When ready for the next run, press ' KbName(p.trigger_key) ' to begin.'];
-
-        rest_text_boundary = Screen('TextBounds', w.window, rest_text);
-        rest_text_patch = CenterRectOnPoint(rest_text_boundary, w.centerX, w.centerY);
-
-        % Draw and flip
-        Screen('DrawText', w.window, rest_text, rest_text_patch(1), rest_text_patch(2), w.white);
-        Screen('Flip', w.window);
-
-        % Let user progress to next run when ready
-        KbQueueFlush(p.device_number);
-        ready_for_next_run = 0;
-
-        while ~ready_for_next_run
-
-            % Check for response
-            if ~p.simulate_response
-                [key_pressed, first_press] = KbQueueCheck(p.device_number);
-                which_press = find(first_press);
-            else
-                key_pressed = 1;
-                which_press = p.trigger_key;
-            end
-
-            % Evaluate response
-            if key_pressed && ~isempty(which_press)
-                if which_press(1) == p.keypress_numbers(end)
-                    % escape session
-                    exit_session = 1;
-                elseif which_press(1) == p.trigger_key
-                    % update flags for progression
-                    n_run = n_run + 1;
-                    ready_for_next_run = 1;
-                end
-            end
-
-        end
-
-
-    else
+    % All done screen
+    if ~exit_session
 
         exit_session = 1;
 

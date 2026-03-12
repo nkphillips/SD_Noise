@@ -1,45 +1,57 @@
-% fit_calibration.m
-% Extracts 3 subject-specific levels from calibration data.
+% validate_calibration.m
+% Validates the calibration fits using the simulated data
 
 clear all; close all; clc;
 
-%% 1. Set subject IDs and directories
-% You can add multiple subject IDs to this cell array
-subj_IDs = {'999'};
+%% Set directories
+script_dir = pwd;
+data_dir = '../data';
 
-data_base_dir = '../../data/';
+num_subjs = 5;
+subj_IDs = cell(num_subjs,1);
+for subj = 1:num_subjs
+    subj_IDs{subj} = num2str(9900 + subj - 1);
+end
 
-for s = 1:length(subj_IDs)
-    subj_ID = subj_IDs{s};
-    data_dir = [data_base_dir subj_ID];
+target_levels = [0.65, 0.75, 0.85];
+gamma = 0.5;
+lambda = 0.01;
+options = optimset('Display', 'off');
 
-    disp(['Processing calibration for Subject ' subj_ID '...']);
+%% Validate each subject
+for subj = 1:num_subjs
+
+    subj_ID = subj_IDs{subj};
 
     % Load all calibration runs for this subject
-    file_pattern = [data_dir '/SD_Noise_Exp2_Calibration_S' subj_ID '_Run*.mat'];
+    file_pattern = [data_dir '/' subj_ID '/SD_Noise_Exp2_Calibration_S' subj_ID '_Run*.mat'];
     files = dir(file_pattern);
 
     if isempty(files)
-        warning('No calibration data found for subject %s. Skipping...', subj_ID);
+        warning('No calibration data found for subject %s. Skipping.', subj_ID);
         continue;
     end
 
-    %% 2. Aggregate Data
     all_contrast_correct = [];
     all_contrast_levels = [];
-
     all_filter_correct = [];
     all_filter_levels = [];
 
+    true_params = [];
+
     for f = 1:length(files)
-        load([data_dir '/' files(f).name], 'run_info');
+        load([data_dir '/' subj_ID '/' files(f).name], 'run_info');
         p = run_info.p;
         behav_data = run_info.behav_data;
+
+        if isempty(true_params) && isfield(p, 'true_params')
+            true_params = p.true_params;
+        end
 
         for n_block = 1:p.num_blocks
             curr_feature = p.feature_order(n_block);
 
-            % Calculate probe offset to exclude 0-offset trials from proportion correct
+            % Calculate probe offset to identify 0-offset trials
             test_ori = p.trial_events(:, 1, n_block);
             probe_ori = p.trial_events(:, 2, n_block);
             probe_offset = probe_ori - test_ori;
@@ -48,11 +60,12 @@ for s = 1:length(subj_IDs)
             probe_offset(probe_offset > 90) = probe_offset(probe_offset > 90) - 180;
             probe_offset(probe_offset < -90) = probe_offset(probe_offset < -90) + 180;
 
-            % Exclude 0-offset trials because guessing brings the asymptote down to ~0.92,
-            % which severely biases the Weibull/EqNoise fits (which expect a 1.0 asymptote).
+            % We exclude 0-offset trials because there is no true "correct" answer.
+            % An observer will guess 50% of the time regardless of contrast/noise,
+            % which artificially pulls down the asymptote from 1.0 to ~0.92,
+            % causing the Weibull/EqNoise fits (which assume lambda=0.01) to underestimate slope.
             valid_trials = probe_offset ~= 0;
 
-            % p.trial_events structure: [test_orientations, probe_orientations, level_order]
             levels = p.trial_events(valid_trials, 3, n_block);
             correct = behav_data.correct(valid_trials, n_block);
 
@@ -68,7 +81,6 @@ for s = 1:length(subj_IDs)
         end
     end
 
-
     % Compute proportions
     [unique_c, ~, idx_c] = unique(all_contrast_levels);
     n_c = accumarray(idx_c, 1);
@@ -80,15 +92,8 @@ for s = 1:length(subj_IDs)
     k_fw = accumarray(idx_fw, all_filter_correct, [], @sum);
     prop_fw = k_fw ./ n_fw;
 
-    %% 3. Fit Models (Maximum Likelihood Estimation)
-
-    % Fixed parameters
-    gamma = 0.5;   % Guess rate (2AFC)
-    lambda = 0.01; % Lapse rate
-    options = optimset('Display', 'off');
-
+    %% Fit Models
     % --- A. Contrast (Weibull) ---
-    % P(x) = gamma + (1 - gamma - lambda) * (1 - exp(-(x/alpha)^beta))
     weibull_prob = @(x, alpha, beta) gamma + (1 - gamma - lambda) * (1 - exp(-(x./alpha).^beta));
 
     nll_weibull = @(params) -sum( ...
@@ -111,8 +116,6 @@ for s = 1:length(subj_IDs)
         end
     end
 
-    % fmincon for Contrast
-    % bounds: alpha (threshold) in [0.001, 1.0], beta (slope) in [0.5, 5.0]
     lb_c = [0.001, 0.5];
     ub_c = [1.0, 5.0];
     best_params_c = fmincon(nll_weibull, best_guess_c, [], [], [], [], lb_c, ub_c, [], options);
@@ -120,8 +123,6 @@ for s = 1:length(subj_IDs)
     beta_c = best_params_c(2);
 
     % --- B. Filter Width (Equivalent Noise) ---
-    % d' = Signal / sqrt(x^2 + sigma_int^2)
-    % P(x) = (1 - lambda) * normcdf(d' / sqrt(2)) + lambda * 0.5
     en_prob = @(x, sig, sig_int) (1 - lambda) * normcdf( (sig ./ sqrt(x.^2 + sig_int.^2)) / sqrt(2) ) + lambda * 0.5;
 
     nll_en = @(params) -sum( ...
@@ -144,42 +145,32 @@ for s = 1:length(subj_IDs)
         end
     end
 
-    % fmincon for Filter Width
-    % bounds: signal in [1.0, 50.0], sigma_int in [1.0, 30.0]
     lb_fw = [1.0, 1.0];
     ub_fw = [50.0, 30.0];
     best_params_fw = fmincon(nll_en, best_guess_fw, [], [], [], [], lb_fw, ub_fw, [], options);
     signal_fw = best_params_fw(1);
     sigma_int_fw = best_params_fw(2);
 
-    %% 4. Inverse Steps to Find 3 Levels
+    %% Calculate Errors
+    fprintf('Subject %s Parameters Validation:\n', subj_ID);
+    fprintf('  Contrast (Alpha): True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.alpha_c, alpha_c, abs(true_params.alpha_c - alpha_c));
+    fprintf('  Contrast (Beta) : True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.beta_c, beta_c, abs(true_params.beta_c - beta_c));
+    fprintf('  EqNoise (Signal): True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.signal_fw, signal_fw, abs(true_params.signal_fw - signal_fw));
+    fprintf('  EqNoise (Sig_int):True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.sigma_int_fw, sigma_int_fw, abs(true_params.sigma_int_fw - sigma_int_fw));
+    fprintf('--------------------------------------------------\n');
 
-    target_levels = [0.65, 0.75, 0.85];
-
-    % --- A. Contrast Inverse ---
-    % K = (P_target - gamma) / (1 - gamma - lambda)
-    % x = alpha * [-ln(1 - K)]^(1/beta)
-
+    %% Extract 3 Levels
     K = (target_levels - gamma) ./ (1 - gamma - lambda);
     calib_contrast = alpha_c .* (-log(1 - K)).^(1/beta_c);
-
-    % Restrict to reasonable values
     calib_contrast = max(0.01, min(1.0, calib_contrast));
-
-    % --- B. Filter Width Inverse ---
-    % P_target = (1 - lambda) * normcdf(...) + lambda * 0.5
-    % P_target_adj = (P_target - lambda * 0.5) / (1 - lambda)
-    % d'_target = sqrt(2) * norminv(P_target_adj)
-    % x = sqrt( (Signal / d'_target)^2 - sigma_int^2 )
 
     P_target_adj = (target_levels - lambda * 0.5) ./ (1 - lambda);
     d_target = sqrt(2) .* norminv(P_target_adj);
-
     calib_filter = zeros(1, length(target_levels));
+
     for i = 1:length(target_levels)
         val = (signal_fw / d_target(i))^2 - sigma_int_fw^2;
         if val < 0
-            warning('Target performance %.2f unreachable (internal noise too high). Clamping to 0.', target_levels(i));
             calib_filter(i) = 0;
         else
             calib_filter(i) = sqrt(val);
@@ -196,58 +187,50 @@ for s = 1:length(subj_IDs)
     % We must also reverse the target levels when plotting so that they map correctly to the reversed filter array
     filter_target_levels = flip(target_levels);
 
-    %% 5. Save Levels
+    %% Plot
+    figure('Color', 'w', 'Position', [100, 100, 1000, 400], 'Name', ['S' subj_ID ' Simulation Fits']);
 
-    calib.target_levels = target_levels;
-    calib.contrast_levels = calib_contrast;
-    calib.filter_width_levels = calib_filter;
-    calib.fit_params.contrast_alpha = alpha_c;
-    calib.fit_params.contrast_beta = beta_c;
-    calib.fit_params.filter_signal = signal_fw;
-    calib.fit_params.filter_sigma_int = sigma_int_fw;
-
-    save([data_dir '/S' subj_ID '_calibrated_levels.mat'], 'calib');
-    disp(['Successfully saved calibrated levels to: ' data_dir '/S' subj_ID '_calibrated_levels.mat']);
-
-    %% 6. Plot the Fits
-
-    figure('Color', 'w', 'Position', [100, 100, 1000, 400], 'Name', ['S' subj_ID ' Calibration Fits']);
-
-    % Plot Contrast
+    % Contrast
     subplot(1,2,1);
     plot(unique_c, prop_c, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6); hold on;
-    x_fit_c = linspace(0, max(unique_c), 100);
+    x_fit_c = linspace(0, max(unique_c)*1.2, 100);
     plot(x_fit_c, weibull_prob(x_fit_c, alpha_c, beta_c), 'r-', 'LineWidth', 2);
+    plot(x_fit_c, weibull_prob(x_fit_c, true_params.alpha_c, true_params.beta_c), 'g--', 'LineWidth', 2);
+    
     for i = 1:3
         plot([0 calib_contrast(i)], [target_levels(i) target_levels(i)], 'b--', 'HandleVisibility', 'off');
         plot([calib_contrast(i) calib_contrast(i)], [0 target_levels(i)], 'b--', 'HandleVisibility', 'off');
         plot(calib_contrast(i), target_levels(i), 'b*', 'MarkerSize', 8);
     end
+    
     xlim([0 max(max(unique_c), max(calib_contrast))*1.1]);
     ylim([0.4 1.0]);
     xlabel('Contrast'); ylabel('Proportion Correct');
     title(sprintf('Weibull Fit (\\alpha=%.2f, \\beta=%.2f)', alpha_c, beta_c));
+    legend('Simulated Data', 'Fit', 'True Generative', 'Location', 'SouthEast');
     set(gca, 'TickDir', 'out', 'TickLength', [0.015, 0.015]);
     box off; axis square;
 
-    % Plot Filter Width
+    % Filter Width
     subplot(1,2,2);
     plot(unique_fw, prop_fw, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6); hold on;
-    x_fit_fw = linspace(0, max(unique_fw), 100);
+    x_fit_fw = linspace(0, max(unique_fw)*1.2, 100);
     plot(x_fit_fw, en_prob(x_fit_fw, signal_fw, sigma_int_fw), 'r-', 'LineWidth', 2);
+    plot(x_fit_fw, en_prob(x_fit_fw, true_params.signal_fw, true_params.sigma_int_fw), 'g--', 'LineWidth', 2);
+    
     for i = 1:3
         plot([0 calib_filter(i)], [filter_target_levels(i) filter_target_levels(i)], 'b--', 'HandleVisibility', 'off');
         plot([calib_filter(i) calib_filter(i)], [0 filter_target_levels(i)], 'b--', 'HandleVisibility', 'off');
         plot(calib_filter(i), filter_target_levels(i), 'b*', 'MarkerSize', 8);
     end
+    
     xlim([0 max(max(unique_fw), max(calib_filter))*1.1]);
     ylim([0.4 1.0]);
     xlabel('Filter Width (\sigma_{ext})'); ylabel('Proportion Correct');
     title(sprintf('Eq Noise Fit (Sig=%.2f, \\sigma_{int}=%.2f)', signal_fw, sigma_int_fw));
+    legend('Simulated Data', 'Fit', 'True Generative', 'Location', 'SouthEast');
     set(gca, 'TickDir', 'out', 'TickLength', [0.015, 0.015]);
     box off; axis square;
-    
-    drawnow; % ensure figures are rendered before continuing the loop
     
     %% Save Figure
     fig_dir = [script_dir '/figures'];
@@ -256,7 +239,7 @@ for s = 1:length(subj_IDs)
     end
     
     % Save as PDF
-    fig_filename = [fig_dir '/S' subj_ID '_Calibration_Fit.pdf'];
+    fig_filename = [fig_dir '/S' subj_ID '_Calibration_Simulation.pdf'];
     exportgraphics(gcf, fig_filename, 'ContentType', 'vector');
-
-end % End of subject loop
+        
+end

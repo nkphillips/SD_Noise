@@ -14,7 +14,7 @@ if ~p.simulate_response
     for n_frame = 1:frames.rest_frames_count
 
         % Draw Fixation
-        Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+        Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
         Screen('FillOval', w.window, p.rest_fixation_color, fixation_dot_patch); % Fixation dot
 
         % Flip
@@ -34,7 +34,7 @@ KbQueueFlush(p.device_number);
 while ~exit_rest
 
     % Draw Fixation
-    Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+    Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
     Screen('FillOval', w.window, w.green, fixation_dot_patch); % Fixation dot
 
     % Flip
@@ -58,7 +58,7 @@ while ~exit_rest
 end
 
 % Draw fixation
-Screen('DrawTexture', w.window, fixation_space_made, [], fixation_space_patch); % Fixation circle
+Screen('DrawTexture', w.window, stimuli.fixation_space_made, [], fixation_space_patch); % Fixation circle
 Screen('FillOval', w.window, p.fixation_dot_color, fixation_dot_patch); % Fixation dot
 Screen('Flip', w.window);
 

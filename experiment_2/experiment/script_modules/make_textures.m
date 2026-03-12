@@ -15,11 +15,11 @@ tic
 
 %% Make fixation space
 
-fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
+stimuli.fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
 
 %% Make aperture
 
-stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
+stimuli.aperture_made = Screen('MakeTexture', w.window, stimuli.aperture_texture);
 
 %% Make noise stimuli
 
