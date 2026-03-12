@@ -23,15 +23,15 @@ p.width_px = round(p.aperture_radius_px*2 + w.ppd);
 %% Define contrast and filter width levels
 
 if p.training
-    p.contrast = 0.9;
-    p.orientation_bp_filter_width = 2;
+    p.contrast = 0.7;
+    p.orientation_bp_filter_width = 10;
 elseif p.calibration
     p.num_levels = 7;
-    p.contrast_min = 0.05;
+    p.contrast_min = 0.10;
     p.contrast_max = 0.9;
     p.contrast = round(logspace(log10(p.contrast_min), log10(p.contrast_max), p.num_levels),2);
 
-    p.filter_width_min = 2;
+    p.filter_width_min = 10;
     p.filter_width_max = 80;
     p.orientation_bp_filter_width = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 else

@@ -11,6 +11,8 @@ lur003@ucsd.edu
 
 function run_info = run_experiment(p,w,dirs)
 
+t_session_start = GetSecs;
+
 %% Verify run number to make sure nothing gets overwritten
 % Check if subject folder exists;
 % If it doesn't, create it and move on. p.run_num is 1.
@@ -78,6 +80,14 @@ screen_text_patch = CenterRectOnPoint(screen_text_boundary, w.centerX, w.centerY
 
 Screen('DrawText', w.window, loading_text, screen_text_patch(1),  screen_text_patch(2), w.white);
 Screen('Flip', w.window);
+
+t.session_start_time = t_session_start;
+t.session_end_time = GetSecs;
+t.session_dur = (t.session_end_time - t.session_start_time) / 60; % min
+
+if p.disp_on
+    disp(['Actual total session duration: ' num2str(round(t.session_dur, 2)) ' minutes']);
+end
 
 run_info.behav_data = behav_data;
 run_info.p = p;

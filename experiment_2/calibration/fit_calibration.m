@@ -3,6 +3,12 @@
 
 clear all; close all; clc;
 
+%% Set directories
+addpath('../analyses/plotting');
+
+% Load plot settings
+ps = plotSettings();
+
 %% 1. Set subject IDs and directories
 % You can add multiple subject IDs to this cell array
 subj_IDs = {'999'};
@@ -69,16 +75,18 @@ for s = 1:length(subj_IDs)
     end
 
 
-    % Compute proportions
+    % Compute proportions and standard errors
     [unique_c, ~, idx_c] = unique(all_contrast_levels);
     n_c = accumarray(idx_c, 1);
     k_c = accumarray(idx_c, all_contrast_correct, [], @sum);
     prop_c = k_c ./ n_c;
+    se_c = sqrt(prop_c .* (1 - prop_c) ./ n_c);
 
     [unique_fw, ~, idx_fw] = unique(all_filter_levels);
     n_fw = accumarray(idx_fw, 1);
     k_fw = accumarray(idx_fw, all_filter_correct, [], @sum);
     prop_fw = k_fw ./ n_fw;
+    se_fw = sqrt(prop_fw .* (1 - prop_fw) ./ n_fw);
 
     %% 3. Fit Models (Maximum Likelihood Estimation)
 
@@ -215,36 +223,37 @@ for s = 1:length(subj_IDs)
 
     % Plot Contrast
     subplot(1,2,1);
-    plot(unique_c, prop_c, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6); hold on;
+    errorbar(unique_c, prop_c, se_c, 'o', 'Color', ps.colors.black, 'MarkerFaceColor', ps.colors.black, 'MarkerSize', 6, 'CapSize', 0, 'LineWidth', ps.line_width); hold on;
     x_fit_c = linspace(0, max(unique_c), 100);
-    plot(x_fit_c, weibull_prob(x_fit_c, alpha_c, beta_c), 'r-', 'LineWidth', 2);
+    plot(x_fit_c, weibull_prob(x_fit_c, alpha_c, beta_c), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     for i = 1:3
-        plot([0 calib_contrast(i)], [target_levels(i) target_levels(i)], 'b--', 'HandleVisibility', 'off');
-        plot([calib_contrast(i) calib_contrast(i)], [0 target_levels(i)], 'b--', 'HandleVisibility', 'off');
-        plot(calib_contrast(i), target_levels(i), 'b*', 'MarkerSize', 8);
+        plot([0 calib_contrast(i)], [target_levels(i) target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
+        plot([calib_contrast(i) calib_contrast(i)], [0 target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
+        plot(calib_contrast(i), target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
     end
     xlim([0 max(max(unique_c), max(calib_contrast))*1.1]);
     ylim([0.4 1.0]);
-    xlabel('Contrast'); ylabel('Proportion Correct');
-    title(sprintf('Weibull Fit (\\alpha=%.2f, \\beta=%.2f)', alpha_c, beta_c));
-    set(gca, 'TickDir', 'out', 'TickLength', [0.015, 0.015]);
+    xlabel('Contrast', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    title(sprintf('Weibull Fit (\\alpha=%.2f, \\beta=%.2f)', alpha_c, beta_c), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    legend('Data', 'Fit', 'Location', 'best', 'FontSize', ps.axes_tick_font_size);
+    set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
 
     % Plot Filter Width
     subplot(1,2,2);
-    plot(unique_fw, prop_fw, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 6); hold on;
+    errorbar(unique_fw, prop_fw, se_fw, 'o', 'Color', ps.colors.black, 'MarkerFaceColor', ps.colors.black, 'MarkerSize', 6, 'CapSize', 0, 'LineWidth', ps.line_width); hold on;
     x_fit_fw = linspace(0, max(unique_fw), 100);
-    plot(x_fit_fw, en_prob(x_fit_fw, signal_fw, sigma_int_fw), 'r-', 'LineWidth', 2);
+    plot(x_fit_fw, en_prob(x_fit_fw, signal_fw, sigma_int_fw), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     for i = 1:3
-        plot([0 calib_filter(i)], [filter_target_levels(i) filter_target_levels(i)], 'b--', 'HandleVisibility', 'off');
-        plot([calib_filter(i) calib_filter(i)], [0 filter_target_levels(i)], 'b--', 'HandleVisibility', 'off');
-        plot(calib_filter(i), filter_target_levels(i), 'b*', 'MarkerSize', 8);
+        plot([0 calib_filter(i)], [filter_target_levels(i) filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
+        plot([calib_filter(i) calib_filter(i)], [0 filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
+        plot(calib_filter(i), filter_target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
     end
     xlim([0 max(max(unique_fw), max(calib_filter))*1.1]);
     ylim([0.4 1.0]);
-    xlabel('Filter Width (\sigma_{ext})'); ylabel('Proportion Correct');
-    title(sprintf('Eq Noise Fit (Sig=%.2f, \\sigma_{int}=%.2f)', signal_fw, sigma_int_fw));
-    set(gca, 'TickDir', 'out', 'TickLength', [0.015, 0.015]);
+    xlabel('Filter Width (\sigma_{ext})', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    title(sprintf('Eq Noise Fit (Sig=%.2f, \\sigma_{int}=%.2f)', signal_fw, sigma_int_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
     
     drawnow; % ensure figures are rendered before continuing the loop
@@ -257,6 +266,14 @@ for s = 1:length(subj_IDs)
     
     % Save as PDF
     fig_filename = [fig_dir '/S' subj_ID '_Calibration_Fit.pdf'];
-    exportgraphics(gcf, fig_filename, 'ContentType', 'vector');
+    
+    % Use exportgraphics to prevent clipping and ensure consistent sizing
+    if exist('exportgraphics', 'file')
+        exportgraphics(gcf, fig_filename, 'ContentType', 'vector');
+    else
+        set(gcf, 'PaperPositionMode', 'auto');
+        set(gcf, 'PaperOrientation', 'landscape');
+        print(gcf, fig_filename, '-dpdf', '-bestfit');
+    end
 
 end % End of subject loop

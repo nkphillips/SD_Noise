@@ -20,7 +20,7 @@ functions_dir = '../experiment/functions'; addpath(functions_dir);
 data_dir = '../data'; addpath(data_dir);
 
 %% Set subjects
-num_subjs = 5;
+num_subjs = 20;
 
 subj_IDs = cell(num_subjs,1);
 for subj = 1:num_subjs
@@ -29,7 +29,6 @@ end
 
 %% Experiment parameters
 
-p.run_num = 1;
 p.feature_name = {'contrast', 'filter'};
 p.num_features = numel(p.feature_name);
 p.num_trials_per_lvl_per_block = 16; % matching recommended 10 trials per level per block for a 90 min session
@@ -39,11 +38,11 @@ p.num_blocks_per_feature = p.num_blocks / p.num_features;
 %% Define stimulus parameters
 
 p.num_levels = 7;
-p.contrast_min = 0.05;
+p.contrast_min = 0.10;
 p.contrast_max = 0.9;
 p.contrast = round(logspace(log10(p.contrast_min), log10(p.contrast_max), p.num_levels),2);
 
-p.filter_width_min = 2;
+p.filter_width_min = 10;
 p.filter_width_max = 80;
 p.orientation_bp_filter_width = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 
@@ -66,8 +65,10 @@ for subj = 1:num_subjs
     true_beta_c = 1.5 + (3.0 - 1.5) * rand();
 
     % Filter width (Eq Noise)
-    true_signal_fw = 10 + (30 - 10) * rand();
-    true_sigma_int_fw = 5 + (15 - 5) * rand();
+    % To ensure 85% performance is physically reachable (val > 0), the model requires:
+    % signal_fw > 1.465 * sigma_int_fw. We set bounds to guarantee this for simulated subjects.
+    true_sigma_int_fw = 5 + (10 - 5) * rand(); % Internal noise between 5 and 10
+    true_signal_fw = 20 + (40 - 20) * rand();  % Signal strength between 20 and 40
 
     % Fixed parameters
     true_gamma = 0.5;

@@ -29,6 +29,10 @@ t.rest_dur = 10; % default = 10;
 
 t.exp_dur_est = round((p.num_trials * t.trial_dur_est + sum(t.iti_dur) + t.rest_dur * (p.num_blocks-1)) / 60, 2);
 
+if p.disp_on
+    disp(['Estimated experiment duration: ' num2str(t.exp_dur_est) ' minutes (' num2str(t.block_dur_est) ' minutes / block)']);
+end
+
 %% Define noise sample update rate
 
 t.noise_sample_update_rate = 10; % Hz; default = 20

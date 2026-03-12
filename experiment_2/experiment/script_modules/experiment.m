@@ -66,3 +66,7 @@ disp(['Performance: ' num2str(round(100*mean(behav_data.performance(:)))) '%']);
 
 t.exp_end_time = GetSecs;
 t.exp_dur = (t.exp_end_time - t.exp_start_time) / 60; % min
+
+if p.disp_on
+    disp(['Actual task duration: ' num2str(round(t.exp_dur, 2)) ' minutes']);
+end

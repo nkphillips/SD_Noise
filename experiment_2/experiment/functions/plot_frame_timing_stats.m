@@ -54,7 +54,7 @@ for i = 1:length(phases)
         if ~isempty(frame_durs) && size(frame_durs, 2) > 0
             histogram(frame_durs(:), 50); hold on;
             yl = ylim;
-            line([t.frame_dur t.frame_dur], yl, 'Color', 'k', 'LineWidth', 1, 'LineStyle', '--');
+            line([t.frame_dur t.frame_dur], yl, 'Color', ps.colors.red, 'LineWidth', 1, 'LineStyle', '--');
 
             title([capitalize(phase) ' Frame Durs (s)'])
             box off; axis square;
