@@ -56,7 +56,7 @@ if p.training
     % Note that the number of levels for each condition in training is 1
     p.num_trials_per_lvl_per_block = 20; % Default = 20
 elseif p.calibration
-    p.num_trials_per_lvl_per_block = 16; % Based on 90m session recommendation
+    p.num_trials_per_lvl_per_block = 1; % default = 16; Based on 90m session recommendation
 else
     p.num_trials_per_lvl_per_block = 40; % Default = 40
 end
