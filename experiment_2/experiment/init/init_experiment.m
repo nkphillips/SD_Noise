@@ -34,11 +34,11 @@ p.feature_name = {'contrast', 'filter'};
 p.num_features = numel(p.feature_name);
 
 if p.training
-    p.num_blocks = p.num_features;
+    p.num_blocks = p.num_features; % Default = num_features (2)
 elseif p.calibration
-    p.num_blocks = 8;
+    p.num_blocks = 8; % Default = 8
 else
-    p.num_blocks = 6;
+    p.num_blocks = 6; % Default = 6
     while mod(p.num_blocks, p.num_features) ~= 0, p.num_blocks = input(['Error! Number of blocks must be a multiple of ' num2str(p.num_features) '. Please enter a multiple of 2: ']); end
 end
 
@@ -56,9 +56,9 @@ if p.training
     % Note that the number of levels for each condition in training is 1
     p.num_trials_per_lvl_per_block = 20; % Default = 20
 elseif p.calibration
-    p.num_trials_per_lvl_per_block = 1; % Default = 16; Based on 90m session recommendation
+    p.num_trials_per_lvl_per_block = 10; % Default = 10
 else
-    p.num_trials_per_lvl_per_block = 40; % Default = 40
+    p.num_trials_per_lvl_per_block = 38; % Default = 38
 end
 
 %% Generate level order, orientations, correct response

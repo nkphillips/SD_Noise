@@ -1,32 +1,32 @@
-function recommend_experiment_design(target_trials_per_level, task_dur_mins, max_block_mins, t, p)
+function recommend_experiment_design(target_task_dur_mins, max_task_dur_mins, max_block_mins, t, p)
 % recommend_experiment_design Calculates optimal block and trial
-% distributions to reach a target number of trials per level while fitting
-% within task duration and block duration constraints.
+% distributions for the main experiment, assuming 3 fixed levels derived
+% from the calibration phase.
 %
 % Usage:
 %   recommend_experiment_design()
-%       Uses hardcoded default targets and timing.
+%       Uses hardcoded default timing and features.
 %
-%   recommend_experiment_design(target_trials_per_level)
-%       Overrides target trials per level per feature (default: 40).
+%   recommend_experiment_design(target_task_dur_mins)
+%       Overrides target task duration (default: 60 mins).
 %
-%   recommend_experiment_design(target_trials_per_level, task_dur_mins, max_block_mins, t, p)
+%   recommend_experiment_design(target_task_dur_mins, max_task_dur_mins, max_block_mins, t, p)
 %       Overrides all parameters and constraints.
 
 % Define Defaults if not provided
 if nargin < 1
-    target_trials_per_level = 40; % 40-50 is standard for psychometric MLE fits
+    target_task_dur_mins = 60;
 end
 
 if nargin < 2
-    task_dur_mins = 60;
-end
-
-if nargin < 3
-    max_block_mins = 10;
+    max_task_dur_mins = 70;
 end
 
 if nargin < 4
+    max_block_mins = 10;
+end
+
+if nargin < 5
     % Hardcoded timing defaults from init_timing.m
     t.test_dur = 0.5;
     t.mask_dur = 0.5;
@@ -38,9 +38,10 @@ if nargin < 4
     t.rest_dur = 10.0;
 end
 
-if nargin < 5
+if nargin < 6
     % Hardcoded feature defaults
     p.num_features = 2; % Contrast and Filter Width
+    p.num_levels = 3; % The main experiment always uses 3 calibrated levels
 end
 
 % 1. Calculate Average Trial Time
@@ -48,79 +49,63 @@ avg_iti = mean([t.iti_min, t.iti_max]);
 trial_dur = t.test_dur + t.mask_dur + t.delay_dur + t.probe_dur + t.response_dur_est + avg_iti;
 
 % Constraints in seconds
-active_task_secs = task_dur_mins * 60;
+target_task_secs = target_task_dur_mins * 60;
+max_task_secs = max_task_dur_mins * 60;
 max_block_secs = max_block_mins * 60;
 
-fprintf('\n=== Searching for Optimal Design ===\n');
-fprintf('Target Trials Per Level: %d\n', target_trials_per_level);
-fprintf('Max Task Duration: %d mins\n', task_dur_mins);
+% 2. Calculate optimal N (replicates per level per block)
+% Each feature block tests its target feature at p.num_levels while keeping the other at baseline
+trials_per_N = p.num_levels;
+max_N_per_block = floor(max_block_secs / (trials_per_N * trial_dur));
+
+if max_N_per_block < 1
+    error('Max block duration is too short to fit even one replicate per level.');
+end
+
+best_N = max_N_per_block;
+trials_per_block = best_N * p.num_levels;
+block_dur = trials_per_block * trial_dur;
+
+% 3. Calculate how many blocks fit in the target duration
+% Block duration + rest duration (assume 1 rest after every block)
+% Try to get as close to the target duration as possible without exceeding the max duration
+best_blocks = 0;
+best_diff_from_target = inf;
+
+% Search for the best number of blocks
+for b = p.num_features:p.num_features:100 % Check in multiples of num_features
+    total_time_secs = (b * block_dur) + ((b - 1) * t.rest_dur);
+    
+    if total_time_secs <= max_task_secs
+        diff = abs(total_time_secs - target_task_secs);
+        if diff < best_diff_from_target
+            best_diff_from_target = diff;
+            best_blocks = b;
+        end
+    else
+        break; % exceeded max duration
+    end
+end
+
+if best_blocks < p.num_features
+    error('Max task duration too short to run even one balanced set of %d blocks.', p.num_features);
+end
+
+% 5. Recalculate metrics for output
+block_dur_mins = block_dur / 60;
+total_trials = best_blocks * trials_per_block;
+total_active_mins = (total_trials * trial_dur + t.rest_dur * (best_blocks - 1)) / 60;
+total_trials_per_level = (best_blocks / p.num_features) * best_N;
+
+fprintf('\n=== Searching for Optimal Main Experiment Design ===\n');
+fprintf('Target Task Duration: %d mins (Max: %d mins)\n', target_task_dur_mins, max_task_dur_mins);
 fprintf('Max Block Duration: %d mins\n', max_block_mins);
 fprintf('Average Trial Time: %.2f seconds\n\n', trial_dur);
 
-best_levels = 0;
-best_N = 0;
-best_blocks = 0;
-best_actual_trials = 0;
-
-% Search from high level counts down to 2
-for num_levels = 15:-1:2
-    
-    max_N = floor(max_block_secs / (num_levels * trial_dur));
-    
-    if max_N < 1
-        continue;
-    end
-    
-    for N = max_N:-1:1
-        trials_per_block = N * num_levels;
-        block_dur = trials_per_block * trial_dur;
-        
-        max_possible_blocks = floor((active_task_secs + t.rest_dur) / (block_dur + t.rest_dur));
-        
-        % Ensure balanced number of blocks for all features
-        B = floor(max_possible_blocks / p.num_features) * p.num_features;
-        
-        if B < p.num_features
-            continue;
-        end
-        
-        % Total trials for a given level of a specific feature
-        actual_trials = N * (B / p.num_features);
-        
-        if actual_trials >= target_trials_per_level
-            if num_levels > best_levels
-                best_levels = num_levels;
-                best_N = N;
-                best_blocks = B;
-                best_actual_trials = actual_trials;
-            elseif num_levels == best_levels
-                % If there is a tie in num_levels, prefer the configuration
-                % that gets closest to the target without going vastly over.
-                if actual_trials < best_actual_trials
-                    best_levels = num_levels;
-                    best_N = N;
-                    best_blocks = B;
-                    best_actual_trials = actual_trials;
-                end
-            end
-        end
-    end
-end
-
-if best_levels == 0
-    error('Could not find any design that satisfies the constraints! Try lowering the target trials per level or increasing the task duration.');
-end
-
-% Recalculate metrics for best fit
-trials_per_block = best_N * best_levels;
-block_dur_mins = (trials_per_block * trial_dur) / 60;
-total_trials = best_blocks * trials_per_block;
-total_active_mins = (total_trials * trial_dur + t.rest_dur * (best_blocks - 1)) / 60;
-
 fprintf('=== Recommended Experiment Design ===\n');
-fprintf('- Recommended Number of Levels: %d\n', best_levels);
+fprintf('- Fixed Number of Levels: %d\n', p.num_levels);
 fprintf('- Recommended Total Blocks: %d (multiple of %d features)\n', best_blocks, p.num_features);
-fprintf('- Total Trials per Level (per feature): %d (Target was %d)\n\n', best_actual_trials, target_trials_per_level);
+fprintf('- Total Trials per Level (per feature): %d\n\n', total_trials_per_level);
 
 fprintf('- Trials per Level per Block (N): %d\n', best_N);
 fprintf('- Total Trials per Block: %d\n', trials_per_block);

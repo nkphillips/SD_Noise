@@ -23,8 +23,8 @@ p.width_px = round(p.aperture_radius_px*2 + w.ppd);
 %% Define contrast and filter width levels
 
 if p.training
-    p.contrast = 0.7;
-    p.orientation_bp_filter_width = 10;
+    p.contrast = 0.7; % High enough to be clear, but not the absolute max
+    p.orientation_bp_filter_width = 10; % Minimum noise for clearest orientation
 elseif p.calibration
     p.num_levels = 8; % Default = 8
     p.contrast_min = 0.10;
