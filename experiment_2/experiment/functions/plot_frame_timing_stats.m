@@ -1,4 +1,4 @@
-function plot_frame_timing_stats(exe_timing, p, dirs, t)
+function plot_frame_timing_stats(exe_timing, p, dirs, t, ps)
 % plot_frame_timing_stats generates summary statistic figures of frame timing
 % vs intended timing and saves them as a PDF.
 
