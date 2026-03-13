@@ -33,17 +33,14 @@ else
         
     else
         
-        data_file_names = sort({data_files.name});
-        most_recent_file = data_file_names{end};
-        
-        file_strs = strsplit(most_recent_file,'_');
-        if ~p.training
-            most_recent_run_num = str2double(file_strs{5}(end));
-        else
-            most_recent_run_num = str2double(file_strs{6}(end));
+        run_nums = zeros(1, length(data_files));
+        for i = 1:length(data_files)
+            run_match = regexp(data_files(i).name, 'Run(\d+)', 'tokens');
+            if ~isempty(run_match)
+                run_nums(i) = str2double(run_match{1}{1});
+            end
         end
-        
-        p.run_num = most_recent_run_num + 1;
+        p.run_num = max(run_nums) + 1;
         
     end
     
@@ -65,45 +62,10 @@ init_experiment
 
 experiment
 
-%% Check event timing
+%% Check frame timing
 
-%{
-
-% Set figure path and check existence
-figure_path = dirs.logs_dir;
-if ~exist(figure_path,'dir')
-    mkdir(figure_path)
-    disp([figure_path ' created.'])
-end
-
-% Open figure
-fg  = figure('Color', [1 1 1]);
-set(0, 'CurrentFigure', fg)
-figure_name = ['S' p.subj_ID ' Frame timing Run ' num2str(p.run_num) ' ' p.which_setup];
-
-% Plot frame timing
-subplot(1,2,1)
-x = cat(1,exe_timing.test_Missed{:});
-plot(x'); hold on; line([min(xlim) max(xlim)], [0 0],'Color', 'k', 'LineStyle', '-')
-test_frames_missed = sum(x(:) > 0);
-title(['Test frames missed: ' num2str(test_frames_missed) ' (' num2str(round(mean(x(:) > 0) * 100)) '%)'])
-box off; axis square;
-xlabel('Frame #')
-ylabel('Deadline offset (s)')
-
-subplot(1,2,2)
-x = cat(1,exe_timing.top_up_Missed{:});
-plot(x'); hold on; line([min(xlim) max(xlim)], [0 0], 'Color', 'k', 'LineStyle', '-')
-top_up_frames_missed = sum(x(:) > 0);
-title(['Top up frames missed: ' num2str(top_up_frames_missed) ' (' num2str(round(mean(x(:) > 0) * 100)) '%)'])
-box off; axis square;
-xlabel('Frame #')
-ylabel('Deadline offset (s)')
-
-saveas(gcf,[figure_path '/' figure_name '.pdf']);
-close(fg)
-
-%}
+ps = plotSettings();
+plot_frame_timing_stats(exe_timing, p, dirs, t, ps);
 
 %% Save run info
 

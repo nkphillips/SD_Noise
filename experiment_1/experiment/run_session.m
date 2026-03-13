@@ -7,7 +7,7 @@ clear all; %#ok<CLALL>
 close all;
 
 commandwindow; % force cursor to command window
-% Priority(1); % Set MATLAB/Psychtoolbox to "high" priority level
+Priority(1); % Set MATLAB/Psychtoolbox to "high" priority level
 
 % Grab date
 t.the_date = datestr(now, 'yyyymmdd'); % Grab today's date
@@ -36,7 +36,7 @@ end
 
 %% Set directories
 
-p.subj_ID = '016';
+p.subj_ID = '999';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;
