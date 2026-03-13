@@ -99,7 +99,20 @@ for subj = 1:num_subjs
     se_fw = sqrt(prop_fw .* (1 - prop_fw) ./ n_fw); % Binomial standard error
 
     %% Fit Models
+    % This section fits psychometric functions to the empirical proportion correct data
+    % using Maximum Likelihood Estimation (MLE).
+    % We use two different models based on the manipulated feature:
+    % 1. Contrast: Weibull function (standard for visual contrast detection)
+    % 2. Filter Width: Equivalent Noise model (standard for orientation integration)
+
     % --- A. Contrast (Weibull) ---
+    % The Weibull function is defined by:
+    % alpha (threshold): The contrast level determining the scale/shift of the curve
+    % beta (slope): Determines the steepness of the psychometric curve
+    % gamma (guess rate): Fixed at 0.5 for 2AFC tasks
+    % lambda (lapse rate): Fixed at 0.01 to prevent unbounded log-likelihoods
+    %
+    % P(x) = gamma + (1 - gamma - lambda) * (1 - exp(-(x/alpha)^beta))
     weibull_prob = @(x, alpha, beta) gamma + (1 - gamma - lambda) * (1 - exp(-(x./alpha).^beta));
 
     nll_weibull = @(params) -sum( ...
@@ -107,28 +120,25 @@ for subj = 1:num_subjs
         (n_c - k_c) .* log(max(eps, 1 - weibull_prob(unique_c, params(1), params(2)))) ...
         );
 
-    % Coarse grid search for Contrast
-    alpha_grid = linspace(0.01, 1.0, 20);
-    beta_grid = linspace(0.5, 5.0, 20);
-    min_nll_c = inf;
-    best_guess_c = [mean(unique_c), 2];
-    for a = alpha_grid
-        for b = beta_grid
-            curr_nll = nll_weibull([a, b]);
-            if curr_nll < min_nll_c
-                min_nll_c = curr_nll;
-                best_guess_c = [a, b];
-            end
-        end
-    end
-
+    % fmincon for Contrast
+    % bounds: alpha (threshold) in [0.001, 1.0], beta (slope) in [0.5, 5.0]
     lb_c = [0.001, 0.5];
     ub_c = [1.0, 5.0];
+    best_guess_c = gridSearch(nll_weibull, lb_c, ub_c);
     best_params_c = fmincon(nll_weibull, best_guess_c, [], [], [], [], lb_c, ub_c, [], options);
     alpha_c = best_params_c(1);
     beta_c = best_params_c(2);
 
     % --- B. Filter Width (Equivalent Noise) ---
+    % The Equivalent Noise model assumes observer
+    % performance is limited by two additive sources of variance:
+    % 1. External noise (x): The physical variance in the stimulus (filter width)
+    % 2. Internal noise (sigma_int): The observer's own neural/representational noise
+    %
+    % Signal (sig): The strength of the internal representation
+    %
+    % d' = Signal / sqrt(x^2 + sigma_int^2)
+    % P(x) = (1 - lambda) * normcdf(d' / sqrt(2)) + lambda * 0.5
     en_prob = @(x, sig, sig_int) (1 - lambda) * normcdf( (sig ./ sqrt(x.^2 + sig_int.^2)) / sqrt(2) ) + lambda * 0.5;
 
     nll_en = @(params) -sum( ...
@@ -136,23 +146,11 @@ for subj = 1:num_subjs
         (n_fw - k_fw) .* log(max(eps, 1 - en_prob(unique_fw, params(1), params(2)))) ...
         );
 
-    % Coarse grid search for Filter Width
-    sig_grid = linspace(1, 50, 20);
-    sig_int_grid = linspace(1, 30, 20);
-    min_nll_fw = inf;
-    best_guess_fw = [15, 10];
-    for s = sig_grid
-        for si = sig_int_grid
-            curr_nll = nll_en([s, si]);
-            if curr_nll < min_nll_fw
-                min_nll_fw = curr_nll;
-                best_guess_fw = [s, si];
-            end
-        end
-    end
-
+    % fmincon for Filter Width
+    % bounds: signal in [1.0, 50.0], sigma_int in [1.0, 30.0]
     lb_fw = [1.0, 1.0];
     ub_fw = [50.0, 30.0];
+    best_guess_fw = gridSearch(nll_en, lb_fw, ub_fw);
     best_params_fw = fmincon(nll_en, best_guess_fw, [], [], [], [], lb_fw, ub_fw, [], options);
     signal_fw = best_params_fw(1);
     sigma_int_fw = best_params_fw(2);
@@ -166,6 +164,10 @@ for subj = 1:num_subjs
     fprintf('--------------------------------------------------\n');
 
     %% Extract 3 Levels
+    % Here we analytically invert the fitted psychometric functions to extract
+    % the physical stimulus values (contrast or filter width) that correspond
+    % to our targeted performance levels (e.g., 65%, 75%, 85% correct).
+
     K = (target_levels - gamma) ./ (1 - gamma - lambda);
     calib_contrast = alpha_c .* (-log(1 - K)).^(1/beta_c);
     calib_contrast = max(0.01, min(1.0, calib_contrast));
