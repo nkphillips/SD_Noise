@@ -69,6 +69,7 @@ init_device_input
 init_display
 open_window
 
+
 %% Load probe offset magnitudes
 
 if ~p.training && p.use_staircase

@@ -29,7 +29,7 @@ for n_block = 1:p.num_blocks
 
         % Update probe offsets if it's not the first block of the current condition
         if n_block > first_block(curr_cond)
-        
+
             prev_block = find(p.cond_order(1:n_block-1) == curr_cond, 1, 'last');
             prev_correct = behav_data.correct(:, prev_block);
             prev_lvl_order = p.trial_events(:, level_order_col, prev_block);
@@ -38,28 +38,28 @@ for n_block = 1:p.num_blocks
             step_size = squeeze(mean(p.staircases.step_size(:,end,:,curr_cond),1));
 
             new_probe_offsets = update_probe_offset(prev_correct, prev_lvl_order, probe_offsets, step_size, p.staircases.min_probe_offset, p.staircases.max_probe_offset);
-            
+
             if p.disp_on
                 disp('Old probe offsets:');
                 disp(num2str(probe_offsets));
                 disp('New probe offsets:');
-                disp(num2str(new_probe_offsets)); 
+                disp(num2str(new_probe_offsets));
             end
 
             p.probe_offsets(curr_cond,:) = new_probe_offsets;
-        
+
             curr_probe_offsets = p.probe_offsets(curr_cond, p.trial_events(:, level_order_col, n_block))';
             probe_orientation = calc_probe_orientation(p.trial_events(:,test_orientation_col, n_block), curr_probe_offsets);
             p.trial_events(:, probe_orientation_col, n_block) = probe_orientation;
-            
+
         end
 
     else
 
         probe_orientation = p.trial_events(:, probe_orientation_col, n_block);
-    
+
     end
-    
+
     % Storing correct response
     cclockwise_trials = double(probe_orientation < p.trial_events(:,test_orientation_col, n_block));
     cclockwise_trials(cclockwise_trials == 0) = 2;
@@ -68,7 +68,7 @@ for n_block = 1:p.num_blocks
     % Grab current block info
     n_trial = 1;
 
-    % Task 
+    % Task
     trials_loop
 
     % Enter rest period
