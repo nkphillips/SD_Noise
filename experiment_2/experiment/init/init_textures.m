@@ -14,13 +14,13 @@ tic
 
 %% Toggles
 
-    if p.training
-        textures_filename = ['SD_Noise_Exp2_Training_textures_' p.display_setup '.mat'];
-    elseif p.calibration
-        textures_filename = ['SD_Noise_Exp2_Calibration_textures_' p.display_setup '.mat'];
-    else
-        textures_filename = ['SD_Noise_Exp2_S' p.subj_ID '_textures_' p.display_setup '.mat'];
-    end
+if p.training
+    textures_filename = ['SD_Noise_Exp2_Training_textures_' p.display_setup '.mat'];
+elseif p.calibration
+    textures_filename = ['SD_Noise_Exp2_Calibration_Lvl' num2str(p.num_levels) '_textures_' p.display_setup '.mat'];
+else
+    textures_filename = ['SD_Noise_Exp2_S' p.subj_ID '_Lvl' num2str(p.num_levels) '_textures_' p.display_setup '.mat'];
+end
 
 textures_path = [dirs.texture_dir '/' textures_filename];
 
@@ -98,7 +98,7 @@ if stimuli.generate_textures
                 if j == 1
                     stimuli.mask_textures(:,:,i,k) = base_noise;
                 end
-                
+
                 % Make orientation- and spatial frequency-bandpass filtered noise
                 noise_texture = bandpassFilterImg(base_noise, [round(90 - p.orientation_bp_filter_width(j)/2), floor(90 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
                 noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);

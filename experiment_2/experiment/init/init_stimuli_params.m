@@ -26,7 +26,7 @@ if p.training
     p.contrast = 0.7;
     p.orientation_bp_filter_width = 10;
 elseif p.calibration
-    p.num_levels = 2; % Default = 7
+    p.num_levels = 8; % Default = 8
     p.contrast_min = 0.10;
     p.contrast_max = 0.9;
     p.contrast = round(logspace(log10(p.contrast_min), log10(p.contrast_max), p.num_levels),2);
