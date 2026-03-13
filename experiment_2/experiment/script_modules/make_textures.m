@@ -15,16 +15,16 @@ tic
 
 %% Make fixation space
 
-fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
+stimuli.fixation_space_made = Screen('MakeTexture', w.window, fixation_space);
 
 %% Make aperture
 
-stimuli.aperture_made = Screen('MakeTexture', w.window, aperture_texture);
+stimuli.aperture_made = Screen('MakeTexture', w.window, stimuli.aperture_texture);
 
 %% Make noise stimuli
 
-stimuli.test_textures_made = nan(length(p.contrast), length(p.orientation_bp_filter_width), p.num_test_samples);
-stimuli.mask_textures_made = nan(length(p.contrast), p.num_mask_samples);
+stimuli.test_textures_made = nan(length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+stimuli.mask_textures_made = nan(length(p.contrast), p.num_noise_samples);
 
 for i = 1:size(stimuli.test_textures_made,1) % Contrasts
     for j = 1:size(stimuli.test_textures_made,2) % Filter width
