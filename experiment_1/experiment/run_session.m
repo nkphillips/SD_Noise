@@ -36,7 +36,7 @@ end
 
 %% Set directories
 
-p.subj_ID = '016';
+p.subj_ID = '015';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir);
 dirs.script_dir = pwd;

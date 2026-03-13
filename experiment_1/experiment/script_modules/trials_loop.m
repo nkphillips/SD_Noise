@@ -50,7 +50,8 @@ for n_trial = 1:size(p.trial_events,1)
         if n_frame == 1
            test_frames_onsets = frames.test_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, test_frames_onsets(n_frame));
+        [exe_timing.test_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.test_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.test_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.test_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, test_frames_onsets(n_frame)); % add output of flip
 
         if p.disp_on && n_frame == frames.test_frames_count
             %pause(3);
@@ -77,7 +78,8 @@ for n_trial = 1:size(p.trial_events,1)
         if n_frame == 1
             mask_frames_onsets = frames.mask_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, mask_frames_onsets(n_frame));
+        [exe_timing.mask_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.mask_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.mask_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.mask_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, mask_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.mask_frames_count
             %pause(3);
@@ -95,7 +97,8 @@ for n_trial = 1:size(p.trial_events,1)
         if n_frame == 1
             delay_frames_onsets = frames.delay_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, delay_frames_onsets(n_frame));
+        [exe_timing.delay_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.delay_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.delay_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.delay_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, delay_frames_onsets(n_frame));
 
         if p.disp_on && n_frame == frames.delay_frames_count
             %pause(3);
@@ -117,7 +120,8 @@ for n_trial = 1:size(p.trial_events,1)
         if n_frame == 1
             probe_frames_onsets = frames.probe_frames_onsets + GetSecs;
         end
-        Screen('Flip', w.window, probe_frames_onsets(n_frame));
+        [exe_timing.probe_VBLTimestamp{n_block}(n_trial,n_frame), exe_timing.probe_StimulusOnsetTime{n_block}(n_trial,n_frame), exe_timing.probe_FlipTimestamp{n_block}(n_trial,n_frame), exe_timing.probe_Missed{n_block}(n_trial,n_frame)] = ...
+            Screen('Flip', w.window, probe_frames_onsets(n_frame));
         
         if p.disp_on && n_frame == frames.probe_frames_count
             %pause(3);
