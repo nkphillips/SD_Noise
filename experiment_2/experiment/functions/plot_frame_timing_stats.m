@@ -12,7 +12,16 @@ end
 % Open figure
 fg = figure('Color', [1 1 1], 'Position', [100 100 1200 600]);
 set(0, 'CurrentFigure', fg)
-figure_name = ['S' p.subj_ID ' Frame timing Run ' num2str(p.run_num) ' ' p.display_setup];
+
+if p.training
+    exp_phase = 'Training_';
+elseif p.calibration
+    exp_phase = 'Calibration_';
+else
+    exp_phase = '';
+end
+figure_name = ['SD_Noise_Exp2_' exp_phase 'S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '_FrameTiming'];
+
 sgtitle(figure_name, 'Interpreter', 'none');
 
 % Set paper size to match figure dimensions to prevent clipping
