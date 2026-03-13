@@ -67,7 +67,8 @@ experiment
 
 %% Check frame timing
 
-plot_frame_timing_stats(exe_timing, p, dirs, t);
+ps = plotSettings();
+plot_frame_timing_stats(exe_timing, p, dirs, t, ps);
 
 %% Save run info
 
