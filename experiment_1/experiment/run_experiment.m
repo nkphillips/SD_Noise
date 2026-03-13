@@ -33,17 +33,14 @@ else
         
     else
         
-        data_file_names = sort({data_files.name});
-        most_recent_file = data_file_names{end};
-        
-        file_strs = strsplit(most_recent_file,'_');
-        if ~p.training
-            most_recent_run_num = str2double(file_strs{5}(end));
-        else
-            most_recent_run_num = str2double(file_strs{6}(end));
+        run_nums = zeros(1, length(data_files));
+        for i = 1:length(data_files)
+            run_match = regexp(data_files(i).name, 'Run(\d+)', 'tokens');
+            if ~isempty(run_match)
+                run_nums(i) = str2double(run_match{1}{1});
+            end
         end
-        
-        p.run_num = most_recent_run_num + 1;
+        p.run_num = max(run_nums) + 1;
         
     end
     

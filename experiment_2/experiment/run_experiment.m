@@ -35,17 +35,14 @@ else
 
     else
 
-        data_file_names = sort({data_files.name});
-        most_recent_file = data_file_names{end};
-
-        file_strs = strsplit(most_recent_file,'_');
-        if ~p.training
-            most_recent_run_num = str2double(file_strs{5}(end));
-        else
-            most_recent_run_num = str2double(file_strs{6}(end));
+        run_nums = zeros(1, length(data_files));
+        for i = 1:length(data_files)
+            run_match = regexp(data_files(i).name, 'Run(\d+)', 'tokens');
+            if ~isempty(run_match)
+                run_nums(i) = str2double(run_match{1}{1});
+            end
         end
-
-        p.run_num = most_recent_run_num + 1;
+        p.run_num = max(run_nums) + 1;
 
     end
 
@@ -57,7 +54,7 @@ disp(['Entering Run ' num2str(p.run_num)]);
 if p.training
     save_filename = ['SD_Noise_Exp2_Training_S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '.mat'];
 elseif p.calibration
-    save_filename = ['SD_Noise_Exp2_Calibration_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+    save_filename = ['SD_Noise_Exp2_Calibration_S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '.mat'];
 else
     save_filename = ['SD_Noise_Exp2_S' p.subj_ID '_Run' num2str(p.run_num) '_' p.display_setup '.mat'];
 end
