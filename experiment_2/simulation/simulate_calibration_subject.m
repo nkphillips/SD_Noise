@@ -64,21 +64,24 @@ for subj = 1:num_subjs
     true_alpha_c = 0.1 + (0.4 - 0.1) * rand();
     true_beta_c = 1.5 + (3.0 - 1.5) * rand();
 
-    % Filter width (Eq Noise)
-    % To ensure 85% performance is physically reachable (val > 0), the model requires:
-    % signal_fw > 1.465 * sigma_int_fw. We set bounds to guarantee this for simulated subjects.
-    true_sigma_int_fw = 5 + (10 - 5) * rand(); % Internal noise between 5 and 10
-    true_signal_fw = 20 + (40 - 20) * rand();  % Signal strength between 20 and 40
+    % Filter width (PTM; Lu & Dosher, 2008)
+    % d' = Signal^g / sqrt((1+Nm^2)*fw^(2g) + Nm^2*Signal^(2g) + Na^2)
+    true_signal_fw = 20 + (50 - 20) * rand();
+    true_nmul_fw   = 0.10 + (0.45 - 0.10) * rand();
+    true_nadd_fw   = 50 + (300 - 50) * rand();
+    true_gamma_fw  = 2.0; % Fixed transducer exponent
 
     % Fixed parameters
-    true_gamma = 0.5;
+    true_guess_rate = 0.5;
     true_lambda = 0.01;
 
     p.true_params.alpha_c = true_alpha_c;
     p.true_params.beta_c = true_beta_c;
     p.true_params.signal_fw = true_signal_fw;
-    p.true_params.sigma_int_fw = true_sigma_int_fw;
-    p.true_params.gamma = true_gamma;
+    p.true_params.nmul_fw = true_nmul_fw;
+    p.true_params.nadd_fw = true_nadd_fw;
+    p.true_params.gamma_fw = true_gamma_fw;
+    p.true_params.guess_rate = true_guess_rate;
     p.true_params.lambda = true_lambda;
 
     %% Define experiment

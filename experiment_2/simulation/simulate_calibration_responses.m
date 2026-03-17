@@ -4,8 +4,10 @@ function [responses, correct] = simulate_calibration_responses(p)
     alpha_c = p.true_params.alpha_c;
     beta_c = p.true_params.beta_c;
     signal_fw = p.true_params.signal_fw;
-    sigma_int_fw = p.true_params.sigma_int_fw;
-    gamma = p.true_params.gamma;
+    nmul_fw = p.true_params.nmul_fw;
+    nadd_fw = p.true_params.nadd_fw;
+    ptm_g = p.true_params.gamma_fw;
+    guess_rate = p.true_params.guess_rate;
     lambda = p.true_params.lambda;
 
     responses = nan(p.num_trials_per_block, p.num_blocks);
@@ -32,12 +34,13 @@ function [responses, correct] = simulate_calibration_responses(p)
             actual_levels = p.contrast(levels)';
             % For contrast blocks, filter width is easiest (index 1)
             % Weibull
-            P_correct = gamma + (1 - gamma - lambda) * (1 - exp(-(actual_levels./alpha_c).^beta_c));
+            P_correct = guess_rate + (1 - guess_rate - lambda) * (1 - exp(-(actual_levels./alpha_c).^beta_c));
         elseif curr_feature == 2 % Filter Width feature
             actual_levels = p.orientation_bp_filter_width(levels)';
-            % For filter blocks, contrast is easiest (index p.num_levels)
-            % Equivalent Noise
-            P_correct = (1 - lambda) * normcdf( (signal_fw ./ sqrt(actual_levels.^2 + sigma_int_fw.^2)) / sqrt(2) ) + lambda * 0.5;
+            % PTM (Perceptual Template Model)
+            d_prime = signal_fw.^ptm_g ./ sqrt((1 + nmul_fw.^2) .* actual_levels.^(2*ptm_g) ...
+                + nmul_fw.^2 .* signal_fw.^(2*ptm_g) + nadd_fw.^2);
+            P_correct = (1 - lambda) * normcdf(d_prime / sqrt(2)) + lambda * 0.5;
         end
         
         % Now determine the probability of responding CW (1) based on what the correct answer is

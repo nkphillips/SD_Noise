@@ -7,27 +7,32 @@
 
 %% Open Window
 
-w.window = PsychImaging('OpenWindow', w.use_screen, w.bg_color, [0 0 w.screen_width_px w.screen_height_px]);
+if p.simulation_mode == 0
+    w.window = PsychImaging('OpenWindow', w.use_screen, w.bg_color, [0 0 w.screen_width_px w.screen_height_px]);
 
-if ~p.half_screen
-    HideCursor;
-    commandwindow;
-end
+    if ~p.half_screen
+        HideCursor;
+        commandwindow;
+    end
 
-%% Enable alpha blending
+    %% Enable alpha blending
 
-Screen('BlendFunction', w.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    Screen('BlendFunction', w.window, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-%% Load CLUT
+    %% Load CLUT
 
-w.DefaultCLUT = Screen('ReadNormalizedGammaTable', w.window);
+    w.DefaultCLUT = Screen('ReadNormalizedGammaTable', w.window);
 
-if any(p.which_setup == 1:3) && w.gamma_correct
+    if any(p.which_setup == 1:3) && w.gamma_correct
 
-    load([dirs.monitor_cal_dir '/corrected_gamma_table_' p.display_setup '.mat'])
-    w.CorrectedCLUT = repmat(corrected_gamma.chosen_table,1,3) * 255;
-    Screen('LoadCLUT', w.window, w.CorrectedCLUT);
+        load([dirs.monitor_cal_dir '/corrected_gamma_table_' p.display_setup '.mat'])
+        w.CorrectedCLUT = repmat(corrected_gamma.chosen_table,1,3) * 255;
+        Screen('LoadCLUT', w.window, w.CorrectedCLUT);
 
+    end
+else
+    w.window = -1;
+    w.DefaultCLUT = [];
 end
 
 %% Define center coordinates
@@ -37,6 +42,8 @@ w.centerY = w.screen_height_px/2;
 
 %% Text settings
 
-Screen('TextStyle', w.window, 1); % 0=normal, 1=bold, 2=italic
-Screen('TextSize', w.window, 18);
+if p.simulation_mode == 0
+    Screen('TextStyle', w.window, 1); % 0=normal, 1=bold, 2=italic
+    Screen('TextSize', w.window, 18);
+end
 

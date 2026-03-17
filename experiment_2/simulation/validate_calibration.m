@@ -18,8 +18,10 @@ for subj = 1:num_subjs
 end
 
 target_levels = [0.65, 0.75, 0.85];
-gamma = 0.5;
+guess_rate = 0.5;
 lambda = 0.01;
+ptm_gamma = 2.0;
+g = ptm_gamma;
 options = optimset('Display', 'off');
 
 %% Validate each subject
@@ -99,29 +101,17 @@ for subj = 1:num_subjs
     se_fw = sqrt(prop_fw .* (1 - prop_fw) ./ n_fw); % Binomial standard error
 
     %% Fit Models
-    % This section fits psychometric functions to the empirical proportion correct data
-    % using Maximum Likelihood Estimation (MLE).
-    % We use two different models based on the manipulated feature:
-    % 1. Contrast: Weibull function (standard for visual contrast detection)
-    % 2. Filter Width: Equivalent Noise model (standard for orientation integration)
+    % 1. Contrast: Weibull function
+    % 2. Filter Width: PTM (Perceptual Template Model; Lu & Dosher, 2008)
 
     % --- A. Contrast (Weibull) ---
-    % The Weibull function is defined by:
-    % alpha (threshold): The contrast level determining the scale/shift of the curve
-    % beta (slope): Determines the steepness of the psychometric curve
-    % gamma (guess rate): Fixed at 0.5 for 2AFC tasks
-    % lambda (lapse rate): Fixed at 0.01 to prevent unbounded log-likelihoods
-    %
-    % P(x) = gamma + (1 - gamma - lambda) * (1 - exp(-(x/alpha)^beta))
-    weibull_prob = @(x, alpha, beta) gamma + (1 - gamma - lambda) * (1 - exp(-(x./alpha).^beta));
+    weibull_prob = @(x, alpha, beta) guess_rate + (1 - guess_rate - lambda) * (1 - exp(-(x./alpha).^beta));
 
     nll_weibull = @(params) -sum( ...
         k_c .* log(max(eps, weibull_prob(unique_c, params(1), params(2)))) + ...
         (n_c - k_c) .* log(max(eps, 1 - weibull_prob(unique_c, params(1), params(2)))) ...
         );
 
-    % fmincon for Contrast
-    % bounds: alpha (threshold) in [0.001, 1.0], beta (slope) in [0.5, 5.0]
     lb_c = [0.001, 0.5];
     ub_c = [1.0, 5.0];
     best_guess_c = gridSearch(nll_weibull, lb_c, ub_c);
@@ -129,70 +119,60 @@ for subj = 1:num_subjs
     alpha_c = best_params_c(1);
     beta_c = best_params_c(2);
 
-    % --- B. Filter Width (Equivalent Noise) ---
-    % The Equivalent Noise model assumes observer
-    % performance is limited by two additive sources of variance:
-    % 1. External noise (x): The physical variance in the stimulus (filter width)
-    % 2. Internal noise (sigma_int): The observer's own neural/representational noise
-    %
-    % Signal (sig): The strength of the internal representation
-    %
-    % d' = Signal / sqrt(x^2 + sigma_int^2)
-    % P(x) = (1 - lambda) * normcdf(d' / sqrt(2)) + lambda * 0.5
-    en_prob = @(x, sig, sig_int) (1 - lambda) * normcdf( (sig ./ sqrt(x.^2 + sig_int.^2)) / sqrt(2) ) + lambda * 0.5;
+    % --- B. Filter Width (PTM) ---
+    % d' = Signal^g / sqrt((1+Nm^2)*fw^(2g) + Nm^2*Signal^(2g) + Na^2)
+    ptm_dprime = @(x, S, Nm, Na) S.^g ./ sqrt((1+Nm.^2).*x.^(2*g) + Nm.^2.*S.^(2*g) + Na.^2);
+    ptm_prob = @(x, S, Nm, Na) (1 - lambda) * normcdf(ptm_dprime(x, S, Nm, Na) / sqrt(2)) + lambda * 0.5;
 
-    nll_en = @(params) -sum( ...
-        k_fw .* log(max(eps, en_prob(unique_fw, params(1), params(2)))) + ...
-        (n_fw - k_fw) .* log(max(eps, 1 - en_prob(unique_fw, params(1), params(2)))) ...
+    nll_ptm = @(params) -sum( ...
+        k_fw .* log(max(eps, ptm_prob(unique_fw, params(1), params(2), params(3)))) + ...
+        (n_fw - k_fw) .* log(max(eps, 1 - ptm_prob(unique_fw, params(1), params(2), params(3)))) ...
         );
 
-    % fmincon for Filter Width
-    % bounds: signal in [1.0, 50.0], sigma_int in [1.0, 30.0]
-    lb_fw = [1.0, 1.0];
-    ub_fw = [50.0, 30.0];
-    best_guess_fw = gridSearch(nll_en, lb_fw, ub_fw);
-    best_params_fw = fmincon(nll_en, best_guess_fw, [], [], [], [], lb_fw, ub_fw, [], options);
+    lb_fw = [5.0, 0.001, 1.0];
+    ub_fw = [80.0, 0.65, 600.0];
+    best_guess_fw = gridSearch(nll_ptm, lb_fw, ub_fw);
+    best_params_fw = fmincon(nll_ptm, best_guess_fw, [], [], [], [], lb_fw, ub_fw, [], options);
     signal_fw = best_params_fw(1);
-    sigma_int_fw = best_params_fw(2);
+    nmul_fw   = best_params_fw(2);
+    nadd_fw   = best_params_fw(3);
 
     %% Calculate Errors
     fprintf('Subject %s Parameters Validation:\n', subj_ID);
-    fprintf('  Contrast (Alpha): True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.alpha_c, alpha_c, abs(true_params.alpha_c - alpha_c));
-    fprintf('  Contrast (Beta) : True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.beta_c, beta_c, abs(true_params.beta_c - beta_c));
-    fprintf('  EqNoise (Signal): True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.signal_fw, signal_fw, abs(true_params.signal_fw - signal_fw));
-    fprintf('  EqNoise (Sig_int):True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.sigma_int_fw, sigma_int_fw, abs(true_params.sigma_int_fw - sigma_int_fw));
+    fprintf('  Contrast (Alpha):  True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.alpha_c, alpha_c, abs(true_params.alpha_c - alpha_c));
+    fprintf('  Contrast (Beta) :  True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.beta_c, beta_c, abs(true_params.beta_c - beta_c));
+    fprintf('  PTM (Signal):      True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.signal_fw, signal_fw, abs(true_params.signal_fw - signal_fw));
+    fprintf('  PTM (N_mul):       True=%.3f, Fit=%.3f, Err=%.3f\n', true_params.nmul_fw, nmul_fw, abs(true_params.nmul_fw - nmul_fw));
+    fprintf('  PTM (N_add):       True=%.1f, Fit=%.1f, Err=%.1f\n', true_params.nadd_fw, nadd_fw, abs(true_params.nadd_fw - nadd_fw));
     fprintf('--------------------------------------------------\n');
 
     %% Extract 3 Levels
-    % Here we analytically invert the fitted psychometric functions to extract
-    % the physical stimulus values (contrast or filter width) that correspond
-    % to our targeted performance levels (e.g., 65%, 75%, 85% correct).
 
-    K = (target_levels - gamma) ./ (1 - gamma - lambda);
+    K = (target_levels - guess_rate) ./ (1 - guess_rate - lambda);
     calib_contrast = alpha_c .* (-log(1 - K)).^(1/beta_c);
     calib_contrast = max(0.01, min(1.0, calib_contrast));
 
+    % PTM inversion: fw^(2g) = (S^(2g)*(1/d'^2 - Nm^2) - Na^2) / (1+Nm^2)
     P_target_adj = (target_levels - lambda * 0.5) ./ (1 - lambda);
     d_target = sqrt(2) .* norminv(P_target_adj);
-    calib_filter = zeros(1, length(target_levels));
+    S2g = signal_fw^(2*g);
 
+    calib_filter = zeros(1, length(target_levels));
     for i = 1:length(target_levels)
-        val = (signal_fw / d_target(i))^2 - sigma_int_fw^2;
-        if val < 0
+        if 1/d_target(i)^2 <= nmul_fw^2
+            calib_filter(i) = 0;
+            continue;
+        end
+        numer = S2g * (1/d_target(i)^2 - nmul_fw^2) - nadd_fw^2;
+        denom = 1 + nmul_fw^2;
+        if numer <= 0
             calib_filter(i) = 0;
         else
-            calib_filter(i) = sqrt(val);
+            calib_filter(i) = (numer / denom)^(1/(2*g));
         end
     end
 
-    % The arrays are naturally created ordered by target_levels:
-    % contrast: [65% val, 75% val, 85% val] -> ascending
-    % filter: [65% val, 75% val, 85% val] -> descending (wider filter = harder)
-    % We want to reverse the filter array so that it is ALSO strictly ascending physical values
-    % (i.e., narrowest/easiest filter first, widest/hardest filter last)
     calib_filter = sort(calib_filter, 'ascend');
-
-    % We must also reverse the target levels when plotting so that they map correctly to the reversed filter array
     filter_target_levels = flip(target_levels);
 
     %% Plot
@@ -219,12 +199,12 @@ for subj = 1:num_subjs
     set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
 
-    % Filter Width
+    % Filter Width (PTM)
     subplot(1,2,2);
     errorbar(unique_fw, prop_fw, se_fw, 'o', 'Color', ps.colors.black, 'MarkerFaceColor', ps.colors.black, 'MarkerSize', 6, 'CapSize', 0, 'LineWidth', ps.line_width); hold on;
-    x_fit_fw = linspace(0, max(unique_fw)*1.2, 100);
-    plot(x_fit_fw, en_prob(x_fit_fw, signal_fw, sigma_int_fw), '-', 'Color', ps.colors.red, 'LineWidth', 2);
-    plot(x_fit_fw, en_prob(x_fit_fw, true_params.signal_fw, true_params.sigma_int_fw), '--', 'Color', ps.colors.green, 'LineWidth', 2);
+    x_fit_fw = linspace(0.1, max(unique_fw)*1.2, 100);
+    plot(x_fit_fw, ptm_prob(x_fit_fw, signal_fw, nmul_fw, nadd_fw), '-', 'Color', ps.colors.red, 'LineWidth', 2);
+    plot(x_fit_fw, ptm_prob(x_fit_fw, true_params.signal_fw, true_params.nmul_fw, true_params.nadd_fw), '--', 'Color', ps.colors.green, 'LineWidth', 2);
 
     for i = 1:3
         plot([0 calib_filter(i)], [filter_target_levels(i) filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
@@ -234,8 +214,8 @@ for subj = 1:num_subjs
 
     xlim([0 max(max(unique_fw), max(calib_filter))*1.1]);
     ylim([0.4 1.0]);
-    xlabel('Filter Width (\sigma_{ext})', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-    title(sprintf('Eq Noise Fit (Sig=%.2f, \\sigma_{int}=%.2f)', signal_fw, sigma_int_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    xlabel('Filter Width (deg)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    title(sprintf('PTM Fit (S=%.1f, N_m=%.2f, N_a=%.0f)', signal_fw, nmul_fw, nadd_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
 

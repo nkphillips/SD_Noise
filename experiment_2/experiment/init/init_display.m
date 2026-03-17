@@ -1,7 +1,11 @@
 % Initialize display parameters
 % Ideal distance: 1 cm equals 1 visual degree at 57 cm
 
-screens = Screen('Screens'); % Grab the available screens
+if p.simulation_mode == 0
+    screens = Screen('Screens'); % Grab the available screens
+else
+    screens = 0; % Dummy screen for simulation
+end
 
 %% Set screen parameters
 

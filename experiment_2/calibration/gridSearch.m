@@ -1,39 +1,42 @@
 function best_guess = gridSearch(nll_func, lb, ub, n_grid)
-% GRIDSEARCH Performs a simple 2D grid search to find a good starting point
-% for subsequent optimization (e.g., using fmincon).
+% GRIDSEARCH N-dimensional grid search for optimization starting points.
 %
 % Inputs:
-%   nll_func : Function handle computing the negative log-likelihood (or cost)
-%              given a 1x2 parameter vector.
-%   lb       : 1x2 vector of lower bounds.
-%   ub       : 1x2 vector of upper bounds.
-%   n_grid   : (Optional) Number of grid points per dimension. Default is 20.
-%
-% Output:
-%   best_guess : 1x2 vector of the parameters that yielded the lowest cost
-%                on the grid.
+%   nll_func : Function handle computing the cost given a 1xN parameter vector.
+%   lb       : 1xN vector of lower bounds.
+%   ub       : 1xN vector of upper bounds.
+%   n_grid   : (Optional) Points per dimension. Default scales with N to
+%              keep total evaluations manageable.
+
+n_dims = length(lb);
 
 if nargin < 4
-    n_grid = 20;
+    % ~8000 total evaluations max; scale per-dim grid accordingly
+    n_grid = max(5, floor(8000^(1/n_dims)));
 end
 
-% Create grid for parameter 1
-p1_grid = linspace(lb(1), ub(1), n_grid);
+grids = cell(1, n_dims);
+for d = 1:n_dims
+    grids{d} = linspace(lb(d), ub(d), n_grid);
+end
 
-% Create grid for parameter 2
-p2_grid = linspace(lb(2), ub(2), n_grid);
+% Build all combinations via ndgrid
+grid_arrays = cell(1, n_dims);
+[grid_arrays{:}] = ndgrid(grids{:});
 
+n_total = numel(grid_arrays{1});
 min_nll = inf;
-best_guess = [lb(1), lb(2)]; % Default to lower bounds
+best_guess = lb;
 
-% Evaluate cost function over the grid
-for p1 = p1_grid
-    for p2 = p2_grid
-        curr_nll = nll_func([p1, p2]);
-        if curr_nll < min_nll
-            min_nll = curr_nll;
-            best_guess = [p1, p2];
-        end
+for idx = 1:n_total
+    params = zeros(1, n_dims);
+    for d = 1:n_dims
+        params(d) = grid_arrays{d}(idx);
+    end
+    curr_nll = nll_func(params);
+    if isfinite(curr_nll) && curr_nll < min_nll
+        min_nll = curr_nll;
+        best_guess = params;
     end
 end
 end

@@ -10,11 +10,13 @@ else
     loading_text = ['Loading experiment run ' num2str(p.run_num) ' ...'];
 end
 
-loading_text_boundary = Screen('TextBounds', w.window, loading_text);
-loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
+if p.simulation_mode == 0
+    loading_text_boundary = Screen('TextBounds', w.window, loading_text);
+    loading_text_patch = CenterRectOnPoint(loading_text_boundary, w.centerX, w.centerY);
 
-Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_patch(2), w.white);
-Screen('Flip', w.window);
+    Screen('DrawText', w.window, loading_text, loading_text_patch(1),  loading_text_patch(2), w.white);
+    Screen('Flip', w.window);
+end
 
 %% Prep stimuli for drawing
 
@@ -22,11 +24,13 @@ init_fixation
 
 init_stimuli_params
 
-stimuli = init_textures(p, dirs, w);
+if p.simulation_mode == 0
+    stimuli = init_textures(p, dirs, w);
 
-make_textures
+    make_textures
 
-make_patches
+    make_patches
+end
 
 %% Define number and sequence of events
 
