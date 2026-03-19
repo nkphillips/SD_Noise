@@ -35,7 +35,7 @@ elseif p.calibration
     p.filter_width_max = 80;
     p.orientation_bp_filter_width = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 else
-    calib_file = [dirs.data_dir '/' p.subj_ID '/S' p.subj_ID '_calibrated_levels.mat'];
+    calib_file = fullfile(dirs.data_dir, p.subj_ID, ['S' p.subj_ID '_calibrated_levels.mat']);
     if exist(calib_file, 'file')
         load(calib_file, 'calib');
         p.num_levels = length(calib.target_levels);

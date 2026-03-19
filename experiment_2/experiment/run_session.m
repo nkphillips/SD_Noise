@@ -66,7 +66,7 @@ addpath(dirs.texture_dir);
 
 dirs.init_dir = 'init'; addpath(dirs.init_dir);
 dirs.modules_dir = 'script_modules'; addpath(dirs.modules_dir);
-dirs.logs_dir = [dirs.data_dir '/' p.subj_ID '/logs'];
+dirs.logs_dir = fullfile(dirs.data_dir, p.subj_ID, 'logs');
 
 if any(p.which_setup == 1:3)
     dirs.monitor_cal_dir = '/home/serenceslabexp/Documents/MonitorCalibration/GammaTables'; addpath(dirs.monitor_cal_dir);
