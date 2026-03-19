@@ -103,7 +103,7 @@ if ~exist(texture_filepath, 'file')
     % Only generate what we need to verify: 1 sample at max contrast for all filter widths
     for fw_idx = 1:n_filter_widths
         base_noise = create_noise_texture(p.height_px, p.width_px);
-        noise_texture = bandpassFilterImg(base_noise, [round(90 - p.orientation_bp_filter_width(fw_idx)/2), floor(90 + p.orientation_bp_filter_width(fw_idx)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+        noise_texture = bandpassFilterImg(base_noise, [round(0 - p.orientation_bp_filter_width(fw_idx)/2), floor(0 + p.orientation_bp_filter_width(fw_idx)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
         noise_texture = centerTextureContrast(noise_texture, target_contrast_val, w.gray);
         textures(:,:,target_contrast_idx, fw_idx, 1) = noise_texture;
     end
@@ -222,16 +222,13 @@ for fw_idx = 1:n_filter_widths
         plot(bin_centers, energy_profile, 'k-', 'LineWidth', 1.5);
         hold on;
 
-        % The target center in this test is 90 (vertical)
-        target_center = 90;
+        % The target center is 0/180 in Fourier space (vertical spatial orientation).
+        % Energy wraps around both edges of the 0-180 axis.
         target_width = p.orientation_bp_filter_width(fw_idx);
 
-        % Plot expected bandwidth bounds
-        left_bound = target_center - (target_width/2);
-        right_bound = target_center + (target_width/2);
-
-        xline(left_bound, 'r--', 'LineWidth', 1.5);
-        xline(right_bound, 'r--', 'LineWidth', 1.5);
+        % Plot expected bandwidth bounds at both edges
+        xline(target_width/2, 'r--', 'LineWidth', 1.5);
+        xline(180 - target_width/2, 'r--', 'LineWidth', 1.5);
 
         % Format figure
         title(sprintf('Orientation Energy (Target Width: %.2f\\circ)', target_width));

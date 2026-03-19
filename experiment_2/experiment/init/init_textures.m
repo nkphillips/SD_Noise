@@ -100,7 +100,7 @@ if stimuli.generate_textures
                 end
 
                 % Make orientation- and spatial frequency-bandpass filtered noise
-                noise_texture = bandpassFilterImg(base_noise, [round(90 - p.orientation_bp_filter_width(j)/2), floor(90 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = bandpassFilterImg(base_noise, [round(0 - p.orientation_bp_filter_width(j)/2), floor(0 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
                 noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
 
                 stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast

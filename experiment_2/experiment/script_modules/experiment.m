@@ -27,8 +27,11 @@ for n_block = 1:p.num_blocks
 
     probe_orientation = p.trial_events(:, probe_orientation_col, n_block);
 
-    % Storing correct response
-    cclockwise_trials = double(probe_orientation < p.trial_events(:,test_orientation_col, n_block));
+    % Storing correct response (circular signed difference handles 0/180 wrap)
+    probe_minus_test = probe_orientation - p.trial_events(:,test_orientation_col, n_block);
+    probe_minus_test(probe_minus_test > 90) = probe_minus_test(probe_minus_test > 90) - 180;
+    probe_minus_test(probe_minus_test < -90) = probe_minus_test(probe_minus_test < -90) + 180;
+    cclockwise_trials = double(probe_minus_test < 0);
     cclockwise_trials(cclockwise_trials == 0) = 2;
     p.correct_response(:,n_block) = cclockwise_trials;
 
