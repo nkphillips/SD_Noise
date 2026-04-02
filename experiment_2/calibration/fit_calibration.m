@@ -12,7 +12,7 @@ ps = plotSettings();
 
 %% 1. Set subject IDs and directories
 % You can add multiple subject IDs to this cell array
-subj_IDs = {'999'};
+subj_IDs = {'777', '000'};
 
 data_base_dir = '../data';
 
@@ -131,8 +131,8 @@ for s = 1:length(subj_IDs)
         (n_c - k_c) .* log(max(eps, 1 - weibull_prob(unique_c, params(1), params(2)))) ...
         );
 
-    % Bounds: alpha (threshold) in [0.0618, 1.0000], beta (slope) in [0.5, 5.0]
-    lb_c = [0.0618, 0.5000];
+    % Bounds: alpha (threshold) in [0.0100, 1.0000], beta (slope) in [0.5, 5.0]
+    lb_c = [0.0100, 0.5000];
     ub_c = [1.0000, 5.0000];
     best_guess_c = gridSearch(nll_contrast, lb_c, ub_c);
     best_params_c = fmincon(nll_contrast, best_guess_c, [], [], [], [], lb_c, ub_c, [], options);
@@ -158,11 +158,11 @@ for s = 1:length(subj_IDs)
 
     % Bounds for the precision-domain Weibull.
     % alpha_fw: threshold in precision units. Filter widths range from
-    %   10 to 80 deg, so precision ranges from 1/80 = 0.0125 to 1/10 = 0.1.
+    %   10 to 180 deg, so precision ranges from 1/180 = 0.0056 to 1/10 = 0.1.
     %   A reasonable threshold sits somewhere in that range.
     % beta_fw: slope, same general range as contrast.
-    lb_fw = [0.0078, 0.5000];
-    ub_fw = [0.1304, 5.0000];
+    lb_fw = [0.0050, 0.5000];
+    ub_fw = [0.1500, 5.0000];
     best_guess_fw = gridSearch(nll_filter, lb_fw, ub_fw);
     best_params_fw = fmincon(nll_filter, best_guess_fw, [], [], [], [], lb_fw, ub_fw, [], options);
     alpha_fw = best_params_fw(1);
@@ -180,7 +180,7 @@ for s = 1:length(subj_IDs)
     % For filter width, x_target is in precision units, so we convert:
     %   fw_target = 1 / x_target
 
-    target_levels = [0.65, 0.75, 0.85];
+    target_levels = [0.65, 0.75, 0.85]; % [0.65, 0.75, 0.85]
 
     % Intermediate quantity K (same formula for both features)
     K = (target_levels - gamma) ./ (1 - gamma - lambda);
@@ -196,18 +196,26 @@ for s = 1:length(subj_IDs)
     % STEP 2: Convert precision back to physical filter width.
     %   precision = 1/fw  =>  fw = 1/precision
     calib_filter = 1 ./ precision_targets;
-    
+
     % --- SANITY CHECKS & CLAMPING FOR REAL DATA ---
     % Warn if the subject's parameters exceed physical monitor/stimulus bounds
     if any(calib_contrast >= 1.0)
         warning('S%s: Contrast target >= 1.0 required. Clamping to 1.0. Subject may have performed poorly.', subj_ID);
     end
-    if any(calib_filter >= 90)
-        warning('S%s: Filter width target >= 90 deg required. Clamping to 90. Subject may have performed poorly.', subj_ID);
+    if any(calib_filter >= 180)
+        warning('S%s: Filter width target >= 180 deg required. Clamping to 180. Subject may have performed poorly.', subj_ID);
     end
-    
-    % Clamp filter width to physically meaningful limits [1 deg, 90 deg]
-    calib_filter = max(1.0, min(90.0, calib_filter));
+    if any(calib_filter <= 10)
+        warning('S%s: Filter width target <= 10 deg required. Clamping to 10. Subject performed extremely well.', subj_ID);
+    end
+
+    % Clamp filter width to physically meaningful limits [10 deg, 180 deg]
+    % (We clamp to 10 minimum because filters narrower than 10 degrees
+    % cause artifacting/aliasing in the spatial frequency domain).
+    calib_filter = max(10.0, min(180.0, calib_filter));
+
+    % Re-calculate clamped precision targets so the plot markers stay on the bounds
+    precision_targets = 1 ./ calib_filter;
 
     % The result naturally comes out DESCENDING (highest precision = narrowest
     % filter comes first for the hardest target). Sort ascending so that
@@ -217,6 +225,18 @@ for s = 1:length(subj_IDs)
     % The target_levels [0.65, 0.75, 0.85] map to descending filter widths,
     % so after sorting we flip the labels for plotting.
     filter_target_levels = flip(target_levels);
+
+    % Calculate R^2 for Contrast and Filter Width fits
+    % Note: R^2 can be negative if the constrained Weibull fit (forced to 0.5
+    % guess rate) has a higher sum of squared errors than a flat line at the mean.
+    % We clamp it to 0 in these cases.
+    ss_res_c = sum((prop_c - weibull_prob(unique_c, alpha_c, beta_c)).^2);
+    ss_tot_c = sum((prop_c - mean(prop_c)).^2);
+    r2_c = max(0, 1 - (ss_res_c / ss_tot_c));
+
+    ss_res_fw = sum((prop_fw - weibull_prob(unique_precision, alpha_fw, beta_fw)).^2);
+    ss_tot_fw = sum((prop_fw - mean(prop_fw)).^2);
+    r2_fw = max(0, 1 - (ss_res_fw / ss_tot_fw));
 
     %% 5. Save Levels
 
@@ -252,7 +272,7 @@ for s = 1:length(subj_IDs)
     xticks([0.1 0.2 0.4 0.6 0.8 1.0]);
     xticklabels({'0.1', '0.2', '0.4', '0.6', '0.8', '1.0'});
     xlabel('Contrast', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-    title(sprintf('Weibull Fit (\\alpha=%.2f, \\beta=%.2f)', alpha_c, beta_c), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    title(sprintf('Weibull Fit (\\alpha=%.2f, \\beta=%.2f, R^2=%.3f)', alpha_c, beta_c, r2_c), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     legend('Data', 'Fit', 'Location', 'best', 'FontSize', ps.axes_tick_font_size);
     set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
@@ -264,7 +284,7 @@ for s = 1:length(subj_IDs)
     plot(x_fit_prec, weibull_prob(x_fit_prec, alpha_fw, beta_fw), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     xl = xlim;
     for i = 1:3
-        prec_i = 1 / calib_filter(i);
+        prec_i = precision_targets(i);
         plot([xl(1) prec_i], [filter_target_levels(i) filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
         plot([prec_i prec_i], [0.0 filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
         plot(prec_i, filter_target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
@@ -274,13 +294,13 @@ for s = 1:length(subj_IDs)
     ylim([0.0 1.0]);
 
     % xticks for precision: choose round filter width values to label
-    % 1/80=0.0125, 1/40=0.025, 1/20=0.05, 1/10=0.10
-    prec_ticks = [1/80, 1/40, 1/20, 1/10];
+    % 1/180=0.0056, 1/80=0.0125, 1/40=0.025, 1/20=0.05, 1/10=0.10
+    prec_ticks = [1/180, 1/80, 1/40, 1/20, 1/10];
     xticks(prec_ticks);
-    xticklabels({'1/80', '1/40', '1/20', '1/10'});
+    xticklabels({'1/180', '1/80', '1/40', '1/20', '1/10'});
 
     xlabel('Precision (1/filter width)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-    title(sprintf('Weibull Fit (\\alpha=%.4f, \\beta=%.2f)', alpha_fw, beta_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+    title(sprintf('Weibull Fit (\\alpha=%.4f, \\beta=%.2f, R^2=%.2f)', alpha_fw, beta_fw, r2_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
 

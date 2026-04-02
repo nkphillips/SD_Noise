@@ -25,6 +25,7 @@ p.half_screen = 1;
 p.simulate_response = 0;
 p.training = 0;
 p.calibration = 1;
+p.simulation_mode = 0;
 
 % Sync Test
 if ~any(p.which_setup == 1:3)

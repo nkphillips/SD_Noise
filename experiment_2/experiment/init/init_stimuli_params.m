@@ -27,12 +27,12 @@ if p.training
     p.orientation_bp_filter_width = 10; % Minimum noise for clearest orientation
 elseif p.calibration
     p.num_levels = 8; % Default = 8
-    p.contrast_min = 0.10;
+    p.contrast_min = 0.02;
     p.contrast_max = 0.9;
     p.contrast = round(logspace(log10(p.contrast_min), log10(p.contrast_max), p.num_levels),2);
 
     p.filter_width_min = 10;
-    p.filter_width_max = 80;
+    p.filter_width_max = 180;
     p.orientation_bp_filter_width = round(logspace(log10(p.filter_width_min), log10(p.filter_width_max), p.num_levels),2);
 else
     calib_file = fullfile(dirs.data_dir, p.subj_ID, ['S' p.subj_ID '_calibrated_levels.mat']);
