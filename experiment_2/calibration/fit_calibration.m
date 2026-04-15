@@ -158,11 +158,11 @@ for s = 1:length(subj_IDs)
 
     % Bounds for the precision-domain Weibull.
     % alpha_fw: threshold in precision units. Filter widths range from
-    %   10 to 180 deg, so precision ranges from 1/180 = 0.0056 to 1/10 = 0.1.
+    %   2 to 180 deg, so precision ranges from 1/180 = 0.0056 to 1/2 = 0.5.
     %   A reasonable threshold sits somewhere in that range.
     % beta_fw: slope, same general range as contrast.
     lb_fw = [0.0050, 0.5000];
-    ub_fw = [0.1500, 5.0000];
+    ub_fw = [0.6000, 5.0000];
     best_guess_fw = gridSearch(nll_filter, lb_fw, ub_fw);
     best_params_fw = fmincon(nll_filter, best_guess_fw, [], [], [], [], lb_fw, ub_fw, [], options);
     alpha_fw = best_params_fw(1);
@@ -205,22 +205,23 @@ for s = 1:length(subj_IDs)
     if any(calib_filter >= 180)
         warning('S%s: Filter width target >= 180 deg required. Clamping to 180. Subject may have performed poorly.', subj_ID);
     end
-    if any(calib_filter <= 10)
-        warning('S%s: Filter width target <= 10 deg required. Clamping to 10. Subject performed extremely well.', subj_ID);
+    if any(calib_filter <= 2)
+        warning('S%s: Filter width target <= 2 deg required. Clamping to 2. Subject performed extremely well.', subj_ID);
     end
 
-    % Clamp filter width to physically meaningful limits [10 deg, 180 deg]
-    % (We clamp to 10 minimum because filters narrower than 10 degrees
-    % cause artifacting/aliasing in the spatial frequency domain).
-    calib_filter = max(10.0, min(180.0, calib_filter));
-
-    % Re-calculate clamped precision targets so the plot markers stay on the bounds
-    precision_targets = 1 ./ calib_filter;
+    % Clamp filter width to physically meaningful limits [2 deg, 180 deg]
+    % (We clamp to 2 minimum because extremely narrow filters
+    % can cause artifacting/aliasing in the spatial frequency domain).
+    calib_filter = max(2.0, min(180.0, calib_filter));
 
     % The result naturally comes out DESCENDING (highest precision = narrowest
     % filter comes first for the hardest target). Sort ascending so that
     % index 1 = narrowest (easiest), index 3 = widest (hardest).
     calib_filter = sort(calib_filter, 'ascend');
+
+    % Re-calculate clamped precision targets so the plot markers stay on the bounds
+    % and correspond to the newly sorted calib_filter indices
+    precision_targets = 1 ./ calib_filter;
 
     % The target_levels [0.65, 0.75, 0.85] map to descending filter widths,
     % so after sorting we flip the labels for plotting.
@@ -258,7 +259,11 @@ for s = 1:length(subj_IDs)
     % Plot Contrast (log-scaled)
     subplot(1,2,1);
     errorbar(unique_c, prop_c, se_c, 'o', 'Color', ps.colors.black, 'MarkerFaceColor', ps.colors.black, 'MarkerSize', 6, 'CapSize', 0, 'LineWidth', ps.line_width); hold on;
-    x_fit_c = logspace(log10(min(unique_c)*0.7), log10(max(unique_c)*1.3), 100);
+    % Determine axis limits dynamically to include both data and extrapolated targets
+    min_x_c = min([unique_c; calib_contrast(:)]);
+    max_x_c = max([unique_c; calib_contrast(:)]);
+    
+    x_fit_c = logspace(log10(min_x_c*0.7), log10(max_x_c*1.3), 100);
     plot(x_fit_c, weibull_prob(x_fit_c, alpha_c, beta_c), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     xl_c = xlim;
     for i = 1:3
@@ -267,7 +272,7 @@ for s = 1:length(subj_IDs)
         plot(calib_contrast(i), target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
     end
     set(gca, 'XScale', 'log');
-    xlim([min(unique_c)*0.7 max(unique_c)*1.3]);
+    xlim([min_x_c*0.7 max_x_c*1.3]);
     ylim([0.0 1.0]);
     xticks([0.1 0.2 0.4 0.6 0.8 1.0]);
     xticklabels({'0.1', '0.2', '0.4', '0.6', '0.8', '1.0'});
@@ -280,7 +285,11 @@ for s = 1:length(subj_IDs)
     % Plot Filter Width (on the transformed precision = 1/fw axis, log-scaled)
     subplot(1,2,2);
     errorbar(unique_precision, prop_fw, se_fw, 'o', 'Color', ps.colors.black, 'MarkerFaceColor', ps.colors.black, 'MarkerSize', 6, 'CapSize', 0, 'LineWidth', ps.line_width); hold on;
-    x_fit_prec = logspace(log10(min(unique_precision)*0.7), log10(max(unique_precision)*1.3), 100);
+    % Determine axis limits dynamically to include both data and extrapolated targets
+    min_x_prec = min([unique_precision; precision_targets(:)]);
+    max_x_prec = max([unique_precision; precision_targets(:)]);
+
+    x_fit_prec = logspace(log10(min_x_prec*0.7), log10(max_x_prec*1.3), 100);
     plot(x_fit_prec, weibull_prob(x_fit_prec, alpha_fw, beta_fw), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     xl = xlim;
     for i = 1:3
@@ -290,14 +299,30 @@ for s = 1:length(subj_IDs)
         plot(prec_i, filter_target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
     end
     set(gca, 'XScale', 'log');
-    xlim([min(unique_precision)*0.7 max(unique_precision)*1.3]);
+    xlim([min_x_prec*0.7 max_x_prec*1.3]);
     ylim([0.0 1.0]);
 
-    % xticks for precision: choose round filter width values to label
-    % 1/180=0.0056, 1/80=0.0125, 1/40=0.025, 1/20=0.05, 1/10=0.10
-    prec_ticks = [1/180, 1/80, 1/40, 1/20, 1/10];
+    % Dynamically generate xticks for precision based on the plotted range
+    possible_fws = [180, 140, 100, 80, 60, 40, 20, 10, 5, 2];
+    valid_fws = possible_fws(1./possible_fws >= min_x_prec*0.7 & 1./possible_fws <= max_x_prec*1.3);
+    
+    % If for some reason none fell perfectly in range, grab the min and max bounds
+    if isempty(valid_fws)
+        valid_fws = [round(1/min_x_prec), round(1/max_x_prec)];
+    end
+    
+    prec_ticks = sort(1 ./ valid_fws, 'ascend');
+    
+    % Sort valid_fws descending to match the ascending precision ticks
+    valid_fws = sort(valid_fws, 'descend');
+    
+    tick_labels = cell(1, length(valid_fws));
+    for i = 1:length(valid_fws)
+        tick_labels{i} = ['1/' num2str(valid_fws(i))];
+    end
+    
     xticks(prec_ticks);
-    xticklabels({'1/180', '1/80', '1/40', '1/20', '1/10'});
+    xticklabels(tick_labels);
 
     xlabel('Precision (1/filter width)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     title(sprintf('Weibull Fit (\\alpha=%.4f, \\beta=%.2f, R^2=%.2f)', alpha_fw, beta_fw, r2_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
