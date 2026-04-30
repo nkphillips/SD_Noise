@@ -1160,9 +1160,29 @@ end % End of n_back loop
 
 %% Clean up
 
+close all;
+
 if toggles.parallelization
-    poolobj = gcp('nocreate');
-    if ~isempty(poolobj)
-        delete(poolobj);
+    try
+        poolobj = gcp('nocreate');
+        if ~isempty(poolobj)
+            delete(poolobj);
+        end
+    catch cleanupErr
+        reports_dir = fullfile(fileparts(mfilename('fullpath')), 'reports');
+        if ~exist(reports_dir, 'dir')
+            mkdir(reports_dir);
+        end
+        cleanup_report = fullfile(reports_dir, ...
+            ['cleanup_error_' datestr(now, 'yyyymmdd_HHMMSS') '.txt']);
+        fid = fopen(cleanup_report, 'w');
+        if fid ~= -1
+            fprintf(fid, 'Cleanup Error\n');
+            fprintf(fid, 'Generated: %s\n', datestr(now, 'yyyy-mm-dd HH:MM:SS'));
+            fprintf(fid, '====================================\n\n');
+            fprintf(fid, '%s\n', getReport(cleanupErr, 'extended', 'hyperlinks', 'off'));
+            fclose(fid);
+        end
+        warning('%s', ['Parallel pool cleanup failed after outputs were written. Details saved to: ' cleanup_report]);
     end
 end
