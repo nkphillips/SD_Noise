@@ -5,7 +5,7 @@ function sd = makeSerialDependence(num)
     sd = struct('ind',[],'grp',[],'all',[]);
 
     struct_size = cell(1,num.subjs);
-    sd.ind = struct('start_params', struct_size, 'start_nll', struct_size, 'params_est', struct_size, 'nll', struct_size, 'exit_flag', struct_size);
+    sd.ind = struct('start_params', struct_size, 'start_nll', struct_size, 'params_est', struct_size, 'nll', struct_size, 'exit_flag', struct_size, 'r2', struct_size);
 
     fieldname_list = fieldnames(sd.ind);
 

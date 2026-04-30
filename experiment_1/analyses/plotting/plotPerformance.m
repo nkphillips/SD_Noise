@@ -118,9 +118,9 @@ for m_idx = 1:numel(metrics)
 
                 % Title with actual values
                 if cond == 1
-                    fg_title = [p.contrast{prev_lvl} ' -> ' p.contrast{curr_lvl}];
+                    fg_title = sprintf('%s \\rightarrow %s', p.contrast{prev_lvl}, p.contrast{curr_lvl});
                 else
-                    fg_title = [p.precision{prev_lvl} ' -> ' p.precision{curr_lvl}];
+                    fg_title = sprintf('%s \\rightarrow %s', p.precision{prev_lvl}, p.precision{curr_lvl});
                 end
                 title(fg_title);
 

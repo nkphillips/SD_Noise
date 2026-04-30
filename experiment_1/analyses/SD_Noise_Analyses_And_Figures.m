@@ -14,6 +14,8 @@ toggles.disp_on = 1;
 toggles.save_estimates = 1;
 toggles.bootstrap_super = 1; % enable bootstrap CIs for super-subject
 toggles.bootstrap_sd = 1; % enable bootstrap CIs for serial dependence (computed pre-plot)
+toggles.fit_individuals = 1; % populate rb.ind and sd.ind subject-level paths
+toggles.subject_bootstrap_sd = 1; % use subject-resampled CIs for SD parameters when available
 
 %% Setup parallelization
 
@@ -66,6 +68,7 @@ plt_opts.rb_subtract_baseline = 0; % Response bias plot: subtract DoG baseline (
 %% Bootstrap settings
 
 bootstrap.B = 10;
+bootstrap.B_subject_sd = 5; % smoke-test value; high-B runs should be done on a larger machine
 bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
@@ -80,7 +83,7 @@ end
 which_setup = '3329C_ASUS';
 analysis_date = datestr(now, 'mm.dd.yyyy'); % automatically pull current date from system
 
-p.subj_IDs = {'015'}; % {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'};
+p.subj_IDs = {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'}; % {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'};
 p.cond_names = {'Contrast' 'Precision'};
 
 % Define contrast and precision values for axis labels
@@ -95,7 +98,23 @@ num.blocks_per_cond = num.blocks/num.conds;
 num.cond_combos = num.conds * num.levels;
 
 % Define n-back conditions
-n_back_conditions = [1];
+n_back_conditions = [1 2 3];
+
+% Optional environment overrides for smoke tests / batch runs
+env_n_back_conditions = getenv('SD_NOISE_N_BACK_CONDITIONS');
+if ~isempty(env_n_back_conditions)
+    n_back_conditions = str2num(env_n_back_conditions); %#ok<ST2NM>
+end
+env_bootstrap_super = getenv('SD_NOISE_BOOTSTRAP_SUPER');
+if ~isempty(env_bootstrap_super), toggles.bootstrap_super = logical(str2double(env_bootstrap_super)); end
+env_bootstrap_sd = getenv('SD_NOISE_BOOTSTRAP_SD');
+if ~isempty(env_bootstrap_sd), toggles.bootstrap_sd = logical(str2double(env_bootstrap_sd)); end
+env_plot_sup = getenv('SD_NOISE_PLOT_SUP_FIGURES');
+if ~isempty(env_plot_sup), plt_opts.plot_sup_figures = logical(str2double(env_plot_sup)); end
+env_save_sup = getenv('SD_NOISE_SAVE_SUP_FIGURES');
+if ~isempty(env_save_sup), plt_opts.save_sup_figures = logical(str2double(env_save_sup)); end
+env_b_subject_sd = getenv('SD_NOISE_B_SUBJECT_SD');
+if ~isempty(env_b_subject_sd), bootstrap.B_subject_sd = str2double(env_b_subject_sd); end
 
 %% Initialize paths and load experiment runs
 
@@ -240,13 +259,25 @@ for i_n_back = 1:length(n_back_conditions)
 
     [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, plt_opts, n_back);
 
+    %% Write cohort audit log
+
+    try
+        cohort_report_path = writeCohortReport(p, num, toggles, bootstrap, which_setup, n_back, total_trials_per_cond);
+        if toggles.disp_on
+            disp(['✓ Cohort log written: ' cohort_report_path]);
+        end
+    catch cohortErr
+        warning(cohortErr.identifier, '%s', ['Failed to write cohort report: ' cohortErr.message]);
+        cohort_report_path = '';
+    end
+
     %% Define model bounds and parameters
 
     p.fmincon_options = optimoptions('fmincon','Display','off');
 
     %%% Response bias model parameters %%%
     p.rb_init_params = [0, 1]; % [mu, sigma]
-    p.rb_bounds = [20, 30; -20, 0.1]; % [upper; lower]
+    p.rb_bounds = [20, 90; -20, 0.1]; % [upper; lower] for [mu, sigma]
     p.guess_rate = 0.25; % Assuming constant guess rate (Sheehan & Serences 2022 PLOS Biology)
 
     %%% Serial dependence model parameters %%%
@@ -262,6 +293,7 @@ for i_n_back = 1:length(n_back_conditions)
 
     p.sd_bounds = [sd_mu_ub, w_ub, 5, p.rb_bounds(1,2); sd_mu_lb, w_lb, -5, p.rb_bounds(2,2)]; % [upper; lower]; default = [p.rb_bounds(1,1), w_ub, 5, p.rb_bounds(1,2); 4, w_lb, -5, p.rb_bounds(2,2)]
     p.sd_objective = toggles.sd_objective; % 'nll' or 'sse' for serial dependence estimation
+    p.sd_min_windows = 3; % minimum finite mu(delta-theta) points required for subject-level DoG fits
 
     if strcmp(p.sd_objective, 'sse')
         p.sd_init_params = p.sd_init_params(1:3);
@@ -376,6 +408,22 @@ for i_n_back = 1:length(n_back_conditions)
     rb_duration = toc(rb_start_time);
 
     if toggles.disp_on, disp('✓ Response bias structure reconstructed'); end
+
+    %% Optional individual-subject response-bias fits
+
+    ind_rb_meta = struct('duration', NaN, 'num_tasks', 0);
+    if isfield(toggles, 'fit_individuals') && toggles.fit_individuals
+        if toggles.disp_on
+            disp(' ');
+            disp('Estimating response bias for individual subjects...');
+        end
+        [rb, ind_rb_meta] = fitIndividualResponseBias(rb, delta_theta_windows, num, p, toggles);
+        if toggles.disp_on
+            disp(['✓ Individual response-bias fits completed in ~' ...
+                num2str(round(ind_rb_meta.duration/60, 1)) ' minutes (' ...
+                num2str(ind_rb_meta.num_tasks) ' tasks)']);
+        end
+    end
 
     %%% Display summary %%%
 
@@ -558,6 +606,24 @@ for i_n_back = 1:length(n_back_conditions)
     sd_duration = toc(sd_start_time);
     if toggles.disp_on, disp('✓ Serial dependence estimation completed'); end
 
+    %% Optional individual-subject serial-dependence fits
+
+    ind_sd_meta = struct('duration', NaN, 'num_tasks', 0, 'skipped_too_few_windows', 0);
+    if isfield(toggles, 'fit_individuals') && toggles.fit_individuals
+        if toggles.disp_on
+            disp(' ');
+            disp('Estimating serial dependence for individual subjects...');
+        end
+        [sd, ind_sd_meta] = fitIndividualSerialDependence(sd, rb, delta_theta_windows, ...
+            delta_theta_centers, num, p, toggles);
+        if toggles.disp_on
+            disp(['✓ Individual serial-dependence fits completed in ~' ...
+                num2str(round(ind_sd_meta.duration/60, 1)) ' minutes (' ...
+                num2str(ind_sd_meta.num_tasks) ' tasks; skipped ' ...
+                num2str(ind_sd_meta.skipped_too_few_windows) ' cells)']);
+        end
+    end
+
     %%% Display summary %%%
 
     if toggles.disp_on
@@ -606,6 +672,27 @@ for i_n_back = 1:length(n_back_conditions)
         end
     else
         sd_ci = struct(); sd_ci.lo = []; sd_ci.hi = [];
+    end
+
+    %% Optional subject-bootstrap CIs for serial dependence
+
+    sd_ci_subject = struct();
+    sd_subject = struct();
+    subject_bs_sd_duration = NaN;
+    if isfield(toggles, 'subject_bootstrap_sd') && toggles.subject_bootstrap_sd && ...
+            isfield(toggles, 'fit_individuals') && toggles.fit_individuals
+        if toggles.disp_on
+            disp(' ');
+            disp('Bootstrapping serial-dependence parameters across subjects...');
+        end
+        subject_bs_sd_start_time = tic;
+        [sd_ci_subject, sd_subject] = bootstrapSerialDependenceSubjects(sd, num, bootstrap, p);
+        subject_bs_sd_duration = toc(subject_bs_sd_start_time);
+        if toggles.disp_on
+            disp(['✓ Subject bootstrap SD CIs completed in ~' ...
+                num2str(round(subject_bs_sd_duration/60, 1)) ' minutes (B_subject_sd = ' ...
+                num2str(bootstrap.B_subject_sd) ')']);
+        end
     end
 
 
@@ -698,10 +785,10 @@ for i_n_back = 1:length(n_back_conditions)
                     % Create title with actual values
                     if cond == 1
                         % Contrast condition
-                        fg_title = [p.contrast{prev_lvl} ' -> ' p.contrast{curr_lvl}];
+                        fg_title = sprintf('%s \\rightarrow %s', p.contrast{prev_lvl}, p.contrast{curr_lvl});
                     else
                         % Precision condition
-                        fg_title = [p.precision{prev_lvl} ' -> ' p.precision{curr_lvl}];
+                        fg_title = sprintf('%s \\rightarrow %s', p.precision{prev_lvl}, p.precision{curr_lvl});
                     end
 
                     subplot(num.levels, num.levels, curr_lvl + (prev_lvl-1)*num.levels);
@@ -777,7 +864,13 @@ for i_n_back = 1:length(n_back_conditions)
         end
 
         for param_idx = 1:num_params_to_plot
-            plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, p, plt_opts, fg, sd_ci.lo, sd_ci.hi);
+            if exist('sd_ci_subject', 'var') && isfield(sd_ci_subject, 'lo') && ~isempty(sd_ci_subject.lo)
+                plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, ...
+                    p, plt_opts, fg, sd_ci_subject.lo, sd_ci_subject.hi, 'subject-bootstrap 95% CI');
+            else
+                plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, ...
+                    p, plt_opts, fg, sd_ci.lo, sd_ci.hi, 'window-bootstrap 95% CI');
+            end
         end
 
         %% Response bias with best-fit DoG curves
@@ -793,10 +886,10 @@ for i_n_back = 1:length(n_back_conditions)
                     % Create title with actual values
                     if cond == 1
                         % Contrast condition
-                        fg_title = [p.contrast{prev_lvl} ' -> ' p.contrast{curr_lvl}];
+                        fg_title = sprintf('%s \\rightarrow %s', p.contrast{prev_lvl}, p.contrast{curr_lvl});
                     else
                         % Precision condition
-                        fg_title = [p.precision{prev_lvl} ' -> ' p.precision{curr_lvl}];
+                        fg_title = sprintf('%s \\rightarrow %s', p.precision{prev_lvl}, p.precision{curr_lvl});
                     end
 
                     subplot(num.levels, num.levels, curr_lvl + (prev_lvl-1)*num.levels);
@@ -930,15 +1023,63 @@ for i_n_back = 1:length(n_back_conditions)
         % Get current time in HHMMSS format
         current_time = datestr(now, 'HHMMSS');
 
+        % Assemble run metadata for downstream auditing without parsing reports
+        meta = struct();
+        meta.super_subject_mode = 'pooled_trials_single_observer';
+        meta.subj_IDs           = p.subj_IDs;
+        meta.num_subjs          = num.subjs;
+        meta.n_back             = n_back;
+        meta.which_setup        = which_setup;
+        meta.analysis_date      = analysis_date;
+        meta.analysis_time      = current_time;
+        meta.sd_objective       = toggles.sd_objective;
+        meta.guess_rate         = p.guess_rate;
+        meta.bootstrap_B        = bootstrap.B;
+        meta.bootstrap_B_subject_sd = bootstrap.B_subject_sd;
+        meta.bootstrap_ci       = bootstrap.ci;
+        meta.fit_individuals    = isfield(toggles, 'fit_individuals') && toggles.fit_individuals;
+        meta.subject_bootstrap_sd = isfield(toggles, 'subject_bootstrap_sd') && toggles.subject_bootstrap_sd;
+        meta.sd_min_windows     = p.sd_min_windows;
+        if exist('sd_ci_subject', 'var') && isfield(sd_ci_subject, 'lo') && ~isempty(sd_ci_subject.lo)
+            meta.ci_source_sd = 'subject-bootstrap';
+        elseif exist('sd_ci', 'var') && isfield(sd_ci, 'lo') && ~isempty(sd_ci.lo)
+            meta.ci_source_sd = 'window-bootstrap';
+        else
+            meta.ci_source_sd = 'none';
+        end
+        if exist('ind_rb_meta', 'var'), meta.ind_rb_meta = ind_rb_meta; end
+        if exist('ind_sd_meta', 'var'), meta.ind_sd_meta = ind_sd_meta; end
+        if exist('subject_bs_sd_duration', 'var'), meta.subject_bs_sd_duration = subject_bs_sd_duration; end
+        meta.delta_theta_centers= delta_theta_centers;
+        meta.delta_theta_width  = delta_theta_width;
+        meta.num_runs_per_subj  = num.runs;
+        if exist('total_trials_per_cond', 'var')
+            meta.total_trials_per_cond = total_trials_per_cond;
+        end
+        if exist('cohort_report_path', 'var')
+            meta.cohort_report_path = cohort_report_path;
+        end
+
+        save_vars = {'rb', 'sd', 'rb_ci', 'perf_ci', 'meta'};
+        if exist('sd_ci', 'var')
+            save_vars{end+1} = 'sd_ci';
+        end
+        if exist('sd_ci_subject', 'var')
+            save_vars{end+1} = 'sd_ci_subject';
+        end
+        if exist('sd_subject', 'var')
+            save_vars{end+1} = 'sd_subject';
+        end
+
         filename = ['SD_Noise_Estimates_' analysis_date '_' current_time '_' toggles.sd_objective '.mat'];
         if exist(fullfile(estimates_path, filename), 'file')
             overwrite = questdlg('File already exists. Overwrite?', 'Overwrite?', 'Yes', 'No', 'Yes');
             if strcmp(overwrite, 'Yes')
-                save(fullfile(estimates_path, filename), 'rb', 'sd', 'rb_ci', 'perf_ci');
+                save(fullfile(estimates_path, filename), save_vars{:});
                 disp(['✓ Saved estimates to: ' filename]);
             end
         else
-            save(fullfile(estimates_path, filename), 'rb', 'sd', 'rb_ci', 'perf_ci');
+            save(fullfile(estimates_path, filename), save_vars{:});
             disp(['✓ Saved estimates to: ' filename]);
         end
 

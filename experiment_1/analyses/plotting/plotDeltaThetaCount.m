@@ -46,10 +46,10 @@ function plotDeltaThetaCount(all_delta_thetas, num, p, plt_opts)
                     % Create title with actual values
                     if cond == 1
                         % Contrast condition
-                        fg_title = [p.contrast{prev_lvl} ' -> ' p.contrast{curr_lvl}];
+                        fg_title = sprintf('%s \\rightarrow %s', p.contrast{prev_lvl}, p.contrast{curr_lvl});
                     else
                         % Precision condition
-                        fg_title = [p.precision{prev_lvl} ' -> ' p.precision{curr_lvl}];
+                        fg_title = sprintf('%s \\rightarrow %s', p.precision{prev_lvl}, p.precision{curr_lvl});
                     end
 
                     subplot(num.levels, num.levels, prev_lvl + (curr_lvl-1)*num.levels);

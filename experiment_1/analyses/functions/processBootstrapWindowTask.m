@@ -15,14 +15,16 @@ function result = processBootstrapWindowTask(task_data, p, bootstrap, toggles)
 
     if n <= bootstrap.min_trials
         result.mu_lo = NaN; result.mu_hi = NaN;
+        result.sigma_lo = NaN; result.sigma_hi = NaN;
         result.pc_lo = NaN; result.pc_hi = NaN;
         result.pccw_lo = NaN; result.pccw_hi = NaN;
         return
     end
 
-    mu_b   = nan(B,1);
-    pc_b   = nan(B,1);
-    pccw_b = nan(B,1);
+    mu_b    = nan(B,1);
+    sigma_b = nan(B,1);
+    pc_b    = nan(B,1);
+    pccw_b  = nan(B,1);
 
     for b = 1:B
         idx = randi(n, n, 1);
@@ -30,9 +32,11 @@ function result = processBootstrapWindowTask(task_data, p, bootstrap, toggles)
         y_b  = y(idx);
         try
             [~, ~, params_est_b] = estimateResponseBias([po_b, y_b], p);
-            mu_b(b) = params_est_b(1);
+            mu_b(b)    = params_est_b(1);
+            sigma_b(b) = params_est_b(2);
         catch ME %#ok<NASGU>
-            mu_b(b) = NaN;
+            mu_b(b)    = NaN;
+            sigma_b(b) = NaN;
             if isfield(toggles,'disp_on') && toggles.disp_on && b == 1
                 % warning suppressed to avoid flooding; uncomment to debug
                 % warning('RB bootstrap fit failed: %s', ME.message);
@@ -57,6 +61,14 @@ function result = processBootstrapWindowTask(task_data, p, bootstrap, toggles)
         result.mu_lo = q(1); result.mu_hi = q(2);
     else
         result.mu_lo = NaN; result.mu_hi = NaN;
+    end
+
+    sigma_c = sigma_b(~isnan(sigma_b));
+    if ~isempty(sigma_c)
+        q = prctile(sigma_c, prc);
+        result.sigma_lo = q(1); result.sigma_hi = q(2);
+    else
+        result.sigma_lo = NaN; result.sigma_hi = NaN;
     end
 
     pc_c = pc_b(~isnan(pc_b));

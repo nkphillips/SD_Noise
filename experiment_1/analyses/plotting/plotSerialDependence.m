@@ -10,7 +10,7 @@
 % Outputs:
 % fg: figure handle
 
-function plotSerialDependence(sd_data, param_index, param_name, p, plt_opts, fg, sd_ci_lo, sd_ci_hi)
+function plotSerialDependence(sd_data, param_index, param_name, p, plt_opts, fg, sd_ci_lo, sd_ci_hi, ci_label)
 % plotSerialDependence - Create heatmap of serial dependence parameters
 %
 % This function creates a heatmap visualization of serial dependence parameters
@@ -24,6 +24,11 @@ function plotSerialDependence(sd_data, param_index, param_name, p, plt_opts, fg,
 %   plt_opts - plotting settings struct
 %   sd_ci_lo - optional 4D array [prev, curr, cond, param] lower CI
 %   sd_ci_hi - optional 4D array [prev, curr, cond, param] upper CI
+%   ci_label - optional text label describing the CI source
+
+if nargin < 9
+    ci_label = '';
+end
 
 % Extract the parameter data
 param_data = squeeze(sd_data(:,:,:,param_index)); % [prev_lvl, curr_lvl, cond]
@@ -175,31 +180,6 @@ for cond = 1:num_conds
 
     marker_colors = repmat(base_color, size(param_data,1),1) .* [1 0.70 0.25]';
 
-    % Get local y min and max
-    local_min = min(cond_data(:));
-    local_max = max(cond_data(:));
-    if local_min == local_max
-        pad = max(abs(local_min), 1) * eps;
-        local_min = local_min - pad;
-        local_max = local_max + pad;
-    end
-
-    % Get global y min and max
-    global_min = min(param_data(:));
-    global_max = max(param_data(:));
-    if global_min == global_max
-        pad = max(abs(global_min), 1) * eps;
-        global_min = global_min - pad;
-        global_max = global_max + pad;
-    end
-
-    % Round to multiples of 5
-    local_min = floor(local_min / 5) * 5;
-    local_max = ceil(local_max / 5) * 5;
-
-    global_min = floor(global_min / 5) * 5;
-    global_max = ceil(global_max / 5) * 5;
-
     % Plot data
     subplot(1, num_conds, cond)
 
@@ -218,7 +198,7 @@ for cond = 1:num_conds
     for i = 1:size(y,2)
         plot(x, y(:,i), '-', 'Color', marker_colors(i,:), 'LineWidth', plt_opts.line_width, 'HandleVisibility', 'off')
         scatter(x, y(:,i), 50, 'MarkerFaceColor', marker_colors(i,:), 'MarkerEdgeColor', [1 1 1], 'MarkerFaceAlpha', 0.75, 'LineWidth', plt_opts.line_width)
-        if has_ci && (param_index == 1 || param_index == 2)
+        if has_ci
             % Asymmetric error bars per point
             yneg = max(0, y(:,i) - lo_y(:,i));
             ypos = max(0, hi_y(:,i) - y(:,i));
@@ -243,9 +223,12 @@ for cond = 1:num_conds
 
     xlabel('Current level')
     ylabel(param_name)
+    if has_ci && ~isempty(ci_label)
+        text(0.02, 0.02, ci_label, 'Units', 'normalized', ...
+            'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', ...
+            'FontSize', 7, 'Color', plt_opts.colors.gray);
+    end
 
-    % ylim([local_min local_max])
-    % ylim([global_min global_max])
     if strcmp(param_name, 'Amplitude'), ylim([0 10]); end
 
     axis square;

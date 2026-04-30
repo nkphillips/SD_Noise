@@ -16,6 +16,7 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
 %
 % Outputs:
 %   rb_ci.mu_lo/mu_hi: [prev, curr, cond, window] lower/upper CI for mu
+%   rb_ci.sigma_lo/sigma_hi: same shape, CIs for response-bias sigma
 %   perf_ci.(pc_lo|pc_hi|pccw_lo|pccw_hi): same shape, CIs for performance
 
     if nargin < 6
@@ -36,6 +37,8 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
     sz = [num.levels, num.levels, num.conds, num.delta_theta_windows];
     rb_ci.mu_lo = nan(sz);
     rb_ci.mu_hi = nan(sz);
+    rb_ci.sigma_lo = nan(sz);
+    rb_ci.sigma_hi = nan(sz);
     perf_ci.pc_lo = nan(sz);
     perf_ci.pc_hi = nan(sz);
     perf_ci.pccw_lo = nan(sz);
@@ -93,6 +96,8 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
         if ~isempty(r)
             rb_ci.mu_lo(prev_lvl, curr_lvl, cond, iw) = r.mu_lo;
             rb_ci.mu_hi(prev_lvl, curr_lvl, cond, iw) = r.mu_hi;
+            if isfield(r, 'sigma_lo'); rb_ci.sigma_lo(prev_lvl, curr_lvl, cond, iw) = r.sigma_lo; end
+            if isfield(r, 'sigma_hi'); rb_ci.sigma_hi(prev_lvl, curr_lvl, cond, iw) = r.sigma_hi; end
             perf_ci.pc_lo(prev_lvl, curr_lvl, cond, iw) = r.pc_lo;
             perf_ci.pc_hi(prev_lvl, curr_lvl, cond, iw) = r.pc_hi;
             perf_ci.pccw_lo(prev_lvl, curr_lvl, cond, iw) = r.pccw_lo;
@@ -103,9 +108,11 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
     % Optional summary
     if isfield(toggles,'disp_on') && toggles.disp_on
         n_mu = sum(isfinite(rb_ci.mu_lo(:)) & isfinite(rb_ci.mu_hi(:)));
+        n_sigma = sum(isfinite(rb_ci.sigma_lo(:)) & isfinite(rb_ci.sigma_hi(:)));
         n_pc = sum(isfinite(perf_ci.pc_lo(:)) & isfinite(perf_ci.pc_hi(:)));
         n_pccw = sum(isfinite(perf_ci.pccw_lo(:)) & isfinite(perf_ci.pccw_hi(:)));
-        disp(['  - Bootstrap CIs computed for windows (mu/pc/pccw): ' num2str(n_mu) ' / ' num2str(n_pc) ' / ' num2str(n_pccw)]);
+        disp(['  - Bootstrap CIs computed for windows (mu/sigma/pc/pccw): ' ...
+              num2str(n_mu) ' / ' num2str(n_sigma) ' / ' num2str(n_pc) ' / ' num2str(n_pccw)]);
     end
 
 end
