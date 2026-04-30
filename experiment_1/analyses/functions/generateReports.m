@@ -142,9 +142,17 @@ function generateReports(trial_counts, total_trials_per_cond, p, num, sd, report
         end
         if isfield(reportMeta, 'bs_duration') && ~isempty(reportMeta.bs_duration) && isfinite(reportMeta.bs_duration)
             if isfield(reportMeta, 'bootstrap') && isfield(reportMeta.bootstrap, 'B')
-                fprintf(fid, 'Bootstrapping: B = %d, %s\n', reportMeta.bootstrap.B, fmt_duration(reportMeta.bs_duration));
+                fprintf(fid, 'RB/performance bootstrapping: B = %d, %s\n', reportMeta.bootstrap.B, fmt_duration(reportMeta.bs_duration));
             else
-                fprintf(fid, 'Bootstrapping: %s\n', fmt_duration(reportMeta.bs_duration));
+                fprintf(fid, 'RB/performance bootstrapping: %s\n', fmt_duration(reportMeta.bs_duration));
+            end
+        end
+        if isfield(reportMeta, 'sd_cluster_bs_duration') && ~isempty(reportMeta.sd_cluster_bs_duration) && isfinite(reportMeta.sd_cluster_bs_duration)
+            if isfield(reportMeta, 'bootstrap') && isfield(reportMeta.bootstrap, 'B_subject_cluster_sd')
+                fprintf(fid, 'Subject-cluster SD bootstrapping: B = %d, %s\n', ...
+                    reportMeta.bootstrap.B_subject_cluster_sd, fmt_duration(reportMeta.sd_cluster_bs_duration));
+            else
+                fprintf(fid, 'Subject-cluster SD bootstrapping: %s\n', fmt_duration(reportMeta.sd_cluster_bs_duration));
             end
         end
 

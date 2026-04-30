@@ -36,13 +36,13 @@ function plotSdSummary(estimates, n_back_list, plt_opts, p, opts, param_index, y
         est = estimates.(key);
         if isempty(est); continue; end
         sd = est.sd;
-        if isfield(est, 'sd_ci_subject') && ~isempty(est.sd_ci_subject) && ...
-                isfield(est.sd_ci_subject, 'lo') && ~isempty(est.sd_ci_subject.lo)
-            sd_ci = est.sd_ci_subject;
-            ci_label = 'subject-bootstrap 95% CI';
+        if isfield(est, 'sd_ci_cluster') && ~isempty(est.sd_ci_cluster) && ...
+                isfield(est.sd_ci_cluster, 'lo') && ~isempty(est.sd_ci_cluster.lo)
+            sd_ci = est.sd_ci_cluster;
+            ci_label = 'subject-cluster 95% CI';
         else
             sd_ci = est.sd_ci;
-            ci_label = 'window-bootstrap 95% CI';
+            ci_label = '95% CI';
         end
         has_ci = ~isempty(sd_ci) && isfield(sd_ci, 'lo') && isfield(sd_ci, 'hi');
 

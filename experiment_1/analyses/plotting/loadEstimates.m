@@ -3,7 +3,7 @@ function estimates = loadEstimates(analysis_date, n_back_list, opts)
 %
 % Shared loader for the per-n-back estimates produced by
 % SD_Noise_Analyses_And_Figures.m. Returns a struct keyed by n-back
-% containing rb, sd, rb_ci, sd_ci, perf_ci, meta and a convenience
+% containing rb, sd, rb_ci, sd_ci, sd_ci_cluster, perf_ci, meta and a convenience
 % delta_theta_centers field pulled from meta when available.
 %
 % Usage:
@@ -80,7 +80,7 @@ function out = load_one(full_path)
 
     out.file = full_path;
 
-    fields = {'rb','sd','rb_ci','sd_ci','sd_ci_subject','sd_subject','perf_ci'};
+    fields = {'rb','sd','rb_ci','sd_ci','sd_ci_cluster','sd_boot_cluster','perf_ci'};
     for f = 1:numel(fields)
         if isfield(S, fields{f})
             out.(fields{f}) = S.(fields{f});

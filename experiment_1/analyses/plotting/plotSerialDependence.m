@@ -229,7 +229,25 @@ for cond = 1:num_conds
             'FontSize', 7, 'Color', plt_opts.colors.gray);
     end
 
-    if strcmp(param_name, 'Amplitude'), ylim([0 10]); end
+    y_limit_vals = y(:);
+    if has_ci
+        y_limit_vals = [y_limit_vals; lo_y(:); hi_y(:)];
+    end
+    y_limit_vals = y_limit_vals(isfinite(y_limit_vals));
+    if ~isempty(y_limit_vals)
+        y_min = min(y_limit_vals);
+        y_max = max(y_limit_vals);
+        if y_min == y_max
+            y_pad = max(abs(y_min), 1) * 0.1;
+        else
+            y_pad = 0.08 * (y_max - y_min);
+        end
+        if strcmp(param_name, 'Amplitude')
+            ylim([max(0, y_min - y_pad), y_max + y_pad]);
+        else
+            ylim([y_min - y_pad, y_max + y_pad]);
+        end
+    end
 
     axis square;
     set(gca, 'TickDir', 'out', 'LineWidth', plt_opts.line_width, 'Box', 'off');

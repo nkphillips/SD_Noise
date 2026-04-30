@@ -8,19 +8,21 @@ clc;
 
 %% Toggles
 
-toggles.parallelization = 1;
+toggles.parallelization = 1; % smoke: 1 to exercise parallel/chunk code; publication: 1
 toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
 toggles.disp_on = 1;
-toggles.save_estimates = 1;
-toggles.bootstrap_super = 1; % enable bootstrap CIs for super-subject
-toggles.bootstrap_sd = 1; % enable bootstrap CIs for serial dependence (computed pre-plot)
-toggles.fit_individuals = 1; % populate rb.ind and sd.ind subject-level paths
-toggles.subject_bootstrap_sd = 1; % use subject-resampled CIs for SD parameters when available
+toggles.save_estimates = 0; % smoke: 0 to avoid writing estimates; publication: 1
+toggles.bootstrap_rb_perf = 0; % smoke: 0 to skip windowed RB/performance CIs; publication: 1 if reporting RB/performance CIs
+toggles.fit_individuals = 0; % smoke: 0 to skip subject-level fits; publication: 1 if reporting individual fits
+toggles.bootstrap_sd_cluster = 1; % smoke: 1 to test pooled subject-cluster DoG CIs; publication: 1
 
 %% Setup parallelization
 
 p.num_workers = 9;
-p.num_chunks = p.num_workers - 1;
+env_num_workers = getenv('SD_NOISE_NUM_WORKERS');
+if ~isempty(env_num_workers), p.num_workers = str2double(env_num_workers); end
+if ~isfinite(p.num_workers) || p.num_workers < 1, p.num_workers = 1; end
+p.num_chunks = max(1, p.num_workers - 1);
 
 if toggles.parallelization
     maxNumCompThreads(p.num_workers);
@@ -67,8 +69,10 @@ plt_opts.rb_subtract_baseline = 0; % Response bias plot: subtract DoG baseline (
 
 %% Bootstrap settings
 
-bootstrap.B = 10;
-bootstrap.B_subject_sd = 5; % smoke-test value; high-B runs should be done on a larger machine
+bootstrap.B = 10; % smoke: unused when toggles.bootstrap_rb_perf is 0; publication: 500-2000 if RB/performance CIs are enabled
+bootstrap.B_subject_cluster_sd = 100; % smoke: 2 for fastest code-path check, 25-50 for development timing; publication: 2000
+bootstrap.subject_cluster_num_chunks = min(p.num_chunks, bootstrap.B_subject_cluster_sd); % smoke: min(9, B); publication: ~31-32 chunks on 32-core CPU
+bootstrap.subject_cluster_seed = 1;
 bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
@@ -98,23 +102,30 @@ num.blocks_per_cond = num.blocks/num.conds;
 num.cond_combos = num.conds * num.levels;
 
 % Define n-back conditions
-n_back_conditions = [1 2 3];
+n_back_conditions = [1]; % smoke: [1]; publication/full analysis: [1 2 3]
 
 % Optional environment overrides for smoke tests / batch runs
 env_n_back_conditions = getenv('SD_NOISE_N_BACK_CONDITIONS');
 if ~isempty(env_n_back_conditions)
     n_back_conditions = str2num(env_n_back_conditions); %#ok<ST2NM>
 end
-env_bootstrap_super = getenv('SD_NOISE_BOOTSTRAP_SUPER');
-if ~isempty(env_bootstrap_super), toggles.bootstrap_super = logical(str2double(env_bootstrap_super)); end
-env_bootstrap_sd = getenv('SD_NOISE_BOOTSTRAP_SD');
-if ~isempty(env_bootstrap_sd), toggles.bootstrap_sd = logical(str2double(env_bootstrap_sd)); end
+env_bootstrap_rb_perf = getenv('SD_NOISE_BOOTSTRAP_RB_PERF');
+if isempty(env_bootstrap_rb_perf), env_bootstrap_rb_perf = getenv('SD_NOISE_BOOTSTRAP_SUPER'); end % legacy env var
+if ~isempty(env_bootstrap_rb_perf), toggles.bootstrap_rb_perf = logical(str2double(env_bootstrap_rb_perf)); end
+env_bootstrap_sd_cluster = getenv('SD_NOISE_BOOTSTRAP_SD_CLUSTER');
+if isempty(env_bootstrap_sd_cluster), env_bootstrap_sd_cluster = getenv('SD_NOISE_SUBJECT_CLUSTER_BOOTSTRAP_SD'); end % legacy env var
+if ~isempty(env_bootstrap_sd_cluster), toggles.bootstrap_sd_cluster = logical(str2double(env_bootstrap_sd_cluster)); end
 env_plot_sup = getenv('SD_NOISE_PLOT_SUP_FIGURES');
 if ~isempty(env_plot_sup), plt_opts.plot_sup_figures = logical(str2double(env_plot_sup)); end
 env_save_sup = getenv('SD_NOISE_SAVE_SUP_FIGURES');
 if ~isempty(env_save_sup), plt_opts.save_sup_figures = logical(str2double(env_save_sup)); end
-env_b_subject_sd = getenv('SD_NOISE_B_SUBJECT_SD');
-if ~isempty(env_b_subject_sd), bootstrap.B_subject_sd = str2double(env_b_subject_sd); end
+env_b_subject_cluster_sd = getenv('SD_NOISE_B_SUBJECT_CLUSTER_SD');
+if ~isempty(env_b_subject_cluster_sd), bootstrap.B_subject_cluster_sd = str2double(env_b_subject_cluster_sd); end
+env_subject_cluster_chunks = getenv('SD_NOISE_SUBJECT_CLUSTER_NUM_CHUNKS');
+if ~isempty(env_subject_cluster_chunks), bootstrap.subject_cluster_num_chunks = str2double(env_subject_cluster_chunks); end
+env_subject_cluster_seed = getenv('SD_NOISE_SUBJECT_CLUSTER_SEED');
+if ~isempty(env_subject_cluster_seed), bootstrap.subject_cluster_seed = str2double(env_subject_cluster_seed); end
+bootstrap.subject_cluster_num_chunks = min(max(1, bootstrap.subject_cluster_num_chunks), bootstrap.B_subject_cluster_sd);
 
 %% Initialize paths and load experiment runs
 
@@ -449,7 +460,7 @@ for i_n_back = 1:length(n_back_conditions)
 
     %% Optional bootstrap CIs for super-subject windowed metrics
 
-    if isfield(toggles, 'bootstrap_super') && toggles.bootstrap_super
+    if isfield(toggles, 'bootstrap_rb_perf') && toggles.bootstrap_rb_perf
         if toggles.disp_on
             disp(' ');
             disp('Bootstrapping super-subject windowed metrics...');
@@ -655,44 +666,29 @@ for i_n_back = 1:length(n_back_conditions)
         disp('==========================================');
     end
 
-    %% Optional bootstrap CIs for serial dependence
-    if ~isfield(toggles, 'bootstrap_sd')
-        toggles.bootstrap_sd = 1;
-    end
-    if toggles.bootstrap_sd
+    %% Optional subject-cluster bootstrap CIs for pooled super-subject serial dependence
+
+    sd_ci_cluster = struct();
+    sd_boot_cluster = struct();
+    sd_ci = struct(); sd_ci.lo = []; sd_ci.hi = []; % compatibility alias for downstream plotting scripts
+    subject_cluster_bs_sd_duration = NaN;
+    if isfield(toggles, 'bootstrap_sd_cluster') && toggles.bootstrap_sd_cluster
         if toggles.disp_on
             disp(' ');
-            disp('Bootstrapping serial dependence parameters for super subject...');
+            disp('Bootstrapping pooled super-subject SD parameters by resampling subjects...');
         end
-        bs_sd_start_time = tic;
-        sd_ci = bootstrapSerialDependence(delta_theta_windows, delta_theta_centers, num, p, rb, bootstrap, toggles);
-        bs_sd_duration = toc(bs_sd_start_time);
+        subject_cluster_bs_sd_start_time = tic;
+        [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenceBySubject( ...
+            delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles);
+        subject_cluster_bs_sd_duration = toc(subject_cluster_bs_sd_start_time);
         if toggles.disp_on
-            disp(['✓ SD bootstrapping completed in ~' num2str(round(bs_sd_duration/60, 1)) ' minutes (' num2str(round(bs_sd_duration, 1)) ' s)']);
+            disp(['✓ Subject-cluster pooled SD CIs completed in ~' ...
+                num2str(round(subject_cluster_bs_sd_duration/60, 1)) ...
+                ' minutes (B_subject_cluster_sd = ' ...
+                num2str(bootstrap.B_subject_cluster_sd) ', chunks = ' ...
+                num2str(bootstrap.subject_cluster_num_chunks) ')']);
         end
-    else
-        sd_ci = struct(); sd_ci.lo = []; sd_ci.hi = [];
-    end
-
-    %% Optional subject-bootstrap CIs for serial dependence
-
-    sd_ci_subject = struct();
-    sd_subject = struct();
-    subject_bs_sd_duration = NaN;
-    if isfield(toggles, 'subject_bootstrap_sd') && toggles.subject_bootstrap_sd && ...
-            isfield(toggles, 'fit_individuals') && toggles.fit_individuals
-        if toggles.disp_on
-            disp(' ');
-            disp('Bootstrapping serial-dependence parameters across subjects...');
-        end
-        subject_bs_sd_start_time = tic;
-        [sd_ci_subject, sd_subject] = bootstrapSerialDependenceSubjects(sd, num, bootstrap, p);
-        subject_bs_sd_duration = toc(subject_bs_sd_start_time);
-        if toggles.disp_on
-            disp(['✓ Subject bootstrap SD CIs completed in ~' ...
-                num2str(round(subject_bs_sd_duration/60, 1)) ' minutes (B_subject_sd = ' ...
-                num2str(bootstrap.B_subject_sd) ')']);
-        end
+        sd_ci = sd_ci_cluster; % keep older plotting utilities working with the current CI source
     end
 
 
@@ -864,12 +860,12 @@ for i_n_back = 1:length(n_back_conditions)
         end
 
         for param_idx = 1:num_params_to_plot
-            if exist('sd_ci_subject', 'var') && isfield(sd_ci_subject, 'lo') && ~isempty(sd_ci_subject.lo)
+            if exist('sd_ci_cluster', 'var') && isfield(sd_ci_cluster, 'lo') && ~isempty(sd_ci_cluster.lo)
                 plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, ...
-                    p, plt_opts, fg, sd_ci_subject.lo, sd_ci_subject.hi, 'subject-bootstrap 95% CI');
+                    p, plt_opts, fg, sd_ci_cluster.lo, sd_ci_cluster.hi, 'subject-cluster 95% CI');
             else
                 plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, ...
-                    p, plt_opts, fg, sd_ci.lo, sd_ci.hi, 'window-bootstrap 95% CI');
+                    p, plt_opts, fg, [], [], '');
             end
         end
 
@@ -904,9 +900,11 @@ for i_n_back = 1:length(n_back_conditions)
 
                     % Plot response bias with DoG curve
                     mu = squeeze(rb.all.params_est(prev_lvl, curr_lvl, cond, :, 1));
+                    ylim_vals = mu(:);
                     if isfield(rb_ci, 'mu_lo')
                         mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
                         mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
+                        ylim_vals = [ylim_vals; mu_lo(:); mu_hi(:)];
                         plotResponseBias(delta_theta_centers, mu, plt_opts, cond, mu_lo, mu_hi, baseline);
                     else
                         plotResponseBias(delta_theta_centers, mu, plt_opts, cond, [], [], baseline);
@@ -925,6 +923,27 @@ for i_n_back = 1:length(n_back_conditions)
                         % Subtract baseline from DoG curve if toggle is on (to match demeaned data)
                         if isfield(plt_opts, 'rb_subtract_baseline') && plt_opts.rb_subtract_baseline
                             dog_fit = dog_fit - dog_params(3);
+                        end
+                        ylim_vals = [ylim_vals; dog_fit(:)];
+
+                        % Plot pointwise subject-cluster confidence band when available
+                        if exist('sd_ci_cluster', 'var') && isfield(sd_ci_cluster, 'curve_lo') && ...
+                                ~isempty(sd_ci_cluster.curve_lo)
+                            curve_x = sd_ci_cluster.curve_x;
+                            curve_lo = squeeze(sd_ci_cluster.curve_lo(prev_lvl, curr_lvl, cond, :))';
+                            curve_hi = squeeze(sd_ci_cluster.curve_hi(prev_lvl, curr_lvl, cond, :))';
+                            if isfield(plt_opts, 'rb_subtract_baseline') && plt_opts.rb_subtract_baseline
+                                curve_lo = curve_lo - dog_params(3);
+                                curve_hi = curve_hi - dog_params(3);
+                            end
+                            curve_idx = isfinite(curve_x) & isfinite(curve_lo) & isfinite(curve_hi);
+                            if any(curve_idx)
+                                ylim_vals = [ylim_vals; curve_lo(curve_idx)'; curve_hi(curve_idx)'];
+                                fill([curve_x(curve_idx), fliplr(curve_x(curve_idx))], ...
+                                    [curve_lo(curve_idx), fliplr(curve_hi(curve_idx))], ...
+                                    plt_opts.colors.black, 'FaceAlpha', 0.12, ...
+                                    'EdgeColor', 'none', 'HandleVisibility', 'off');
+                            end
                         end
 
                         % Plot DoG fit with dashed line
@@ -969,9 +988,22 @@ for i_n_back = 1:length(n_back_conditions)
                     set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
                     xlim([-90 90]);
                     line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
-                    line([0, 0], [p.rb_bounds(2,1), p.rb_bounds(1,1)], 'LineWidth', 1, 'Color', 'k');
-                    ylim([p.rb_bounds(2,1) p.rb_bounds(1,1)]);
-                    yticks(p.rb_bounds(2,1):5:p.rb_bounds(1,1));
+                    ylim_vals = ylim_vals(isfinite(ylim_vals));
+                    if isempty(ylim_vals)
+                        y_lims = [p.rb_bounds(2,1), p.rb_bounds(1,1)];
+                    else
+                        y_min = min(ylim_vals);
+                        y_max = max(ylim_vals);
+                        if y_min == y_max
+                            y_pad = max(abs(y_min), 1) * 0.1;
+                        else
+                            y_pad = 0.08 * (y_max - y_min);
+                        end
+                        y_lims = [min(p.rb_bounds(2,1), y_min - y_pad), max(p.rb_bounds(1,1), y_max + y_pad)];
+                    end
+                    line([0, 0], y_lims, 'LineWidth', 1, 'Color', 'k');
+                    ylim(y_lims);
+                    yticks(floor(y_lims(1)/5)*5:5:ceil(y_lims(2)/5)*5);
 
                     % Annotate R^2 in top-left quadrant (smaller, regular weight)
                     curr_r2 = sd.all.r2(prev_lvl, curr_lvl, cond);
@@ -1008,8 +1040,13 @@ for i_n_back = 1:length(n_back_conditions)
         disp(['Total time: ~' num2str(round(overall_duration/60, 1)) ' minutes']);
         disp(['Response bias: ' num2str(task_count) ' tasks completed (~' num2str(round(rb_duration/60, 1)) ' min)']);
         disp(['Serial dependence: ' num2str(sd_count) ' tasks completed (~' num2str(round(sd_duration/60, 1)) ' min)']);
-        if exist('bs_duration','var') && toggles.bootstrap_super
-            disp(['Bootstrapping: B = ' num2str(bootstrap.B) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
+        if exist('bs_duration','var') && toggles.bootstrap_rb_perf
+            disp(['RB/performance bootstrapping: B = ' num2str(bootstrap.B) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
+        end
+        if exist('subject_cluster_bs_sd_duration','var') && toggles.bootstrap_sd_cluster
+            disp(['Subject-cluster SD bootstrapping: B = ' ...
+                num2str(bootstrap.B_subject_cluster_sd) ', completed in ~' ...
+                num2str(round(subject_cluster_bs_sd_duration/60, 1)) ' minutes']);
         end
         disp('================================');
     end
@@ -1034,22 +1071,23 @@ for i_n_back = 1:length(n_back_conditions)
         meta.analysis_time      = current_time;
         meta.sd_objective       = toggles.sd_objective;
         meta.guess_rate         = p.guess_rate;
-        meta.bootstrap_B        = bootstrap.B;
-        meta.bootstrap_B_subject_sd = bootstrap.B_subject_sd;
+        meta.bootstrap_B_rb_perf = bootstrap.B;
+        meta.bootstrap_B_subject_cluster_sd = bootstrap.B_subject_cluster_sd;
+        meta.subject_cluster_num_chunks = bootstrap.subject_cluster_num_chunks;
+        meta.subject_cluster_seed = bootstrap.subject_cluster_seed;
         meta.bootstrap_ci       = bootstrap.ci;
         meta.fit_individuals    = isfield(toggles, 'fit_individuals') && toggles.fit_individuals;
-        meta.subject_bootstrap_sd = isfield(toggles, 'subject_bootstrap_sd') && toggles.subject_bootstrap_sd;
+        meta.bootstrap_rb_perf  = isfield(toggles, 'bootstrap_rb_perf') && toggles.bootstrap_rb_perf;
+        meta.bootstrap_sd_cluster = isfield(toggles, 'bootstrap_sd_cluster') && toggles.bootstrap_sd_cluster;
         meta.sd_min_windows     = p.sd_min_windows;
-        if exist('sd_ci_subject', 'var') && isfield(sd_ci_subject, 'lo') && ~isempty(sd_ci_subject.lo)
-            meta.ci_source_sd = 'subject-bootstrap';
-        elseif exist('sd_ci', 'var') && isfield(sd_ci, 'lo') && ~isempty(sd_ci.lo)
-            meta.ci_source_sd = 'window-bootstrap';
+        if exist('sd_ci_cluster', 'var') && isfield(sd_ci_cluster, 'lo') && ~isempty(sd_ci_cluster.lo)
+            meta.ci_source_sd = 'subject-cluster-bootstrap-pooled-super-subject';
         else
             meta.ci_source_sd = 'none';
         end
         if exist('ind_rb_meta', 'var'), meta.ind_rb_meta = ind_rb_meta; end
         if exist('ind_sd_meta', 'var'), meta.ind_sd_meta = ind_sd_meta; end
-        if exist('subject_bs_sd_duration', 'var'), meta.subject_bs_sd_duration = subject_bs_sd_duration; end
+        if exist('subject_cluster_bs_sd_duration', 'var'), meta.subject_cluster_bs_sd_duration = subject_cluster_bs_sd_duration; end
         meta.delta_theta_centers= delta_theta_centers;
         meta.delta_theta_width  = delta_theta_width;
         meta.num_runs_per_subj  = num.runs;
@@ -1064,11 +1102,11 @@ for i_n_back = 1:length(n_back_conditions)
         if exist('sd_ci', 'var')
             save_vars{end+1} = 'sd_ci';
         end
-        if exist('sd_ci_subject', 'var')
-            save_vars{end+1} = 'sd_ci_subject';
+        if exist('sd_ci_cluster', 'var')
+            save_vars{end+1} = 'sd_ci_cluster';
         end
-        if exist('sd_subject', 'var')
-            save_vars{end+1} = 'sd_subject';
+        if exist('sd_boot_cluster', 'var')
+            save_vars{end+1} = 'sd_boot_cluster';
         end
 
         filename = ['SD_Noise_Estimates_' analysis_date '_' current_time '_' toggles.sd_objective '.mat'];
@@ -1091,13 +1129,22 @@ for i_n_back = 1:length(n_back_conditions)
     reportMeta.overall_duration = overall_duration;
     reportMeta.rb_duration = rb_duration;
     reportMeta.sd_duration = sd_duration;
-    if exist('bs_duration','var') && toggles.bootstrap_super
+    if exist('bs_duration','var') && toggles.bootstrap_rb_perf
         reportMeta.bs_duration = bs_duration;
     else
         reportMeta.bs_duration = NaN;
     end
-    reportMeta.num_tasks = exist('task_count','var') * task_count + ~exist('task_count','var') * NaN; %#ok<*NASGU>
-    reportMeta.num_sd_tasks = exist('sd_count','var') * sd_count + ~exist('sd_count','var') * NaN;
+    reportMeta.sd_cluster_bs_duration = subject_cluster_bs_sd_duration;
+    if exist('task_count', 'var')
+        reportMeta.num_tasks = task_count;
+    else
+        reportMeta.num_tasks = NaN;
+    end
+    if exist('sd_count', 'var')
+        reportMeta.num_sd_tasks = sd_count;
+    else
+        reportMeta.num_sd_tasks = NaN;
+    end
     reportMeta.parallelization = isfield(toggles, 'parallelization') && toggles.parallelization;
     reportMeta.num_chunks = p.num_chunks;
     reportMeta.bootstrap = bootstrap;

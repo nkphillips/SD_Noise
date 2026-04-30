@@ -66,11 +66,14 @@ function report_path = writeCohortReport(p, num, toggles, bootstrap, which_setup
     if isfield(bootstrap, 'ci') && numel(bootstrap.ci) == 2
         fprintf(fid, '  bootstrap.ci      : [%g %g]\n', bootstrap.ci(1), bootstrap.ci(2));
     end
-    if isfield(toggles, 'bootstrap_super')
-        fprintf(fid, '  bootstrap_super   : %d\n', toggles.bootstrap_super);
+    if isfield(toggles, 'bootstrap_rb_perf')
+        fprintf(fid, '  bootstrap_rb_perf : %d\n', toggles.bootstrap_rb_perf);
     end
-    if isfield(toggles, 'bootstrap_sd')
-        fprintf(fid, '  bootstrap_sd      : %d\n', toggles.bootstrap_sd);
+    if isfield(toggles, 'bootstrap_sd_cluster')
+        fprintf(fid, '  bootstrap_sd_cluster: %d\n', toggles.bootstrap_sd_cluster);
+    end
+    if isfield(bootstrap, 'B_subject_cluster_sd')
+        fprintf(fid, '  B_subject_cluster_sd: %d\n', bootstrap.B_subject_cluster_sd);
     end
     if isfield(toggles, 'parallelization')
         fprintf(fid, '  parallelization   : %d\n', toggles.parallelization);
