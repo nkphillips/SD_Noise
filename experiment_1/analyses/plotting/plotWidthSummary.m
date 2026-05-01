@@ -25,7 +25,11 @@ function plotWidthSummary(analysis_date, n_back_list, opts)
     end
     if opts.save && ~exist(opts.fig_dir, 'dir'); mkdir(opts.fig_dir); end
 
-    estimates = loadEstimates(analysis_date, n_back_list, opts);
+    if isfield(opts, 'estimates') && ~isempty(opts.estimates)
+        estimates = opts.estimates;
+    else
+        estimates = loadEstimates(analysis_date, n_back_list, opts);
+    end
 
     c = 2 * sqrt(log(2));
     w_to_fwhm    = @(w) c ./ max(w, eps);

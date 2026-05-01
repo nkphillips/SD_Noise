@@ -8,19 +8,17 @@ clc;
 
 %% Toggles
 
-toggles.parallelization = 1; % smoke: 1 to exercise parallel/chunk code; publication: 1
+toggles.parallelization = 1;
 toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
 toggles.disp_on = 1;
-toggles.save_estimates = 0; % smoke: 0 to avoid writing estimates; publication: 1
-toggles.bootstrap_rb_perf = 0; % smoke: 0 to skip windowed RB/performance CIs; publication: 1 if reporting RB/performance CIs
-toggles.fit_individuals = 0; % smoke: 0 to skip subject-level fits; publication: 1 if reporting individual fits
-toggles.bootstrap_sd_cluster = 1; % smoke: 1 to test pooled subject-cluster DoG CIs; publication: 1
+toggles.save_estimates = 1;
+toggles.bootstrap_rb_perf = 0;
+toggles.fit_individuals = 0;
+toggles.bootstrap_sd_cluster = 1; % 1 to compute pooled subject-cluster DoG CIs (B set separately; raise to >=2000 for reportable results)
 
 %% Setup parallelization
 
 p.num_workers = 9;
-env_num_workers = getenv('SD_NOISE_NUM_WORKERS');
-if ~isempty(env_num_workers), p.num_workers = str2double(env_num_workers); end
 if ~isfinite(p.num_workers) || p.num_workers < 1, p.num_workers = 1; end
 p.num_chunks = max(1, p.num_workers - 1);
 
@@ -33,52 +31,26 @@ end
 
 %% Plot settings
 
-plt_opts.plot_ind_figures = 0;
-plt_opts.plot_grp_figures = 0;
-plt_opts.plot_sup_figures = 1;
-
-plt_opts.save_ind_figures = 0;
-plt_opts.save_grp_figures = 0;
-plt_opts.save_sup_figures = 1;
-
-plt_opts.axis_square = 1;
-
-plt_opts.tick_length = 0.020;
-plt_opts.line_width = 1;
-plt_opts.marker_size = 0;
-plt_opts.marker_size_scatter = 50;
-plt_opts.marker_size_bin = 5;
-plt_opts.marker_size_polarplot = 350;
-
-plt_opts.colors.blue = [38 71 237]/255;
-plt_opts.colors.red = [204 0 0]/255;
-plt_opts.colors.green = [0 153 0]/255;
-plt_opts.colors.black = [0 0 0];
-plt_opts.colors.white = [1 1 1];
-plt_opts.colors.purple = [102 51 204]/255;
-plt_opts.colors.orange = [255 128 0]/255;
-plt_opts.colors.yellow = [242 214 53]/255;
-plt_opts.colors.gray = [128 128 128]/255;
-
-plt_opts.figure_color = plt_opts.colors.white;
-plt_opts.alpha_lvl = 0.75;
-plt_opts.fg_type = 'pdf';
-
-plt_opts.sd_colorbar_global = 0; % Serial dependence grids colorbar scaling: 1=global min/max across conditions, 0=per-subplot
-plt_opts.rb_subtract_baseline = 0; % Response bias plot: subtract DoG baseline (b) if provided
+addpath('functions');
+ps = plotSettings();
 
 %% Bootstrap settings
 
-bootstrap.B = 10; % smoke: unused when toggles.bootstrap_rb_perf is 0; publication: 500-2000 if RB/performance CIs are enabled
-bootstrap.B_subject_cluster_sd = 100; % smoke: 2 for fastest code-path check, 25-50 for development timing; publication: 2000
-bootstrap.subject_cluster_num_chunks = min(p.num_chunks, bootstrap.B_subject_cluster_sd); % smoke: min(9, B); publication: ~31-32 chunks on 32-core CPU
+bootstrap.B = 10; % unused when toggles.bootstrap_rb_perf is 0
+bootstrap.B_subject_cluster_sd = 5;
+bootstrap.subject_cluster_num_chunks = min(p.num_chunks, bootstrap.B_subject_cluster_sd);
 bootstrap.subject_cluster_seed = 1;
 bootstrap.ci = [2.5, 97.5];
+bootstrap.ci_method            = 'bca';   % 'bca' | 'percentile' (controls active sd_ci_cluster.lo/hi)
+bootstrap.discard_at_bound     = true;    % drop bound-hit replicates before CI
+bootstrap.discard_failed_fits  = true;    % drop fmincon exit_flag <= 0 replicates
+bootstrap.bound_tol            = 1e-4;    % rel. tol for "at bound" detection
+bootstrap.compute_jackknife = true; % false skips leave-one-out jackknife (BCa -> percentile with warning)
 
 %% Open figure handle
 
-if plt_opts.plot_ind_figures || plt_opts.plot_grp_figures || plt_opts.plot_sup_figures
-    fg = figure('Visible','on','Color','w');
+if ps.plot_ind_figures || ps.plot_grp_figures || ps.plot_sup_figures
+    fg = figure('Visible','on','Color',ps.figure_color);
     set(0,'CurrentFigure',fg);
 end
 
@@ -102,29 +74,9 @@ num.blocks_per_cond = num.blocks/num.conds;
 num.cond_combos = num.conds * num.levels;
 
 % Define n-back conditions
-n_back_conditions = [1]; % smoke: [1]; publication/full analysis: [1 2 3]
+n_back_conditions = [1 2 3];
 
-% Optional environment overrides for smoke tests / batch runs
-env_n_back_conditions = getenv('SD_NOISE_N_BACK_CONDITIONS');
-if ~isempty(env_n_back_conditions)
-    n_back_conditions = str2num(env_n_back_conditions); %#ok<ST2NM>
-end
-env_bootstrap_rb_perf = getenv('SD_NOISE_BOOTSTRAP_RB_PERF');
-if isempty(env_bootstrap_rb_perf), env_bootstrap_rb_perf = getenv('SD_NOISE_BOOTSTRAP_SUPER'); end % legacy env var
-if ~isempty(env_bootstrap_rb_perf), toggles.bootstrap_rb_perf = logical(str2double(env_bootstrap_rb_perf)); end
-env_bootstrap_sd_cluster = getenv('SD_NOISE_BOOTSTRAP_SD_CLUSTER');
-if isempty(env_bootstrap_sd_cluster), env_bootstrap_sd_cluster = getenv('SD_NOISE_SUBJECT_CLUSTER_BOOTSTRAP_SD'); end % legacy env var
-if ~isempty(env_bootstrap_sd_cluster), toggles.bootstrap_sd_cluster = logical(str2double(env_bootstrap_sd_cluster)); end
-env_plot_sup = getenv('SD_NOISE_PLOT_SUP_FIGURES');
-if ~isempty(env_plot_sup), plt_opts.plot_sup_figures = logical(str2double(env_plot_sup)); end
-env_save_sup = getenv('SD_NOISE_SAVE_SUP_FIGURES');
-if ~isempty(env_save_sup), plt_opts.save_sup_figures = logical(str2double(env_save_sup)); end
-env_b_subject_cluster_sd = getenv('SD_NOISE_B_SUBJECT_CLUSTER_SD');
-if ~isempty(env_b_subject_cluster_sd), bootstrap.B_subject_cluster_sd = str2double(env_b_subject_cluster_sd); end
-env_subject_cluster_chunks = getenv('SD_NOISE_SUBJECT_CLUSTER_NUM_CHUNKS');
-if ~isempty(env_subject_cluster_chunks), bootstrap.subject_cluster_num_chunks = str2double(env_subject_cluster_chunks); end
-env_subject_cluster_seed = getenv('SD_NOISE_SUBJECT_CLUSTER_SEED');
-if ~isempty(env_subject_cluster_seed), bootstrap.subject_cluster_seed = str2double(env_subject_cluster_seed); end
+% Sanity clamp: ensure chunk count never exceeds B_subject_cluster_sd.
 bootstrap.subject_cluster_num_chunks = min(max(1, bootstrap.subject_cluster_num_chunks), bootstrap.B_subject_cluster_sd);
 
 %% Initialize paths and load experiment runs
@@ -133,10 +85,16 @@ init_paths
 load_matfiles
 
 % Store base paths before the loop
-base_ind_figure_path = plt_opts.ind_figure_path;
-base_grp_figure_path = plt_opts.grp_figure_path;
-base_sup_figure_path = plt_opts.sup_figure_path;
+base_ind_figure_path = ps.ind_figure_path;
+base_grp_figure_path = ps.grp_figure_path;
+base_sup_figure_path = ps.sup_figure_path;
 base_estimates_path = estimates_path;
+
+% Accumulate per-n_back snapshots for cross-n_back poster figures (driven inline,
+% no longer dependent on reload via render_poster_figures.m).
+per_nback_estimates = struct();
+per_nback_estimates.analysis_date = analysis_date;
+per_nback_estimates.objective     = toggles.sd_objective;
 
 %% Analyze data
 
@@ -154,15 +112,15 @@ for i_n_back = 1:length(n_back_conditions)
     % Create and set paths for the current n_back condition
     n_back_folder = [num2str(n_back) '_back'];
 
-    plt_opts.ind_figure_path = fullfile(base_ind_figure_path, n_back_folder);
-    plt_opts.grp_figure_path = fullfile(base_grp_figure_path, n_back_folder);
-    plt_opts.sup_figure_path = fullfile(base_sup_figure_path, n_back_folder);
+    ps.ind_figure_path = fullfile(base_ind_figure_path, n_back_folder);
+    ps.grp_figure_path = fullfile(base_grp_figure_path, n_back_folder);
+    ps.sup_figure_path = fullfile(base_sup_figure_path, n_back_folder);
     estimates_path = fullfile(base_estimates_path, analysis_date, n_back_folder);
 
     % Create directories if they don't exist
-    if plt_opts.save_ind_figures && ~exist(plt_opts.ind_figure_path, 'dir'), mkdir(plt_opts.ind_figure_path); end
-    if plt_opts.save_grp_figures && ~exist(plt_opts.grp_figure_path, 'dir'), mkdir(plt_opts.grp_figure_path); end
-    if plt_opts.save_sup_figures && ~exist(plt_opts.sup_figure_path, 'dir'), mkdir(plt_opts.sup_figure_path); end
+    if ps.save_ind_figures && ~exist(ps.ind_figure_path, 'dir'), mkdir(ps.ind_figure_path); end
+    if ps.save_grp_figures && ~exist(ps.grp_figure_path, 'dir'), mkdir(ps.grp_figure_path); end
+    if ps.save_sup_figures && ~exist(ps.sup_figure_path, 'dir'), mkdir(ps.sup_figure_path); end
     if toggles.save_estimates && ~exist(estimates_path, 'dir'), mkdir(estimates_path); end
 
     %% Count trials across all subjects
@@ -268,7 +226,7 @@ for i_n_back = 1:length(n_back_conditions)
 
     num.delta_theta_windows = length(delta_theta_centers);
 
-    [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, plt_opts, n_back);
+    [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, ps, n_back);
 
     %% Write cohort audit log
 
@@ -304,7 +262,8 @@ for i_n_back = 1:length(n_back_conditions)
 
     p.sd_bounds = [sd_mu_ub, w_ub, 5, p.rb_bounds(1,2); sd_mu_lb, w_lb, -5, p.rb_bounds(2,2)]; % [upper; lower]; default = [p.rb_bounds(1,1), w_ub, 5, p.rb_bounds(1,2); 4, w_lb, -5, p.rb_bounds(2,2)]
     p.sd_objective = toggles.sd_objective; % 'nll' or 'sse' for serial dependence estimation
-    p.sd_min_windows = 3; % minimum finite mu(delta-theta) points required for subject-level DoG fits
+    p.sd_min_windows = max(3, floor(num.delta_theta_windows / 4)); % minimum finite mu(delta-theta) points required for subject-level DoG fits
+    p.sd_lobe_edges  = [-90 -15 15 90]; % require >=1 finite mu in each of: left lobe, center, right lobe (used by bootstrap admission)
 
     if strcmp(p.sd_objective, 'sse')
         p.sd_init_params = p.sd_init_params(1:3);
@@ -679,21 +638,38 @@ for i_n_back = 1:length(n_back_conditions)
         end
         subject_cluster_bs_sd_start_time = tic;
         [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenceBySubject( ...
-            delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles);
+            delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles, sd);
         subject_cluster_bs_sd_duration = toc(subject_cluster_bs_sd_start_time);
+        bootstrap.ci_method = sd_ci_cluster.ci_method;
         if toggles.disp_on
             disp(['✓ Subject-cluster pooled SD CIs completed in ~' ...
                 num2str(round(subject_cluster_bs_sd_duration/60, 1)) ...
                 ' minutes (B_subject_cluster_sd = ' ...
                 num2str(bootstrap.B_subject_cluster_sd) ', chunks = ' ...
-                num2str(bootstrap.subject_cluster_num_chunks) ')']);
+                num2str(bootstrap.subject_cluster_num_chunks) ', method = ' ...
+                sd_ci_cluster.ci_method ')']);
+            if isfield(sd_boot_cluster, 'timing') && isfield(sd_boot_cluster.timing, 'bootstrap_replicates_sec') && ...
+                    isfinite(sd_boot_cluster.timing.bootstrap_replicates_sec)
+                disp(['  Bootstrap replicates only: ~' ...
+                    num2str(round(sd_boot_cluster.timing.bootstrap_replicates_sec/60, 1)) ...
+                    ' minutes (' num2str(round(sd_boot_cluster.timing.bootstrap_replicates_sec, 1)) ' s)']);
+            end
+            if isfield(sd_boot_cluster, 'timing') && isfield(sd_boot_cluster.timing, 'jackknife_sec') && ...
+                    isfinite(sd_boot_cluster.timing.jackknife_sec) && sd_boot_cluster.timing.jackknife_sec > 0
+                disp(['  Leave-one-out jackknife (N = ' num2str(num.subjs) '): ~' ...
+                    num2str(round(sd_boot_cluster.timing.jackknife_sec/60, 1)) ...
+                    ' minutes (' num2str(round(sd_boot_cluster.timing.jackknife_sec, 1)) ' s)']);
+            elseif isfield(bootstrap, 'compute_jackknife') && ~bootstrap.compute_jackknife
+                disp('  Leave-one-out jackknife skipped (compute_jackknife = false)');
+            end
+            printBootstrapAdmissionSummary(sd_boot_cluster, num);
         end
         sd_ci = sd_ci_cluster; % keep older plotting utilities working with the current CI source
     end
 
 
     %% Subject-level plots
-    if plt_opts.plot_ind_figures
+    if ps.plot_ind_figures
 
         if toggles.disp_on
             disp(' ');
@@ -704,8 +680,8 @@ for i_n_back = 1:length(n_back_conditions)
             subj_prefix = ['S' p.subj_IDs{subj}];
 
             % Create subject-specific directory if needed
-            subj_figure_path = fullfile(plt_opts.ind_figure_path, subj_prefix);
-            if plt_opts.save_ind_figures && ~exist(subj_figure_path, 'dir')
+            subj_figure_path = fullfile(ps.ind_figure_path, subj_prefix);
+            if ps.save_ind_figures && ~exist(subj_figure_path, 'dir')
                 mkdir(subj_figure_path);
             end
 
@@ -713,8 +689,8 @@ for i_n_back = 1:length(n_back_conditions)
             plotPerformance(delta_theta_centers, ...
                 delta_theta_windows.ind(subj).performance, ...
                 delta_theta_windows.ind(subj).pCW, ...
-                p, plt_opts, subj_prefix, [], ...
-                subj_figure_path, plt_opts.save_ind_figures);
+                p, ps, subj_prefix, [], ...
+                subj_figure_path, ps.save_ind_figures);
             clf(fg);
         end
 
@@ -724,7 +700,7 @@ for i_n_back = 1:length(n_back_conditions)
     end
 
     %% Group-level plots
-    if plt_opts.plot_grp_figures
+    if ps.plot_grp_figures
 
         if toggles.disp_on
             disp(' ');
@@ -735,8 +711,8 @@ for i_n_back = 1:length(n_back_conditions)
         plotPerformance(delta_theta_centers, ...
             delta_theta_windows.grp.performance, ...
             delta_theta_windows.grp.pCW, ...
-            p, plt_opts, 'Group', [], ...
-            plt_opts.grp_figure_path, plt_opts.save_grp_figures);
+            p, ps, 'Group', [], ...
+            ps.grp_figure_path, ps.save_grp_figures);
         clf(fg);
 
         if toggles.disp_on
@@ -746,11 +722,11 @@ for i_n_back = 1:length(n_back_conditions)
 
     %% Super-subject level plots
 
-    if plt_opts.plot_sup_figures
+    if ps.plot_sup_figures
 
         %% Delta theta counts
 
-        plotDeltaThetaCount(all_delta_thetas, num, p, plt_opts);
+        plotDeltaThetaCount(all_delta_thetas, num, p, ps);
 
         %% Performance (percent correct and percent CCW)
 
@@ -762,9 +738,9 @@ for i_n_back = 1:length(n_back_conditions)
         end
 
         if isfield(perf_ci, 'pc_lo')
-            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, plt_opts, 'Super Subj', perf_ci, plt_opts.sup_figure_path, plt_opts.save_sup_figures);
+            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, ps, 'Super Subj', perf_ci, ps.sup_figure_path, ps.save_sup_figures);
         else
-            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, plt_opts, 'Super Subj', [], plt_opts.sup_figure_path, plt_opts.save_sup_figures);
+            plotPerformance(delta_theta_centers, delta_theta_windows.all.performance, delta_theta_windows.all.pCW, p, ps, 'Super Subj', [], ps.sup_figure_path, ps.save_sup_figures);
         end
         clf(fg);
 
@@ -802,9 +778,9 @@ for i_n_back = 1:length(n_back_conditions)
                     if isfield(rb_ci, 'mu_lo')
                         mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
                         mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
-                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, mu_lo, mu_hi, baseline);
+                        plotResponseBias(delta_theta_centers, mu, ps, cond, mu_lo, mu_hi, baseline);
                     else
-                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, [], [], baseline);
+                        plotResponseBias(delta_theta_centers, mu, ps, cond, [], [], baseline);
                     end
 
                     % Format figure
@@ -827,7 +803,7 @@ for i_n_back = 1:length(n_back_conditions)
                         ylabel('Bias (°)');
                     end
 
-                    set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
+                    set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length]);
                     xlim([-90 90]);
                     line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
                     line([0, 0], [p.rb_bounds(2,1), p.rb_bounds(1,1)], 'LineWidth', 1, 'Color', 'k');
@@ -841,8 +817,8 @@ for i_n_back = 1:length(n_back_conditions)
             end
 
             % Save figure
-            if plt_opts.save_sup_figures
-                saveas(fg, fullfile(plt_opts.sup_figure_path, [fg_name '.' plt_opts.fg_type]));
+            if ps.save_sup_figures
+                saveas(fg, fullfile(ps.sup_figure_path, [fg_name '.' ps.fg_type]));
             end
 
             clf(fg);
@@ -862,10 +838,10 @@ for i_n_back = 1:length(n_back_conditions)
         for param_idx = 1:num_params_to_plot
             if exist('sd_ci_cluster', 'var') && isfield(sd_ci_cluster, 'lo') && ~isempty(sd_ci_cluster.lo)
                 plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, ...
-                    p, plt_opts, fg, sd_ci_cluster.lo, sd_ci_cluster.hi, 'subject-cluster 95% CI');
+                    p, ps, fg, sd_ci_cluster.lo, sd_ci_cluster.hi, 'subject-cluster 95% CI');
             else
                 plotSerialDependence(sd.all.params_est, param_idx, param_names{param_idx}, ...
-                    p, plt_opts, fg, [], [], '');
+                    p, ps, fg, [], [], '');
             end
         end
 
@@ -905,9 +881,9 @@ for i_n_back = 1:length(n_back_conditions)
                         mu_lo = squeeze(rb_ci.mu_lo(prev_lvl, curr_lvl, cond, :));
                         mu_hi = squeeze(rb_ci.mu_hi(prev_lvl, curr_lvl, cond, :));
                         ylim_vals = [ylim_vals; mu_lo(:); mu_hi(:)];
-                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, mu_lo, mu_hi, baseline);
+                        plotResponseBias(delta_theta_centers, mu, ps, cond, mu_lo, mu_hi, baseline);
                     else
-                        plotResponseBias(delta_theta_centers, mu, plt_opts, cond, [], [], baseline);
+                        plotResponseBias(delta_theta_centers, mu, ps, cond, [], [], baseline);
                     end
 
                     % Plot DoG curve from existing estimates
@@ -921,7 +897,7 @@ for i_n_back = 1:length(n_back_conditions)
                         dog_fit = calcDoG(delta_smooth, dog_params);
 
                         % Subtract baseline from DoG curve if toggle is on (to match demeaned data)
-                        if isfield(plt_opts, 'rb_subtract_baseline') && plt_opts.rb_subtract_baseline
+                        if isfield(ps, 'rb_subtract_baseline') && ps.rb_subtract_baseline
                             dog_fit = dog_fit - dog_params(3);
                         end
                         ylim_vals = [ylim_vals; dog_fit(:)];
@@ -932,27 +908,37 @@ for i_n_back = 1:length(n_back_conditions)
                             curve_x = sd_ci_cluster.curve_x;
                             curve_lo = squeeze(sd_ci_cluster.curve_lo(prev_lvl, curr_lvl, cond, :))';
                             curve_hi = squeeze(sd_ci_cluster.curve_hi(prev_lvl, curr_lvl, cond, :))';
-                            if isfield(plt_opts, 'rb_subtract_baseline') && plt_opts.rb_subtract_baseline
+                            if isfield(ps, 'rb_subtract_baseline') && ps.rb_subtract_baseline
                                 curve_lo = curve_lo - dog_params(3);
                                 curve_hi = curve_hi - dog_params(3);
                             end
                             curve_idx = isfinite(curve_x) & isfinite(curve_lo) & isfinite(curve_hi);
                             if any(curve_idx)
+                                if isfield(sd_ci_cluster, 'ci_method') && ~isempty(sd_ci_cluster.ci_method)
+                                    band_label = sprintf('%s pointwise 95%% CI', upper(sd_ci_cluster.ci_method));
+                                else
+                                    band_label = 'pointwise 95% CI';
+                                end
                                 ylim_vals = [ylim_vals; curve_lo(curve_idx)'; curve_hi(curve_idx)'];
                                 fill([curve_x(curve_idx), fliplr(curve_x(curve_idx))], ...
                                     [curve_lo(curve_idx), fliplr(curve_hi(curve_idx))], ...
-                                    plt_opts.colors.black, 'FaceAlpha', 0.12, ...
-                                    'EdgeColor', 'none', 'HandleVisibility', 'off');
+                                    ps.colors.black, 'FaceAlpha', 0.12, ...
+                                    'EdgeColor', 'none', 'DisplayName', band_label);
+                                if prev_lvl == 1 && curr_lvl == 1
+                                    text(0.05, 0.05, band_label, 'Units', 'normalized', ...
+                                        'FontSize', 7, 'Color', ps.colors.gray, ...
+                                        'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom');
+                                end
                             end
                         end
 
                         % Plot DoG fit with dashed line
                         if cond == 1
                             % Contrast condition - dashed blue
-                            plot(delta_smooth, dog_fit, '--', 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.black);
+                            plot(delta_smooth, dog_fit, '--', 'LineWidth', ps.line_width, 'Color', ps.colors.black);
                         elseif cond == 2
                             % Precision condition - dashed green
-                            plot(delta_smooth, dog_fit, '--', 'LineWidth', plt_opts.line_width, 'Color', plt_opts.colors.black);
+                            plot(delta_smooth, dog_fit, '--', 'LineWidth', ps.line_width, 'Color', ps.colors.black);
                         end
 
                         % Annotate amplitude and FWHM (bottom-right)
@@ -962,7 +948,7 @@ for i_n_back = 1:length(n_back_conditions)
                         text(0.95, 0.10, sprintf('A = %.2f°\nFWHM = %.1f°\nb = %.2f°', amp_est, fwhm_est, dog_params(3)), ...
                             'Units', 'normalized', 'HorizontalAlignment', 'right', ...
                             'VerticalAlignment', 'bottom', 'FontWeight', 'normal', 'FontSize', 8, ...
-                            'Color', plt_opts.colors.black);
+                            'Color', ps.colors.black);
                     end
 
                     % Format figure
@@ -985,7 +971,7 @@ for i_n_back = 1:length(n_back_conditions)
                         ylabel('Bias (°)');
                     end
 
-                    set(gca, 'TickDir', 'out', 'TickLength', [plt_opts.tick_length, plt_opts.tick_length]);
+                    set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length]);
                     xlim([-90 90]);
                     line([min(xlim), max(xlim)], [0, 0], 'LineWidth', 1, 'Color', 'k');
                     ylim_vals = ylim_vals(isfinite(ylim_vals));
@@ -1011,7 +997,7 @@ for i_n_back = 1:length(n_back_conditions)
                         text(0.05, 0.90, sprintf('R^2 = %.2f', curr_r2), ...
                             'Units', 'normalized', 'HorizontalAlignment', 'left', ...
                             'VerticalAlignment', 'top', 'FontWeight', 'normal', 'FontSize', 8, ...
-                            'Color', plt_opts.colors.black);
+                            'Color', ps.colors.black);
                     end
                     box off;
                     hold on;
@@ -1020,12 +1006,60 @@ for i_n_back = 1:length(n_back_conditions)
             end
 
             % Save figure
-            if plt_opts.save_sup_figures
-                saveas(fg, fullfile(plt_opts.sup_figure_path, [fg_name '.' plt_opts.fg_type]));
+            if ps.save_sup_figures
+                saveas(fg, fullfile(ps.sup_figure_path, [fg_name '.' ps.fg_type]));
             end
 
             clf(fg);
         end
+
+        %% Bootstrap CI diagnostics
+
+        if isfield(ps, 'plot_ci_diagnostics') && ps.plot_ci_diagnostics && ...
+                exist('sd_boot_cluster', 'var') && isfield(sd_boot_cluster, 'params') && ...
+                ~isempty(sd_boot_cluster.params)
+            ci_figure_path = fullfile(ps.sup_figure_path, 'CI');
+            if isfield(ps, 'save_ci_diagnostics') && ps.save_ci_diagnostics && ...
+                    ~exist(ci_figure_path, 'dir')
+                mkdir(ci_figure_path);
+            end
+            plotBootstrapCIDiagnostics(sd, sd_ci_cluster, sd_boot_cluster, p, ps, ci_figure_path);
+        end
+
+        %% Inline poster figures (single-n_back panels)
+
+        % Build an in-memory estimates snapshot in the same shape that
+        % loadEstimates returns, then dispatch the single-n_back poster
+        % renderers using opts.estimates so they don't reload from disk.
+        single_estimates = struct();
+        single_estimates.analysis_date = analysis_date;
+        single_estimates.objective     = toggles.sd_objective;
+        single_estimates.(sprintf('n%d', n_back)) = makePosterEstSnapshot( ...
+            rb, sd, rb_ci, sd_ci, sd_ci_cluster, sd_boot_cluster, perf_ci, ...
+            delta_theta_centers);
+
+        poster_opts = struct( ...
+            'estimates', single_estimates, ...
+            'fig_dir',   ps.sup_figure_path, ...
+            'save',      ps.save_sup_figures, ...
+            'objective', toggles.sd_objective);
+
+        try
+            plotResponseBiasSigma(analysis_date, n_back, poster_opts);
+        catch posterErr
+            warning(posterErr.identifier, '%s', ...
+                ['plotResponseBiasSigma failed: ' posterErr.message]);
+        end
+        try
+            plotBiasDogGrid(analysis_date, n_back, poster_opts);
+        catch posterErr
+            warning(posterErr.identifier, '%s', ...
+                ['plotBiasDogGrid failed: ' posterErr.message]);
+        end
+
+        % Stash this iteration's snapshot for cross-n_back posters after the loop.
+        per_nback_estimates.(sprintf('n%d', n_back)) = ...
+            single_estimates.(sprintf('n%d', n_back));
 
     end
 
@@ -1045,8 +1079,20 @@ for i_n_back = 1:length(n_back_conditions)
         end
         if exist('subject_cluster_bs_sd_duration','var') && toggles.bootstrap_sd_cluster
             disp(['Subject-cluster SD bootstrapping: B = ' ...
-                num2str(bootstrap.B_subject_cluster_sd) ', completed in ~' ...
+                num2str(bootstrap.B_subject_cluster_sd) ', total block ~' ...
                 num2str(round(subject_cluster_bs_sd_duration/60, 1)) ' minutes']);
+            if exist('sd_boot_cluster', 'var') && isstruct(sd_boot_cluster) && isfield(sd_boot_cluster, 'timing')
+                if isfield(sd_boot_cluster.timing, 'bootstrap_replicates_sec') && ...
+                        isfinite(sd_boot_cluster.timing.bootstrap_replicates_sec)
+                    disp(['  Replicates phase: ~' num2str(round(sd_boot_cluster.timing.bootstrap_replicates_sec/60, 1)) ...
+                        ' min']);
+                end
+                if isfield(sd_boot_cluster.timing, 'jackknife_sec') && ...
+                        isfinite(sd_boot_cluster.timing.jackknife_sec) && sd_boot_cluster.timing.jackknife_sec > 0
+                    disp(['  Jackknife phase: ~' num2str(round(sd_boot_cluster.timing.jackknife_sec/60, 1)) ...
+                        ' min']);
+                end
+            end
         end
         disp('================================');
     end
@@ -1080,14 +1126,26 @@ for i_n_back = 1:length(n_back_conditions)
         meta.bootstrap_rb_perf  = isfield(toggles, 'bootstrap_rb_perf') && toggles.bootstrap_rb_perf;
         meta.bootstrap_sd_cluster = isfield(toggles, 'bootstrap_sd_cluster') && toggles.bootstrap_sd_cluster;
         meta.sd_min_windows     = p.sd_min_windows;
+        meta.sd_lobe_edges      = p.sd_lobe_edges;
+        meta.ci_method          = bootstrap.ci_method;
+        meta.compute_jackknife  = bootstrap.compute_jackknife;
+        meta.discard_at_bound   = bootstrap.discard_at_bound;
+        meta.discard_failed_fits= bootstrap.discard_failed_fits;
         if exist('sd_ci_cluster', 'var') && isfield(sd_ci_cluster, 'lo') && ~isempty(sd_ci_cluster.lo)
-            meta.ci_source_sd = 'subject-cluster-bootstrap-pooled-super-subject';
+            meta.ci_source_sd = sprintf('subject-cluster-bootstrap-pooled-super-subject-%s', bootstrap.ci_method);
         else
             meta.ci_source_sd = 'none';
+        end
+        if exist('sd_boot_cluster', 'var') && isfield(sd_boot_cluster, 'discard_summary')
+            meta.bootstrap_discard_summary = sd_boot_cluster.discard_summary;
         end
         if exist('ind_rb_meta', 'var'), meta.ind_rb_meta = ind_rb_meta; end
         if exist('ind_sd_meta', 'var'), meta.ind_sd_meta = ind_sd_meta; end
         if exist('subject_cluster_bs_sd_duration', 'var'), meta.subject_cluster_bs_sd_duration = subject_cluster_bs_sd_duration; end
+        if exist('sd_boot_cluster', 'var') && isstruct(sd_boot_cluster) && isfield(sd_boot_cluster, 'timing')
+            meta.bootstrap_replicates_sec = sd_boot_cluster.timing.bootstrap_replicates_sec;
+            meta.bootstrap_jackknife_sec  = sd_boot_cluster.timing.jackknife_sec;
+        end
         meta.delta_theta_centers= delta_theta_centers;
         meta.delta_theta_width  = delta_theta_width;
         meta.num_runs_per_subj  = num.runs;
@@ -1135,6 +1193,16 @@ for i_n_back = 1:length(n_back_conditions)
         reportMeta.bs_duration = NaN;
     end
     reportMeta.sd_cluster_bs_duration = subject_cluster_bs_sd_duration;
+    reportMeta.sd_cluster_bs_replicates_sec = NaN;
+    reportMeta.sd_cluster_bs_jackknife_sec = NaN;
+    if exist('sd_boot_cluster', 'var') && isstruct(sd_boot_cluster) && isfield(sd_boot_cluster, 'timing')
+        if isfield(sd_boot_cluster.timing, 'bootstrap_replicates_sec')
+            reportMeta.sd_cluster_bs_replicates_sec = sd_boot_cluster.timing.bootstrap_replicates_sec;
+        end
+        if isfield(sd_boot_cluster.timing, 'jackknife_sec')
+            reportMeta.sd_cluster_bs_jackknife_sec = sd_boot_cluster.timing.jackknife_sec;
+        end
+    end
     if exist('task_count', 'var')
         reportMeta.num_tasks = task_count;
     else
@@ -1157,6 +1225,44 @@ for i_n_back = 1:length(n_back_conditions)
     end
 
 end % End of n_back loop
+
+%% Cross-n_back poster figures
+
+% These figures plot DoG parameters (amplitude, FWHM, sigma) and a A-vs-FWHM
+% scatter across n_back values, so they require >= 2 n_back conditions.
+if length(n_back_conditions) >= 2 && ps.plot_sup_figures
+    summary_dir = fullfile(base_sup_figure_path, 'summary');
+    if ps.save_sup_figures && ~exist(summary_dir, 'dir')
+        mkdir(summary_dir);
+    end
+
+    summary_opts = struct( ...
+        'estimates', per_nback_estimates, ...
+        'fig_dir',   summary_dir, ...
+        'save',      ps.save_sup_figures, ...
+        'objective', toggles.sd_objective);
+
+    if toggles.disp_on
+        disp(' ');
+        disp(['Rendering cross-n_back poster figures into ' summary_dir]);
+    end
+
+    summary_renderers = {@plotSigmaSummary, @plotAmplitudeSummary, ...
+        @plotWidthSummary, @plotAmplitudeWidthScatter};
+    for i_renderer = 1:numel(summary_renderers)
+        try
+            summary_renderers{i_renderer}(analysis_date, n_back_conditions, summary_opts);
+        catch summaryErr
+            warning(summaryErr.identifier, '%s', ...
+                ['Cross-n_back poster ' func2str(summary_renderers{i_renderer}) ...
+                 ' failed: ' summaryErr.message]);
+        end
+    end
+elseif ps.plot_sup_figures && toggles.disp_on
+    disp(' ');
+    disp(['Skipping cross-n_back poster figures (need >= 2 n_back values; got ' ...
+        num2str(length(n_back_conditions)) ').']);
+end
 
 %% Clean up
 

@@ -30,7 +30,11 @@ function plotResponseBiasSigma(analysis_date, n_back_list, opts)
     end
     if opts.save && ~exist(opts.fig_dir, 'dir'); mkdir(opts.fig_dir); end
 
-    estimates = loadEstimates(analysis_date, n_back_list, opts);
+    if isfield(opts, 'estimates') && ~isempty(opts.estimates)
+        estimates = opts.estimates;
+    else
+        estimates = loadEstimates(analysis_date, n_back_list, opts);
+    end
 
     for i = 1:numel(n_back_list)
         n_back = n_back_list(i);

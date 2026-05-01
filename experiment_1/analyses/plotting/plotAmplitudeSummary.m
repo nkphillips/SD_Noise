@@ -24,7 +24,11 @@ function plotAmplitudeSummary(analysis_date, n_back_list, opts)
     end
     if opts.save && ~exist(opts.fig_dir, 'dir'); mkdir(opts.fig_dir); end
 
-    estimates = loadEstimates(analysis_date, n_back_list, opts);
+    if isfield(opts, 'estimates') && ~isempty(opts.estimates)
+        estimates = opts.estimates;
+    else
+        estimates = loadEstimates(analysis_date, n_back_list, opts);
+    end
 
     id_transform = @(v) v;
     id_ci       = @(lo, hi) deal(lo, hi);

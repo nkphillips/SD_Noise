@@ -1,31 +1,12 @@
-%%% render_poster_figures
-% One-shot driver to render the six Phase 2 poster figures using the
-% fresh 04.24.2026 estimates produced by Phase 1.
+%%% render_poster_figures (deprecated)
+%
+% This standalone driver has been folded into SD_Noise_Analyses_And_Figures.m.
+% Single-n_back poster figures are now rendered inline at the end of each
+% n_back iteration; cross-n_back summary figures are rendered after the loop
+% closes (when length(n_back_conditions) >= 2). Both write into
+% figures/super/<analysis_date>/...
 
-clear; clc; close all;
-
-addpath('functions');
-addpath('plotting');
-
-analysis_date = '04.24.2026';
-n_back_list   = [1 2 3];
-
-disp('Rendering Poster Figure 1 (sigma grids)...');
-plotResponseBiasSigma(analysis_date, n_back_list);
-
-disp('Rendering Poster Figure 2 (sigma summary)...');
-plotSigmaSummary(analysis_date, n_back_list);
-
-disp('Rendering Poster Figure 3 (amplitude summary)...');
-plotAmplitudeSummary(analysis_date, n_back_list);
-
-disp('Rendering Poster Figure 4 (FWHM summary)...');
-plotWidthSummary(analysis_date, n_back_list);
-
-disp('Rendering Poster Figure 5 (A vs FWHM scatter)...');
-plotAmplitudeWidthScatter(analysis_date, n_back_list);
-
-disp('Rendering Poster Figure 6 (full 3x3 bias+DoG)...');
-plotBiasDogGrid(analysis_date, n_back_list);
-
-disp('Done.');
+warning('render_poster_figures:deprecated', ...
+    ['render_poster_figures has been folded into SD_Noise_Analyses_And_Figures.m.\n' ...
+     'Run SD_Noise_Analyses_And_Figures with the desired n_back vector and\n' ...
+     'plt_opts.plot_sup_figures = 1 to render the same poster outputs.']);

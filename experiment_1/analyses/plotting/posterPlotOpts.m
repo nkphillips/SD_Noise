@@ -5,7 +5,7 @@ function plt_opts = posterPlotOpts()
 % (plotResponseBiasSigma, plotSigmaSummary, plotAmplitudeSummary,
 %  plotWidthSummary, plotAmplitudeWidthScatter, plotBiasDogDiagonal).
 %
-% Mirrors the `plt_opts` struct assembled inside SD_Noise_Analyses_And_Figures
+% Mirrors the `ps` struct returned by functions/plotSettings.m (SD_Noise_Analyses_And_Figures).
 % so that figures produced post-hoc match the aesthetic of the super-subject
 % figures written during the main run.
 
