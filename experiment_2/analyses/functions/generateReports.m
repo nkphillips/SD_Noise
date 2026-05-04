@@ -141,10 +141,20 @@ function generateReports(trial_counts, total_trials_per_cond, p, num, sd, report
             end
         end
         if isfield(reportMeta, 'bs_duration') && ~isempty(reportMeta.bs_duration) && isfinite(reportMeta.bs_duration)
-            if isfield(reportMeta, 'bootstrap') && isfield(reportMeta.bootstrap, 'B')
-                fprintf(fid, 'Bootstrapping: B = %d, %s\n', reportMeta.bootstrap.B, fmt_duration(reportMeta.bs_duration));
+            if isfield(reportMeta, 'bootstrap')
+                bb = NaN;
+                if isfield(reportMeta.bootstrap, 'B_rb_perf') && ~isempty(reportMeta.bootstrap.B_rb_perf)
+                    bb = reportMeta.bootstrap.B_rb_perf;
+                elseif isfield(reportMeta.bootstrap, 'B')
+                    bb = reportMeta.bootstrap.B;
+                end
+                if isscalar(bb) && isfinite(bb)
+                    fprintf(fid, 'RB/performance bootstrapping: B_rb_perf = %d, %s\n', bb, fmt_duration(reportMeta.bs_duration));
+                else
+                    fprintf(fid, 'RB/performance bootstrapping: %s\n', fmt_duration(reportMeta.bs_duration));
+                end
             else
-                fprintf(fid, 'Bootstrapping: %s\n', fmt_duration(reportMeta.bs_duration));
+                fprintf(fid, 'RB/performance bootstrapping: %s\n', fmt_duration(reportMeta.bs_duration));
             end
         end
 

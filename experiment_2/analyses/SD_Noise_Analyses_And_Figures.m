@@ -65,7 +65,7 @@ plt_opts.rb_subtract_baseline = 0; % Response bias plot: subtract DoG baseline (
 
 %% Bootstrap settings
 
-bootstrap.B = 10;
+bootstrap.B_rb_perf = 10; % trial-level replicates for rb_ci/perf_ci via bootstrapSuperSubject
 bootstrap.ci = [2.5, 97.5];
 
 %% Open figure handle
@@ -916,7 +916,7 @@ for i_n_back = 1:length(n_back_conditions)
         disp(['Response bias: ' num2str(task_count) ' tasks completed (~' num2str(round(rb_duration/60, 1)) ' min)']);
         disp(['Serial dependence: ' num2str(sd_count) ' tasks completed (~' num2str(round(sd_duration/60, 1)) ' min)']);
         if exist('bs_duration','var') && toggles.bootstrap_super
-            disp(['Bootstrapping: B = ' num2str(bootstrap.B) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
+            disp(['RB/performance bootstrapping: B_rb_perf = ' num2str(bootstrap.B_rb_perf) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
         end
         disp('================================');
     end

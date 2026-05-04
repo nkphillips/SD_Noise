@@ -36,7 +36,7 @@ ps = plotSettings();
 
 %% Bootstrap settings
 
-bootstrap.B = 10; % unused when toggles.bootstrap_rb_perf is 0
+bootstrap.B_rb_perf = 10; % trial-level replicates for rb_ci/perf_ci (unused when toggles.bootstrap_rb_perf is 0)
 bootstrap.B_subject_cluster_sd = 5;
 bootstrap.subject_cluster_num_chunks = min(p.num_chunks, bootstrap.B_subject_cluster_sd);
 bootstrap.subject_cluster_seed = 1;
@@ -1075,7 +1075,7 @@ for i_n_back = 1:length(n_back_conditions)
         disp(['Response bias: ' num2str(task_count) ' tasks completed (~' num2str(round(rb_duration/60, 1)) ' min)']);
         disp(['Serial dependence: ' num2str(sd_count) ' tasks completed (~' num2str(round(sd_duration/60, 1)) ' min)']);
         if exist('bs_duration','var') && toggles.bootstrap_rb_perf
-            disp(['RB/performance bootstrapping: B = ' num2str(bootstrap.B) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
+            disp(['RB/performance bootstrapping: B_rb_perf = ' num2str(bootstrap.B_rb_perf) ', completed in ~' num2str(round(bs_duration/60, 1)) ' minutes']);
         end
         if exist('subject_cluster_bs_sd_duration','var') && toggles.bootstrap_sd_cluster
             disp(['Subject-cluster SD bootstrapping: B = ' ...
@@ -1117,7 +1117,7 @@ for i_n_back = 1:length(n_back_conditions)
         meta.analysis_time      = current_time;
         meta.sd_objective       = toggles.sd_objective;
         meta.guess_rate         = p.guess_rate;
-        meta.bootstrap_B_rb_perf = bootstrap.B;
+        meta.bootstrap_B_rb_perf = bootstrap.B_rb_perf;
         meta.bootstrap_B_subject_cluster_sd = bootstrap.B_subject_cluster_sd;
         meta.subject_cluster_num_chunks = bootstrap.subject_cluster_num_chunks;
         meta.subject_cluster_seed = bootstrap.subject_cluster_seed;

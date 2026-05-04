@@ -60,8 +60,10 @@ function report_path = writeCohortReport(p, num, toggles, bootstrap, which_setup
     if isfield(p, 'guess_rate')
         fprintf(fid, '  guess_rate        : %g\n', p.guess_rate);
     end
-    if isfield(bootstrap, 'B')
-        fprintf(fid, '  bootstrap.B       : %d\n', bootstrap.B);
+    if isfield(bootstrap, 'B_rb_perf') && ~isempty(bootstrap.B_rb_perf)
+        fprintf(fid, '  bootstrap.B_rb_perf: %d\n', bootstrap.B_rb_perf);
+    elseif isfield(bootstrap, 'B')
+        fprintf(fid, '  bootstrap.B (legacy): %d\n', bootstrap.B);
     end
     if isfield(bootstrap, 'ci') && numel(bootstrap.ci) == 2
         fprintf(fid, '  bootstrap.ci      : [%g %g]\n', bootstrap.ci(1), bootstrap.ci(2));

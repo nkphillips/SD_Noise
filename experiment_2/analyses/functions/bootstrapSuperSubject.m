@@ -10,7 +10,8 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
 %   num: struct with levels/conds/windows
 %   p: parameter struct (used for RB fitting)
 %   bootstrap: struct with fields:
-%       .B  - number of bootstrap iterations (e.g., 200)
+%       .B_rb_perf - number of trial-level bootstrap iterations for RB/perf CIs (e.g., 200)
+%       .B       - legacy alias for .B_rb_perf (optional)
 %       .ci - 1x2 vector of percentiles (e.g., [2.5 97.5])
 %   toggles: struct for printing/parallelization flags
 %
@@ -22,14 +23,16 @@ function [rb_ci, perf_ci] = bootstrapSuperSubject(delta_theta_windows, num, p, b
         toggles = struct('disp_on', 0);
     end
 
-    if ~isfield(bootstrap, 'B') || isempty(bootstrap.B)
-        bootstrap.B = 200;
+    if isfield(bootstrap, 'B_rb_perf') && ~isempty(bootstrap.B_rb_perf)
+        B = bootstrap.B_rb_perf;
+    elseif isfield(bootstrap, 'B') && ~isempty(bootstrap.B)
+        B = bootstrap.B;
+    else
+        B = 200;
     end
     if ~isfield(bootstrap, 'ci') || isempty(bootstrap.ci)
         bootstrap.ci = [2.5, 97.5];
     end
-
-    B = bootstrap.B;
     prc = bootstrap.ci;
 
     % Preallocate CI outputs with NaNs

@@ -4,7 +4,13 @@ function result = processBootstrapWindowTask(task_data, p, bootstrap, toggles)
 
     po = task_data.po(:);
     y  = task_data.y(:);
-    B  = bootstrap.B;
+    if isfield(bootstrap, 'B_rb_perf') && ~isempty(bootstrap.B_rb_perf)
+        B = bootstrap.B_rb_perf;
+    elseif isfield(bootstrap, 'B') && ~isempty(bootstrap.B)
+        B = bootstrap.B;
+    else
+        B = 200;
+    end
     prc = bootstrap.ci;
     if ~isfield(bootstrap,'min_trials') || isempty(bootstrap.min_trials)
         bootstrap.min_trials = 0;
