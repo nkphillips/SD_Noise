@@ -15,6 +15,11 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
 %   'guess_rate' (0.25) -- S&S 2022; passed through fit_opts
 %   'contrast_labels', 'precision_labels' -- 1x3 cells for subplot titles
 %   'mu_bounds' -- [lower upper] degrees for plot y-axis (default [-20 20])
+%   'fig_subdir' -- e.g. '1_back'; figures and contrasts CSV go to figures/<subdir>/
+%   'compute_contrasts' (true) -- auto-compute within-manipulation BCa contrasts;
+%                                 results.contrast_table is added on success.
+%   'contrast_params' ({'A'}) -- subset of {'A','w','sigma','beta'} to test contrasts on.
+%   'contrast_specs' ([]) -- override specs; if empty, uses buildStandardContrasts.
 
     ip = inputParser;
     addParameter(ip, 'B', 2000, @(x) isnumeric(x) && isscalar(x) && x >= 1);
@@ -34,6 +39,9 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
     addParameter(ip, 'precision_labels', {'2°', '40°', '80°'}, @(x) iscell(x) && numel(x) == 3);
     addParameter(ip, 'mu_bounds', [-20, 20], @(x) isnumeric(x) && numel(x) == 2);
     addParameter(ip, 'fig_subdir', '', @(x) ischar(x) || isstring(x));
+    addParameter(ip, 'compute_contrasts', true, @(x) islogical(x) && isscalar(x));
+    addParameter(ip, 'contrast_params', {'A'}, @(x) iscell(x));   % which DoG params to test contrasts on
+    addParameter(ip, 'contrast_specs', [], @(x) isempty(x) || isstruct(x));   % override; empty => use buildStandardContrasts
     parse(ip, varargin{:});
 
     B = ip.Results.B;
@@ -366,6 +374,35 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
     results.ci_bca = ci_bca;
     results.ci_active = active;
     results.summary_table = summary_table;
+
+    % -------- Within-manipulation contrasts (BCa CIs on linear-combination contrasts) --------
+    if ip.Results.compute_contrasts && compute_jackknife
+        if isempty(ip.Results.contrast_specs)
+            cspecs = buildStandardContrasts('params', ip.Results.contrast_params);
+        else
+            cspecs = ip.Results.contrast_specs;
+        end
+        try
+            results.contrast_table = computeUnbinnedContrasts(results, cspecs);
+            % Save CSV alongside the figures
+            csv_path = fullfile(fig_dir, 'contrasts_bca.csv');
+            try
+                writetable(results.contrast_table, csv_path);
+            catch %#ok<CTCH>
+                % non-fatal -- the table is still in results
+            end
+        catch contrastErr
+            warning('runUnbinnedMLEClusterBootstrap:contrastFailed', ...
+                'Within-manipulation contrast computation failed: %s', contrastErr.message);
+            results.contrast_table = table();
+        end
+    else
+        if ip.Results.compute_contrasts && ~compute_jackknife
+            warning('runUnbinnedMLEClusterBootstrap:noJackknifeForContrasts', ...
+                'compute_contrasts requested but compute_jackknife = false; skipping (BCa requires jackknife).');
+        end
+        results.contrast_table = table();
+    end
 
     % -------- Plots --------
     ps = plotSettings();
