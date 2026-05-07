@@ -16,24 +16,31 @@ function [best_params, best_nll] = gridSearchSerialDependence(init_params, fixed
 
     %% Define adaptive search steps based on data size
         
+    use_nll = isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'nll');
+
     switch which_search
         case 'coarse'
-            % Fixed resolution per request
-            search_steps = 10;
+            % NLL has one extra dim (sigma) and a per-trial cost that is ~N times more
+            % expensive than SSE's per-window cost (N ~= 2000 trials vs ~193 windows).
+            % Coarse grid: NLL uses 8 steps -> 4096 evals; SSE uses 10 -> 1000 evals.
+            if use_nll
+                search_steps = 8;
+            else
+                search_steps = 10;
+            end
             amplitude_vals = linspace(p.sd_bounds(2,1), p.sd_bounds(1,1), search_steps);
-            
+
             % Sample width uniformly in FWHM (i.e., uniformly in 1/w)
             fwhm_vals = linspace(1.6651/p.sd_bounds(1,2), 1.6651/p.sd_bounds(2,2), search_steps);
             w_vals = 1.6651 ./ fwhm_vals;
             baseline_vals = linspace(p.sd_bounds(2,3), p.sd_bounds(1,3), search_steps);
-            
-            % Define sigma_vals only if not using SSE
-            if ~isfield(p, 'sd_objective') || ~strcmp(p.sd_objective, 'sse')
+
+            if use_nll
                 sigma_vals = linspace(p.sd_bounds(2,4), p.sd_bounds(1,4), search_steps);
             else
                 sigma_vals = []; % Not used for SSE, but needs to be defined
             end
-        
+
         case 'fine'
             if init_params(1)/2 < p.sd_bounds(2,1)
                 amplitude_lb = p.sd_bounds(2,1);
@@ -52,16 +59,27 @@ function [best_params, best_nll] = gridSearchSerialDependence(init_params, fixed
             fwhm_lb = max(1.6651/p.sd_bounds(1,2), init_fwhm/2);
             fwhm_ub = min(1.6651/p.sd_bounds(2,2), init_fwhm*1.5);
 
-            % Fixed resolution per request
-            search_steps = 50;
+            % Fine grid: NLL uses 12 steps -> 12^4 = 20736 evals (tractable); SSE uses
+            % 50 -> 125k evals. fmincon afterwards refines either start.
+            if use_nll
+                search_steps = 12;
+            else
+                search_steps = 50;
+            end
             amplitude_vals = linspace(amplitude_lb, amplitude_ub, search_steps);
             fwhm_vals = linspace(fwhm_lb, fwhm_ub, search_steps);
             w_vals = 1.6651 ./ fwhm_vals;
             baseline_vals = linspace(p.sd_bounds(2,3), p.sd_bounds(1,3), search_steps);
-            
-            % Define sigma_vals only if not using SSE
-            if ~isfield(p, 'sd_objective') || ~strcmp(p.sd_objective, 'sse')
-                sigma_vals = linspace(p.sd_bounds(2,4), p.sd_bounds(1,4), search_steps);
+
+            if use_nll
+                % Center sigma fine grid around init, same +/- 50% logic as A and FWHM.
+                sigma_lb = max(p.sd_bounds(2,4), init_params(4)/2);
+                sigma_ub = min(p.sd_bounds(1,4), init_params(4)*1.5);
+                if sigma_lb >= sigma_ub
+                    sigma_lb = p.sd_bounds(2,4);
+                    sigma_ub = p.sd_bounds(1,4);
+                end
+                sigma_vals = linspace(sigma_lb, sigma_ub, search_steps);
             else
                 sigma_vals = []; % Not used for SSE, but needs to be defined
             end

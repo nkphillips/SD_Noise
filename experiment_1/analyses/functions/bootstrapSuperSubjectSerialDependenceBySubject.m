@@ -1,4 +1,4 @@
-function [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenceBySubject(delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles, sd_point)
+function [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenceBySubject(delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles, sd_point, trial_pool)
 % bootstrapSuperSubjectSerialDependenceBySubject
 %
 % Subject-cluster bootstrap CIs for pooled super-subject DoG fits. Each
@@ -27,12 +27,24 @@ function [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenc
 %                         theta_hat for BCa bias correction). When omitted or
 %                         empty, the function falls back to percentile for
 %                         sd_ci_cluster.lo/hi.
+%   trial_pool          - REQUIRED for sd_objective='nll'. Per-subject un-windowed
+%                         trial pool from buildPerSubjectCondTrialPool(all_runs, ...).
+%                         SSE mode ignores it.
 
     if nargin < 6
         toggles = struct('disp_on', 0, 'parallelization', 0);
     end
     if nargin < 7
         sd_point = [];
+    end
+    if nargin < 8
+        trial_pool = [];
+    end
+
+    if isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'nll') && isempty(trial_pool)
+        error('bootstrapSuperSubjectSerialDependenceBySubject:missingTrialPool', ...
+            ['NLL mode requires the un-windowed trial_pool argument ' ...
+             '(buildPerSubjectCondTrialPool). Pass it as the 8th argument or run SSE.']);
     end
 
     % --- Defaults for new bootstrap fields ---
@@ -165,13 +177,13 @@ function [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenc
         parfor i_chunk = 1:actual_num_chunks
             chunk_results{i_chunk} = processSubjectClusterBootstrapChunk( ...
                 chunk_tasks{i_chunk}, subject_samples, delta_theta_windows, ...
-                delta_theta_centers, curve_x, num, p, bootstrap, inner_toggles);
+                delta_theta_centers, curve_x, num, p, bootstrap, inner_toggles, trial_pool);
         end
     else
         for i_chunk = 1:actual_num_chunks
             chunk_results{i_chunk} = processSubjectClusterBootstrapChunk( ...
                 chunk_tasks{i_chunk}, subject_samples, delta_theta_windows, ...
-                delta_theta_centers, curve_x, num, p, bootstrap, inner_toggles);
+                delta_theta_centers, curve_x, num, p, bootstrap, inner_toggles, trial_pool);
         end
     end
 
@@ -194,7 +206,7 @@ function [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenc
             disp(['  Computing leave-one-subject-out jackknife (N = ' num2str(num.subjs) ' fits)...']);
         end
         jk_use_parallel = isfield(toggles, 'parallelization') && toggles.parallelization;
-        jk = runSubjectJackknife(delta_theta_windows, delta_theta_centers, curve_x, num, p, inner_toggles, jk_use_parallel);
+        jk = runSubjectJackknife(delta_theta_windows, delta_theta_centers, curve_x, num, p, inner_toggles, jk_use_parallel, trial_pool);
     else
         jk = struct();
         jk.params       = nan(num.subjs, num.levels, num.levels, num.conds, num_params);
@@ -317,8 +329,11 @@ end
 % Per-chunk bootstrap fitting
 % =========================================================================
 
-function chunk_result = processSubjectClusterBootstrapChunk(chunk_task, subject_samples, delta_theta_windows, delta_theta_centers, curve_x, num, p, bootstrap, toggles)
+function chunk_result = processSubjectClusterBootstrapChunk(chunk_task, subject_samples, delta_theta_windows, delta_theta_centers, curve_x, num, p, bootstrap, toggles, trial_pool)
     reps = chunk_task.replicate_indices;
+    if nargin < 10
+        trial_pool = [];
+    end
     n_reps = numel(reps);
     use_sse = isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'sse');
     num_params = 3 + (~use_sse);
@@ -344,8 +359,13 @@ function chunk_result = processSubjectClusterBootstrapChunk(chunk_task, subject_
         sampled_subjects = subject_samples(b, :);
         pooled_windows = poolSubjectDeltaThetaWindows(delta_theta_windows, sampled_subjects, num);
         rb_params = fitBootstrapResponseBias(pooled_windows, num, p);
+        if ~isempty(trial_pool)
+            pooled_trials = poolSubjectCondTrialPool(trial_pool, sampled_subjects, num);
+        else
+            pooled_trials = [];
+        end
         [sd_params, sd_exit, sd_admit, sd_reason] = ...
-            fitBootstrapSerialDependence(pooled_windows, rb_params, delta_theta_centers, num, p, toggles);
+            fitBootstrapSerialDependence(pooled_windows, rb_params, delta_theta_centers, num, p, toggles, pooled_trials);
 
         chunk_result.params(i_rep,:,:,:,:)       = sd_params;
         chunk_result.exit_flag(i_rep,:,:,:)      = sd_exit;
@@ -392,6 +412,34 @@ end
 % =========================================================================
 % Subject pooling for sampled (or jackknife) subject sets
 % =========================================================================
+
+function pooled_trials = poolSubjectCondTrialPool(trial_pool, sampled_subjects, num)
+% Concatenate per-subject un-windowed trial vectors across the resampled subject set.
+% trial_pool.ind(subj).{delta_thetas, probe_offsets, responses}{prev, curr, cond}.
+
+    fields = {'delta_thetas', 'probe_offsets', 'responses'};
+    for i_field = 1:numel(fields)
+        pooled_trials.(fields{i_field}) = cell(num.levels, num.levels, num.conds);
+    end
+
+    for i_sample = 1:numel(sampled_subjects)
+        subj = sampled_subjects(i_sample);
+        for prev_lvl = 1:num.levels
+            for curr_lvl = 1:num.levels
+                for cond = 1:num.conds
+                    for i_field = 1:numel(fields)
+                        f = fields{i_field};
+                        v = trial_pool.ind(subj).(f){prev_lvl, curr_lvl, cond};
+                        if ~isempty(v)
+                            pooled_trials.(f){prev_lvl, curr_lvl, cond} = ...
+                                [pooled_trials.(f){prev_lvl, curr_lvl, cond}; v(:)];
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
 
 function pooled_windows = poolSubjectDeltaThetaWindows(delta_theta_windows, sampled_subjects, num)
     fields = {'delta_thetas', 'probe_offsets', 'responses'};
@@ -460,7 +508,10 @@ end
 % DoG fit on pooled windows; returns admission flags + discard reasons
 % =========================================================================
 
-function [sd_params, sd_exit, sd_admit, sd_reason] = fitBootstrapSerialDependence(pooled_windows, rb_params, delta_theta_centers, num, p, toggles)
+function [sd_params, sd_exit, sd_admit, sd_reason] = fitBootstrapSerialDependence(pooled_windows, rb_params, delta_theta_centers, num, p, toggles, pooled_trials)
+    if nargin < 7
+        pooled_trials = [];
+    end
     use_sse = isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'sse');
     num_params = 3 + (~use_sse);
     sd_params = nan(num.levels, num.levels, num.conds, num_params);
@@ -511,13 +562,17 @@ function [sd_params, sd_exit, sd_admit, sd_reason] = fitBootstrapSerialDependenc
                     task_data.delta_thetas  = dt_centers(valid_windows)';
                     task_data.condition_info = [prev_lvl, curr_lvl, cond];
                 else
-                    curr_probe_offsets = pooled_windows.probe_offsets(prev_lvl, curr_lvl, cond, :);
-                    curr_responses     = pooled_windows.responses(prev_lvl, curr_lvl, cond, :);
-                    curr_delta_thetas  = pooled_windows.delta_thetas(prev_lvl, curr_lvl, cond, :);
+                    % NLL mode: trial-level binary responses, each trial counted ONCE.
+                    % Use pooled_trials (un-windowed); previously this branch vertcatted
+                    % across overlapping Δθ windows and duplicated each trial ~32x.
+                    if isempty(pooled_trials)
+                        sd_reason(prev_lvl, curr_lvl, cond) = "no_trial_pool";
+                        continue
+                    end
 
-                    probe_offsets = vertcat(curr_probe_offsets{:});
-                    responses     = vertcat(curr_responses{:});
-                    delta_thetas  = vertcat(curr_delta_thetas{:});
+                    probe_offsets = pooled_trials.probe_offsets{prev_lvl, curr_lvl, cond};
+                    responses     = pooled_trials.responses{prev_lvl, curr_lvl, cond};
+                    delta_thetas  = pooled_trials.delta_thetas{prev_lvl, curr_lvl, cond};
                     if isempty(probe_offsets) || isempty(responses) || isempty(delta_thetas)
                         sd_reason(prev_lvl, curr_lvl, cond) = "min_windows";
                         continue
@@ -551,9 +606,12 @@ end
 % Leave-one-subject-out jackknife (drives BCa acceleration)
 % =========================================================================
 
-function jk = runSubjectJackknife(delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles, use_parallel)
+function jk = runSubjectJackknife(delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles, use_parallel, trial_pool)
     if nargin < 7 || isempty(use_parallel)
         use_parallel = false;
+    end
+    if nargin < 8
+        trial_pool = [];
     end
 
     use_sse = isfield(p, 'sd_objective') && strcmp(p.sd_objective, 'sse');
@@ -571,14 +629,14 @@ function jk = runSubjectJackknife(delta_theta_windows, delta_theta_centers, curv
     jk_elapsed = tic;
     if run_parfor
         parfor k = 1:N
-            [sd_p, fk, ck] = jackknifeOneSubject(k, delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles);
+            [sd_p, fk, ck] = jackknifeOneSubject(k, delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles, trial_pool);
             sd_p_cell{k}  = sd_p;
             fwhm_cell{k}  = fk;
             curve_cell{k} = ck;
         end
     else
         for k = 1:N
-            [sd_p, fk, ck] = jackknifeOneSubject(k, delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles);
+            [sd_p, fk, ck] = jackknifeOneSubject(k, delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles, trial_pool);
             sd_p_cell{k}  = sd_p;
             fwhm_cell{k}  = fk;
             curve_cell{k} = ck;
@@ -603,13 +661,21 @@ function jk = runSubjectJackknife(delta_theta_windows, delta_theta_centers, curv
     jk.duration_sec = toc(jk_elapsed);
 end
 
-function [sd_params, fwhm_k, curve_k] = jackknifeOneSubject(k, delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles)
+function [sd_params, fwhm_k, curve_k] = jackknifeOneSubject(k, delta_theta_windows, delta_theta_centers, curve_x, num, p, toggles, trial_pool)
+    if nargin < 8
+        trial_pool = [];
+    end
     n_curve = numel(curve_x);
     all_subjects = 1:num.subjs;
     sampled_subjects = all_subjects(all_subjects ~= k);
     pooled_windows = poolSubjectDeltaThetaWindows(delta_theta_windows, sampled_subjects, num);
     rb_params = fitBootstrapResponseBias(pooled_windows, num, p);
-    sd_params = fitBootstrapSerialDependence(pooled_windows, rb_params, delta_theta_centers, num, p, toggles);
+    if ~isempty(trial_pool)
+        pooled_trials = poolSubjectCondTrialPool(trial_pool, sampled_subjects, num);
+    else
+        pooled_trials = [];
+    end
+    sd_params = fitBootstrapSerialDependence(pooled_windows, rb_params, delta_theta_centers, num, p, toggles, pooled_trials);
 
     fwhm_k  = nan(num.levels, num.levels, num.conds);
     curve_k = nan(num.levels, num.levels, num.conds, n_curve);

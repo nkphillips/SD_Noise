@@ -9,7 +9,7 @@ clc;
 %% Toggles
 
 toggles.parallelization = 1;
-toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
+toggles.sd_objective = 'nll'; % minimize 'nll' or 'sse' for serial dependence estimation
 toggles.disp_on = 1;
 toggles.save_estimates = 1;
 toggles.bootstrap_rb_perf = 0;
@@ -59,7 +59,7 @@ end
 which_setup = '3329C_ASUS';
 analysis_date = datestr(now, 'mm.dd.yyyy'); % automatically pull current date from system
 
-p.subj_IDs = {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'}; % {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'};
+p.subj_IDs = {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '015'}; % {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'};
 p.cond_names = {'Contrast' 'Precision'};
 
 % Define contrast and precision values for axis labels
@@ -228,6 +228,12 @@ for i_n_back = 1:length(n_back_conditions)
 
     [delta_theta_windows, all_delta_thetas] = makeDeltaThetaWindows(delta_theta_centers, delta_theta_width, all_runs, num, p, ps, n_back);
 
+    % Un-windowed per-(prev,curr,cond) trial pool. Required for NLL mode (and for any
+    % bootstrap that pools trials directly). makeDeltaThetaWindows duplicates each trial
+    % across ~32 overlapping windows, which is correct for windowed response-bias / SSE
+    % steps but inflates the likelihood ~32x when vertcatted across the window dim.
+    trial_pool = buildPerSubjectCondTrialPool(all_runs, p, num, n_back);
+
     %% Write cohort audit log
 
     try
@@ -245,14 +251,14 @@ for i_n_back = 1:length(n_back_conditions)
     p.fmincon_options = optimoptions('fmincon','Display','off');
 
     %%% Response bias model parameters %%%
-    p.rb_init_params = [0, 1]; % [mu, sigma]
-    p.rb_bounds = [20, 90; -20, 0.1]; % [upper; lower] for [mu, sigma]
+    p.rb_init_params = [0, 5]; % [mu, sigma]
+    p.rb_bounds = [20, 90; -20, 1]; % [upper; lower] for [mu, sigma] -- sigma_lb lifted from 0.1 to 1 deg (avoid lapse-sigma confound at the corner)
     p.guess_rate = 0.25; % Assuming constant guess rate (Sheehan & Serences 2022 PLOS Biology)
 
     %%% Serial dependence model parameters %%%
-    p.sd_init_params = [1, 0.1, 0, 1]; % [amplitude, width (1/deg), baseline, sigma]
-    sd_mu_lb = 1;
-    sd_mu_ub = p.rb_bounds(1,1);
+    p.sd_init_params = [1, 0.1, 0, 5]; % [amplitude, width (1/deg), baseline, sigma]
+    sd_mu_lb = -30;  % allow repulsive amplitudes; was 1 (forbade negative A)
+    sd_mu_ub = 30;   % was 20; aligned with unbinned pipeline
 
     % Set width bounds via FWHM bounds (more interpretable), then convert to w = 1.6651 / FWHM
     fwhm_min_deg = 8;
@@ -485,14 +491,13 @@ for i_n_back = 1:length(n_back_conditions)
                         sd_task_indices = [sd_task_indices; prev_lvl, curr_lvl, cond];
                     end
                 else
-                    % NLL mode: use trial-level binary responses
-                    curr_probe_offsets = delta_theta_windows.all.probe_offsets(prev_lvl, curr_lvl, cond, :);
-                    curr_responses = delta_theta_windows.all.responses(prev_lvl, curr_lvl, cond, :);
-                    curr_delta_thetas = delta_theta_windows.all.delta_thetas(prev_lvl, curr_lvl, cond, :);
-
-                    probe_offsets = vertcat(curr_probe_offsets{:});
-                    responses = vertcat(curr_responses{:});
-                    delta_thetas = vertcat(curr_delta_thetas{:});
+                    % NLL mode: trial-level binary responses, each trial counted ONCE.
+                    % Pull from trial_pool.all (built without windowing); previously this
+                    % branch vertcatted across overlapping Δθ windows, duplicating each
+                    % trial ~32x and crashing calc_pCW with an N x N allocation.
+                    probe_offsets = trial_pool.all.probe_offsets{prev_lvl, curr_lvl, cond};
+                    responses     = trial_pool.all.responses{prev_lvl, curr_lvl, cond};
+                    delta_thetas  = trial_pool.all.delta_thetas{prev_lvl, curr_lvl, cond};
 
                     if ~isempty(probe_offsets) && ~isempty(responses) && ~isempty(delta_thetas)
                         task_data.probe_offsets = probe_offsets;
@@ -585,7 +590,7 @@ for i_n_back = 1:length(n_back_conditions)
             disp('Estimating serial dependence for individual subjects...');
         end
         [sd, ind_sd_meta] = fitIndividualSerialDependence(sd, rb, delta_theta_windows, ...
-            delta_theta_centers, num, p, toggles);
+            delta_theta_centers, num, p, toggles, trial_pool);
         if toggles.disp_on
             disp(['✓ Individual serial-dependence fits completed in ~' ...
                 num2str(round(ind_sd_meta.duration/60, 1)) ' minutes (' ...
@@ -638,7 +643,7 @@ for i_n_back = 1:length(n_back_conditions)
         end
         subject_cluster_bs_sd_start_time = tic;
         [sd_ci_cluster, sd_boot_cluster] = bootstrapSuperSubjectSerialDependenceBySubject( ...
-            delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles, sd);
+            delta_theta_windows, delta_theta_centers, num, p, bootstrap, toggles, sd, trial_pool);
         subject_cluster_bs_sd_duration = toc(subject_cluster_bs_sd_start_time);
         bootstrap.ci_method = sd_ci_cluster.ci_method;
         if toggles.disp_on
@@ -1255,7 +1260,7 @@ if length(n_back_conditions) >= 2 && ps.plot_sup_figures
         catch summaryErr
             warning(summaryErr.identifier, '%s', ...
                 ['Cross-n_back poster ' func2str(summary_renderers{i_renderer}) ...
-                 ' failed: ' summaryErr.message]);
+                ' failed: ' summaryErr.message]);
         end
     end
 elseif ps.plot_sup_figures && toggles.disp_on

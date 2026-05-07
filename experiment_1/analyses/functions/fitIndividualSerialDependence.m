@@ -1,15 +1,25 @@
-function [sd, ind_sd_meta] = fitIndividualSerialDependence(sd, rb, delta_theta_windows, delta_theta_centers, num, p, toggles)
+function [sd, ind_sd_meta] = fitIndividualSerialDependence(sd, rb, delta_theta_windows, delta_theta_centers, num, p, toggles, trial_pool)
 % fitIndividualSerialDependence
 %
 % Populate sd.ind by fitting the DoG separately for each subject and
 % previous/current level pair. In SSE mode this uses each subject's fitted
-% response-bias mu values across delta-theta windows.
+% response-bias mu values across delta-theta windows. In NLL mode this uses
+% trial_pool.ind(subj) (un-windowed trials, each counted once).
 
     if nargin < 7
         toggles = struct('disp_on', 0, 'parallelization', 0);
     end
+    if nargin < 8
+        trial_pool = [];
+    end
     if ~isfield(p, 'sd_min_windows') || isempty(p.sd_min_windows)
         p.sd_min_windows = 3;
+    end
+
+    if strcmp(p.sd_objective, 'nll') && isempty(trial_pool)
+        error('fitIndividualSerialDependence:missingTrialPool', ...
+            ['NLL mode requires the un-windowed trial_pool (8th arg). ' ...
+             'Build it with buildPerSubjectCondTrialPool(all_runs, p, num, n_back).']);
     end
 
     start_time = tic;
@@ -42,13 +52,11 @@ function [sd, ind_sd_meta] = fitIndividualSerialDependence(sd, rb, delta_theta_w
                         task_data.delta_thetas = x_dt;
                         task_data.condition_info = [prev_lvl, curr_lvl, cond];
                     else
-                        curr_probe_offsets = delta_theta_windows.ind(subj).probe_offsets(prev_lvl, curr_lvl, cond, :);
-                        curr_responses = delta_theta_windows.ind(subj).responses(prev_lvl, curr_lvl, cond, :);
-                        curr_delta_thetas = delta_theta_windows.ind(subj).delta_thetas(prev_lvl, curr_lvl, cond, :);
-
-                        probe_offsets = vertcat(curr_probe_offsets{:});
-                        responses = vertcat(curr_responses{:});
-                        delta_thetas = vertcat(curr_delta_thetas{:});
+                        % NLL mode: trial-level binary responses, each trial counted ONCE.
+                        % (Previously vertcatted across overlapping windows -> ~32x duplication.)
+                        probe_offsets = trial_pool.ind(subj).probe_offsets{prev_lvl, curr_lvl, cond};
+                        responses     = trial_pool.ind(subj).responses{prev_lvl, curr_lvl, cond};
+                        delta_thetas  = trial_pool.ind(subj).delta_thetas{prev_lvl, curr_lvl, cond};
 
                         if isempty(probe_offsets) || isempty(responses) || isempty(delta_thetas)
                             skipped_too_few_windows = skipped_too_few_windows + 1;
