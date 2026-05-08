@@ -1,12 +1,11 @@
 % find_plausible_params.m
-% Grid search over Weibull and PTM (Perceptual Template Model) parameter
-% spaces to find ranges that guarantee all calibrated levels fall within
-% the physical stimulus bounds (contrast < 0.9, filter width < 80 deg,
-% all > 0).
+% Grid search over Weibull parameter spaces for both features (contrast
+% and filter width) to find ranges that guarantee all calibrated levels
+% fall within the physical stimulus bounds (contrast < 0.9, filter
+% width in [0, 80] deg).
 %
-% PTM model (Lu & Dosher, 2008, Eq. 13; gamma fixed at 2.0):
-%   d' = Signal^g / sqrt((1+Nm^2)*fw^(2g) + Nm^2*Signal^(2g) + Na^2)
-%   P  = (1-lambda)*normcdf(d'/sqrt(2)) + lambda*0.5
+% Both features use the same Weibull psychometric function. For filter
+% width, the independent variable is precision = 1/filter_width.
 %
 % The output informs the ground truth parameter ranges used in
 % simulate_experiment.m and the fitting bounds in fit_calibration.m.
@@ -27,20 +26,14 @@ filter_width_min = 10;
 
 guess_rate = 0.5; % 2AFC guess rate
 lambda = 0.01;    % Lapse rate
-ptm_gamma = 2.0;  % Fixed transducer exponent (Lu & Dosher, 1999; Ramirez et al., 2021 n~1.78)
-g = ptm_gamma;
 
 %% Target performance levels for calibration inversion
 
 target_levels = [0.65, 0.75, 0.85];
 
-% Weibull inversion constants
+% Weibull inversion constants (same formula for both features)
 K = (target_levels - guess_rate) ./ (1 - guess_rate - lambda);
 neg_log_1mK = -log(1 - K);
-
-% PTM inversion constants
-P_target_adj = (target_levels - lambda * 0.5) ./ (1 - lambda);
-d_target = sqrt(2) .* norminv(P_target_adj); % [0.551, 0.965, 1.485]
 
 %% ============================================================
 %  1. WEIBULL (Contrast) Grid Search
@@ -56,7 +49,7 @@ c_levels = zeros([size(A_grid), 3]);
 
 for t = 1:3
     c_levels(:,:,t) = A_grid .* neg_log_1mK(t).^(1./B_grid);
-    weibull_valid = weibull_valid & c_levels(:,:,t) > 0 & c_levels(:,:,t) < contrast_max;
+    weibull_valid = weibull_valid & c_levels(:,:,t) >= contrast_min & c_levels(:,:,t) <= contrast_max;
 end
 
 weibull_prob = @(x, a, b) guess_rate + (1 - guess_rate - lambda) .* (1 - exp(-(x./a).^b));
@@ -77,110 +70,89 @@ fprintf('alpha: [%.3f, %.3f]\n', alpha_feasible_min, alpha_feasible_max);
 fprintf('beta:  [%.2f, %.2f]\n', beta_feasible_min, beta_feasible_max);
 
 %% ============================================================
-%  2. PTM (Filter Width) Grid Search
+%  2. WEIBULL on PRECISION (Filter Width) Grid Search
 %  ============================================================
-% 3D search over (Signal, N_mul, N_add) with gamma fixed.
-% Inversion: fw^(2g) = (S^(2g)*(1/d'^2 - Nm^2) - Na^2) / (1+Nm^2)
+% Same Weibull function as contrast, but the independent variable is
+% precision = 1/filter_width. This transforms the decreasing
+% performance-vs-fw relationship into a standard increasing one.
+%
+% Inversion: precision_target = alpha_fw * (-log(1-K))^(1/beta_fw)
+%            fw_target = 1 / precision_target
+%
+% Feasibility: all 3 inverted fw must be in (0, filter_width_max].
 
-n_s = 120;  n_m = 40;  n_a = 120;
-signal_range = linspace(5, 80, n_s);
-nmul_range   = linspace(0.01, 0.65, n_m);
-nadd_range   = linspace(1, 600, n_a);
+% Precision range corresponding to fw = [10, 80] deg
+prec_min = 1 / filter_width_max; % 0.0125
+prec_max = 1 / filter_width_min; % 0.1
 
-ptm_feasible_3d = false(n_m, n_s, n_a); % (nmul, signal, nadd)
+alpha_fw_range = linspace(0.005, 0.15, n_grid);
+beta_fw_range  = linspace(0.5, 5.0, n_grid);
+[A_fw_grid, B_fw_grid] = meshgrid(alpha_fw_range, beta_fw_range);
 
-ptm_dprime = @(fw, S, Nm, Na) S.^g ./ sqrt((1+Nm.^2).*fw.^(2*g) + Nm.^2.*S.^(2*g) + Na.^2);
-ptm_prob   = @(fw, S, Nm, Na) (1-lambda).*normcdf(ptm_dprime(fw,S,Nm,Na)./sqrt(2)) + lambda*0.5;
+fw_valid = true(size(A_fw_grid));
+fw_levels = zeros([size(A_fw_grid), 3]);
 
-for im = 1:n_m
-    Nm = nmul_range(im);
-    for is = 1:n_s
-        S = signal_range(is);
-        S2g = S^(2*g);
-        for ia = 1:n_a
-            Na = nadd_range(ia);
-
-            valid = true;
-            for t = 1:3
-                denom = 1 + Nm^2;
-                numer = S2g * (1/d_target(t)^2 - Nm^2) - Na^2;
-                if numer <= 0 || (1/d_target(t)^2 <= Nm^2)
-                    valid = false; break;
-                end
-                fw_val = (numer / denom)^(1/(2*g));
-                if fw_val <= 0 || fw_val >= filter_width_max
-                    valid = false; break;
-                end
-            end
-
-            if valid
-                P_fwmin = ptm_prob(filter_width_min, S, Nm, Na);
-                P_fwmax = ptm_prob(filter_width_max, S, Nm, Na);
-                if P_fwmin > 0.75 && P_fwmax > 0.55 && P_fwmax < 0.80
-                    ptm_feasible_3d(im, is, ia) = true;
-                end
-            end
-        end
-    end
+for t = 1:3
+    % Invert the Weibull in the precision domain
+    prec_level = A_fw_grid .* neg_log_1mK(t).^(1./B_fw_grid);
+    % Convert precision back to filter width
+    fw_level = 1 ./ prec_level;
+    fw_levels(:,:,t) = fw_level;
+    fw_valid = fw_valid & fw_level >= filter_width_min & fw_level <= filter_width_max;
 end
 
-ptm_any_feasible = squeeze(any(ptm_feasible_3d, 1)); % (signal, nadd) -- any N_mul works
+% Quality: psychometric function spans a meaningful range across the
+% tested precision values [1/80, 1/10]
+weibull_prob_fw = @(x, a, b) guess_rate + (1 - guess_rate - lambda) .* (1 - exp(-(x./a).^b));
+P_at_prec_max = weibull_prob_fw(prec_max, A_fw_grid, B_fw_grid); % narrowest filter (easiest)
+P_at_prec_min = weibull_prob_fw(prec_min, A_fw_grid, B_fw_grid); % widest filter (hardest)
 
-% Extract marginal feasible ranges
-[fs, fa, fm] = ind2sub(size(ptm_feasible_3d), find(ptm_feasible_3d));
-signal_feasible_min = signal_range(min(fa));
-signal_feasible_max = signal_range(max(fa));
-nmul_feasible_min   = nmul_range(min(fs));
-nmul_feasible_max   = nmul_range(max(fs));
-nadd_feasible_min   = nadd_range(min(fm));
-nadd_feasible_max   = nadd_range(max(fm));
+fw_quality = P_at_prec_max > 0.75 & P_at_prec_min > 0.52 & P_at_prec_min < 0.80;
+fw_feasible = fw_valid & fw_quality;
 
-fprintf('\n=== PTM (Filter Width) Feasible Region (gamma = %.1f) ===\n', ptm_gamma);
-fprintf('Signal: [%.1f, %.1f]\n', signal_feasible_min, signal_feasible_max);
-fprintf('N_mul:  [%.3f, %.3f]\n', nmul_feasible_min, nmul_feasible_max);
-fprintf('N_add:  [%.1f, %.1f]\n', nadd_feasible_min, nadd_feasible_max);
+[r_fw, c_fw] = find(fw_feasible);
+alpha_fw_feasible_min = alpha_fw_range(min(c_fw));
+alpha_fw_feasible_max = alpha_fw_range(max(c_fw));
+beta_fw_feasible_min  = beta_fw_range(min(r_fw));
+beta_fw_feasible_max  = beta_fw_range(max(r_fw));
 
-% Project feasible region onto Signal x N_add plane at a representative N_mul
-mid_nmul_idx = round(n_m / 2);
-ptm_slice = squeeze(ptm_feasible_3d(mid_nmul_idx, :, :)); % (signal, nadd)
+fprintf('\n=== WEIBULL on PRECISION (Filter Width) Feasible Region ===\n');
+fprintf('alpha_fw (precision threshold): [%.4f, %.4f]\n', alpha_fw_feasible_min, alpha_fw_feasible_max);
+fprintf('beta_fw  (slope):               [%.2f, %.2f]\n', beta_fw_feasible_min, beta_fw_feasible_max);
 
 %% ============================================================
 %  3. RECOMMENDED RANGES for simulate_experiment.m
 %  ============================================================
 
-% Weibull
+% Contrast Weibull
 rec_alpha_mean = (alpha_feasible_min + alpha_feasible_max) / 2;
 rec_alpha_std  = (alpha_feasible_max - alpha_feasible_min) / 6;
 rec_beta_mean  = (beta_feasible_min + beta_feasible_max) / 2;
 rec_beta_std   = (beta_feasible_max - beta_feasible_min) / 6;
 
-% PTM
-rec_signal_mean = (signal_feasible_min + signal_feasible_max) / 2;
-rec_signal_std  = (signal_feasible_max - signal_feasible_min) / 6;
-rec_nmul_mean   = (nmul_feasible_min + nmul_feasible_max) / 2;
-rec_nmul_std    = (nmul_feasible_max - nmul_feasible_min) / 6;
-rec_nadd_mean   = (nadd_feasible_min + nadd_feasible_max) / 2;
-rec_nadd_std    = (nadd_feasible_max - nadd_feasible_min) / 6;
+% Filter Width Weibull (precision domain)
+rec_alpha_fw_mean = (alpha_fw_feasible_min + alpha_fw_feasible_max) / 2;
+rec_alpha_fw_std  = (alpha_fw_feasible_max - alpha_fw_feasible_min) / 6;
+rec_beta_fw_mean  = (beta_fw_feasible_min + beta_fw_feasible_max) / 2;
+rec_beta_fw_std   = (beta_fw_feasible_max - beta_fw_feasible_min) / 6;
 
 fprintf('\n=== RECOMMENDED simulate_experiment.m PARAMETERS ===\n');
-fprintf('\n--- Weibull ---\n');
+fprintf('\n--- Contrast Weibull ---\n');
 fprintf('gt.contrast_alpha = %.2f + %.2f * randn();\n', rec_alpha_mean, rec_alpha_std);
 fprintf('gt.contrast_alpha = max(%.3f, min(%.3f, gt.contrast_alpha));\n', alpha_feasible_min, alpha_feasible_max);
 fprintf('gt.contrast_beta  = %.2f + %.2f * randn();\n', rec_beta_mean, rec_beta_std);
 fprintf('gt.contrast_beta  = max(%.2f, min(%.2f, gt.contrast_beta));\n', beta_feasible_min, beta_feasible_max);
 
-fprintf('\n--- PTM (gamma = %.1f fixed) ---\n', ptm_gamma);
-fprintf('gt.filter_signal = %.1f + %.1f * randn();\n', rec_signal_mean, rec_signal_std);
-fprintf('gt.filter_signal = max(%.1f, min(%.1f, gt.filter_signal));\n', signal_feasible_min, signal_feasible_max);
-fprintf('gt.filter_nmul   = %.3f + %.3f * randn();\n', rec_nmul_mean, rec_nmul_std);
-fprintf('gt.filter_nmul   = max(%.3f, min(%.3f, gt.filter_nmul));\n', nmul_feasible_min, nmul_feasible_max);
-fprintf('gt.filter_nadd   = %.1f + %.1f * randn();\n', rec_nadd_mean, rec_nadd_std);
-fprintf('gt.filter_nadd   = max(%.1f, min(%.1f, gt.filter_nadd));\n', nadd_feasible_min, nadd_feasible_max);
+fprintf('\n--- Filter Width Weibull (precision = 1/fw) ---\n');
+fprintf('gt.filter_alpha = %.4f + %.4f * randn();\n', rec_alpha_fw_mean, rec_alpha_fw_std);
+fprintf('gt.filter_alpha = max(%.4f, min(%.4f, gt.filter_alpha));\n', alpha_fw_feasible_min, alpha_fw_feasible_max);
+fprintf('gt.filter_beta  = %.2f + %.2f * randn();\n', rec_beta_fw_mean, rec_beta_fw_std);
+fprintf('gt.filter_beta  = max(%.2f, min(%.2f, gt.filter_beta));\n', beta_fw_feasible_min, beta_fw_feasible_max);
 
 fprintf('\n--- fit_calibration.m bounds ---\n');
-fprintf('lb_fw = [%.1f, %.3f, %.1f];  ub_fw = [%.1f, %.3f, %.1f];\n', ...
-    signal_feasible_min * 0.5, max(0.001, nmul_feasible_min * 0.5), nadd_feasible_min * 0.5, ...
-    signal_feasible_max * 1.5, nmul_feasible_max * 1.5, nadd_feasible_max * 1.5);
+fprintf('lb_fw = [%.4f, %.2f];  ub_fw = [%.4f, %.2f];\n', ...
+    alpha_fw_feasible_min * 0.5, max(0.5, beta_fw_feasible_min * 0.5), ...
+    alpha_fw_feasible_max * 1.5, beta_fw_feasible_max * 1.5);
 
 %% ============================================================
 %  4. VISUALIZATIONS
@@ -188,7 +160,7 @@ fprintf('lb_fw = [%.1f, %.3f, %.1f];  ub_fw = [%.1f, %.3f, %.1f];\n', ...
 
 fig = figure('Color', 'w', 'Position', [50, 50, 1400, 600], 'Name', 'Plausible Parameter Search');
 
-% --- Weibull feasibility map ---
+% --- Contrast Weibull feasibility map ---
 subplot(1,2,1);
 imagesc(alpha_range, beta_range, double(weibull_feasible));
 set(gca, 'YDir', 'normal');
@@ -204,34 +176,41 @@ rectangle('Position', [alpha_feasible_min, beta_feasible_min, ...
 
 xlabel('\alpha (Contrast Threshold)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
 ylabel('\beta (Slope)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-title('Weibull: Feasible Region', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+title('Contrast Weibull: Feasible Region', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
 legend({'c_{85} = 0.9 boundary', 'Recommended'}, 'Location', 'northeast', 'FontSize', ps.axes_tick_font_size);
 set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], ...
     'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
 box off; axis square;
 
-% --- PTM feasibility map (Signal x N_add slice at median N_mul) ---
+% --- Filter Width Weibull (precision) feasibility map ---
 subplot(1,2,2);
-imagesc(signal_range, nadd_range, double(ptm_slice'));
+imagesc(alpha_fw_range, beta_fw_range, double(fw_feasible));
 set(gca, 'YDir', 'normal');
 colormap(gca, [1 1 1; ps.colors.blue]);
 hold on;
 
-rectangle('Position', [signal_feasible_min, nadd_feasible_min, ...
-    signal_feasible_max - signal_feasible_min, nadd_feasible_max - nadd_feasible_min], ...
+% Boundary where the hardest target (85%) reaches fw_max (precision_min)
+% precision_target = alpha * neg_log_1mK(3)^(1/beta)
+% Boundary: alpha = prec_min / neg_log_1mK(3)^(1/beta)
+alpha_fw_boundary = prec_min ./ neg_log_1mK(3).^(1./beta_fw_range);
+plot(alpha_fw_boundary, beta_fw_range, '-', 'Color', ps.colors.red, 'LineWidth', 2);
+
+rectangle('Position', [alpha_fw_feasible_min, beta_fw_feasible_min, ...
+    alpha_fw_feasible_max - alpha_fw_feasible_min, beta_fw_feasible_max - beta_fw_feasible_min], ...
     'EdgeColor', ps.colors.green, 'LineWidth', 2, 'LineStyle', '--');
 
-xlabel('Signal', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-ylabel('N_{add}', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-title(sprintf('PTM: Feasible (\\gamma=%.0f, N_{mul}=%.2f slice)', ptm_gamma, nmul_range(mid_nmul_idx)), ...
-    'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
-legend({'Recommended'}, 'Location', 'northeast', 'FontSize', ps.axes_tick_font_size);
+xlabel('\alpha_{fw} (Precision Threshold)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+ylabel('\beta_{fw} (Slope)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+title('Filter Width Weibull (1/fw): Feasible', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
+legend({'fw_{85} = 80 boundary', 'Recommended'}, 'Location', 'northeast', 'FontSize', ps.axes_tick_font_size);
 set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], ...
     'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
 box off; axis square;
 
 %% Save figure
-fig_dir = 'experiment/figures';
+fig_dir = fullfile(fileparts(mfilename('fullpath')), 'experiment', 'figures');
 if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
-exportgraphics(fig, fullfile(fig_dir, 'plausible_parameter_search.pdf'), 'ContentType', 'vector');
+set(gcf, 'PaperPositionMode', 'auto');
+set(gcf, 'PaperOrientation', 'landscape');
+print(fig, fullfile(fig_dir, 'plausible_parameter_search.pdf'), '-dpdf', '-bestfit');
 disp(['Figure saved to ' fullfile(fig_dir, 'plausible_parameter_search.pdf')]);

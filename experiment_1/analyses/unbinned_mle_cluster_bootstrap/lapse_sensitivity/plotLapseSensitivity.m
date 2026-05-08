@@ -30,7 +30,10 @@ function plotLapseSensitivity(results, fig_dir, contrast_labels, precision_label
     green = [0.30 0.65 0.30];
 
     %% ---- Figure 1: each param vs lambda, one trace per cell ----
-    fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 900 700]);
+    fig = figure('Color', 'w', 'Visible', 'off', ...
+        'Units', 'inches', 'Position', [1 1 9 7], ...
+        'PaperUnits', 'inches', 'PaperSize', [9 7], ...
+        'PaperPositionMode', 'manual', 'PaperPosition', [0 0 9 7]);
     tl = tiledlayout(2, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
 
     panels = {A_grid, 'Amplitude A (deg)';
@@ -79,7 +82,10 @@ function plotLapseSensitivity(results, fig_dir, contrast_labels, precision_label
             mname = 'precision'; mtitle = 'Precision'; labels = precision_labels; mcolor = green;
         end
 
-        fig = figure('Color', 'w', 'Visible', 'off', 'Position', [100 100 1100 900]);
+        fig = figure('Color', 'w', 'Visible', 'off', ...
+            'Units', 'inches', 'Position', [1 1 11 9], ...
+            'PaperUnits', 'inches', 'PaperSize', [11 9], ...
+            'PaperPositionMode', 'manual', 'PaperPosition', [0 0 11 9]);
         tl = tiledlayout(3, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
 
         for prev = 1:3

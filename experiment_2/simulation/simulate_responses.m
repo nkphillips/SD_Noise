@@ -3,7 +3,7 @@ function [responses, correct] = simulate_responses(p, gt)
 %   p:  experiment parameters (contains trial_events, num_blocks, etc.)
 %   gt: ground truth parameters for the simulated subject
 %       gt.contrast_alpha, gt.contrast_beta (Weibull)
-%       gt.filter_signal, gt.filter_nmul, gt.filter_nadd, gt.filter_gamma (PTM)
+%       gt.filter_alpha, gt.filter_beta (Weibull on precision = 1/fw)
 %       gt.lambda (lapse rate)
 %       gt.dog_amp, gt.dog_w (Serial dependence parameters, e.g. matrices [num_features x num_levels])
 
@@ -34,12 +34,10 @@ function [responses, correct] = simulate_responses(p, gt)
         if curr_feature == 1 % Contrast
             c_vals = p.contrast(levels)';
             p_correct_base = 0.5 + (0.5 - gt.lambda) * (1 - exp(-(c_vals ./ gt.contrast_alpha).^gt.contrast_beta));
-        else % Filter Width (PTM)
+        else % Filter Width (Weibull on precision = 1/fw)
             fw_vals = p.orientation_bp_filter_width(levels)';
-            g = gt.filter_gamma;
-            d_prime = gt.filter_signal.^g ./ sqrt((1 + gt.filter_nmul.^2) .* fw_vals.^(2*g) ...
-                + gt.filter_nmul.^2 .* gt.filter_signal.^(2*g) + gt.filter_nadd.^2);
-            p_correct_base = (1 - gt.lambda) * normcdf(d_prime / sqrt(2)) + gt.lambda * 0.5;
+            precision_vals = 1 ./ fw_vals;
+            p_correct_base = 0.5 + (0.5 - gt.lambda) * (1 - exp(-(precision_vals ./ gt.filter_alpha).^gt.filter_beta));
         end
         
         %% 2. Calibration: direct binomial sampling from p_correct_base

@@ -15,9 +15,13 @@ rng(t.my_rng_seed);
 save_data = 1;
 
 %% Set directories
-script_dir = pwd;
+script_dir = fileparts(mfilename('fullpath'));
 functions_dir = '../experiment/functions'; addpath(functions_dir);
-data_dir = '../data'; addpath(data_dir);
+data_dir = fullfile(script_dir, 'data');
+if ~exist(data_dir, 'dir')
+    mkdir(data_dir);
+end
+addpath(data_dir);
 
 %% Set subjects
 num_subjs = 20;
@@ -55,8 +59,9 @@ for subj = 1:num_subjs
 
     p.subj_ID = subj_IDs{subj};
 
-    if ~exist([data_dir '/' p.subj_ID],'dir')
-        mkdir([data_dir '/' p.subj_ID])
+    subj_dir = fullfile(data_dir, p.subj_ID);
+    if ~exist(subj_dir, 'dir')
+        mkdir(subj_dir);
     end
 
     % True parameters for this subject
@@ -64,12 +69,10 @@ for subj = 1:num_subjs
     true_alpha_c = 0.1 + (0.4 - 0.1) * rand();
     true_beta_c = 1.5 + (3.0 - 1.5) * rand();
 
-    % Filter width (PTM; Lu & Dosher, 2008)
-    % d' = Signal^g / sqrt((1+Nm^2)*fw^(2g) + Nm^2*Signal^(2g) + Na^2)
-    true_signal_fw = 20 + (50 - 20) * rand();
-    true_nmul_fw   = 0.10 + (0.45 - 0.10) * rand();
-    true_nadd_fw   = 50 + (300 - 50) * rand();
-    true_gamma_fw  = 2.0; % Fixed transducer exponent
+    % Filter width (Weibull on precision = 1/fw)
+    % precision = 1/fw ranges from ~0.0125 (fw=80) to ~0.1 (fw=10)
+    true_alpha_fw = 0.02 + (0.07 - 0.02) * rand(); % threshold in precision units
+    true_beta_fw  = 1.5 + (3.0 - 1.5) * rand();    % slope
 
     % Fixed parameters
     true_guess_rate = 0.5;
@@ -77,10 +80,8 @@ for subj = 1:num_subjs
 
     p.true_params.alpha_c = true_alpha_c;
     p.true_params.beta_c = true_beta_c;
-    p.true_params.signal_fw = true_signal_fw;
-    p.true_params.nmul_fw = true_nmul_fw;
-    p.true_params.nadd_fw = true_nadd_fw;
-    p.true_params.gamma_fw = true_gamma_fw;
+    p.true_params.alpha_fw = true_alpha_fw;
+    p.true_params.beta_fw = true_beta_fw;
     p.true_params.guess_rate = true_guess_rate;
     p.true_params.lambda = true_lambda;
 
@@ -128,7 +129,7 @@ for subj = 1:num_subjs
     run_info.p = p;
 
     if save_data
-        save([data_dir '/' p.subj_ID '/' save_filename], 'run_info', '-mat', '-v7.3');
+        save(fullfile(subj_dir, save_filename), 'run_info', '-mat', '-v7.3');
         disp(['Saved ' save_filename]);
     end
 

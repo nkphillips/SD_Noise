@@ -3,10 +3,8 @@ function [responses, correct] = simulate_calibration_responses(p)
 
     alpha_c = p.true_params.alpha_c;
     beta_c = p.true_params.beta_c;
-    signal_fw = p.true_params.signal_fw;
-    nmul_fw = p.true_params.nmul_fw;
-    nadd_fw = p.true_params.nadd_fw;
-    ptm_g = p.true_params.gamma_fw;
+    alpha_fw = p.true_params.alpha_fw;
+    beta_fw = p.true_params.beta_fw;
     guess_rate = p.true_params.guess_rate;
     lambda = p.true_params.lambda;
 
@@ -37,10 +35,9 @@ function [responses, correct] = simulate_calibration_responses(p)
             P_correct = guess_rate + (1 - guess_rate - lambda) * (1 - exp(-(actual_levels./alpha_c).^beta_c));
         elseif curr_feature == 2 % Filter Width feature
             actual_levels = p.orientation_bp_filter_width(levels)';
-            % PTM (Perceptual Template Model)
-            d_prime = signal_fw.^ptm_g ./ sqrt((1 + nmul_fw.^2) .* actual_levels.^(2*ptm_g) ...
-                + nmul_fw.^2 .* signal_fw.^(2*ptm_g) + nadd_fw.^2);
-            P_correct = (1 - lambda) * normcdf(d_prime / sqrt(2)) + lambda * 0.5;
+            % Weibull on precision = 1/filter_width
+            precision_vals = 1 ./ actual_levels;
+            P_correct = guess_rate + (1 - guess_rate - lambda) * (1 - exp(-(precision_vals ./ alpha_fw).^beta_fw));
         end
         
         % Now determine the probability of responding CW (1) based on what the correct answer is

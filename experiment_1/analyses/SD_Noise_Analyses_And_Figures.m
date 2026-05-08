@@ -266,7 +266,7 @@ for i_n_back = 1:length(n_back_conditions)
     w_lb = 1.6651 / fwhm_max_deg;
     w_ub = 1.6651 / fwhm_min_deg;
 
-    p.sd_bounds = [sd_mu_ub, w_ub, 5, p.rb_bounds(1,2); sd_mu_lb, w_lb, -5, p.rb_bounds(2,2)]; % [upper; lower]; default = [p.rb_bounds(1,1), w_ub, 5, p.rb_bounds(1,2); 4, w_lb, -5, p.rb_bounds(2,2)]
+    p.sd_bounds = [sd_mu_ub, w_ub, 10, p.rb_bounds(1,2); sd_mu_lb, w_lb, -10, p.rb_bounds(2,2)]; % [upper; lower]; baseline b widened to +-10 deg to align with unbinned pipeline
     p.sd_objective = toggles.sd_objective; % 'nll' or 'sse' for serial dependence estimation
     p.sd_min_windows = max(3, floor(num.delta_theta_windows / 4)); % minimum finite mu(delta-theta) points required for subject-level DoG fits
     p.sd_lobe_edges  = [-90 -15 15 90]; % require >=1 finite mu in each of: left lobe, center, right lobe (used by bootstrap admission)

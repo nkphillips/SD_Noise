@@ -20,11 +20,11 @@ hypothesis = 'contrast_only';
 inject_calib_correlation = true; % If true, makes baseline DoG amplitude dependent on psychometric fits
 
 % Setup Directories
-base_dir = pwd;
+base_dir = fileparts(mfilename('fullpath'));
 dirs.project_dir = '../../';
 addpath(genpath('../experiment')); % Add experiment functions
 
-dirs.data_dir = fullfile(dirs.project_dir, 'data');
+dirs.data_dir = fullfile(base_dir, 'data');
 if ~exist(dirs.data_dir, 'dir'), mkdir(dirs.data_dir); end
 
 %% 2. Ground Truth Generation
@@ -40,30 +40,29 @@ for i = 1:num_subjs
     % filter width < 80 deg, all > 0).
 
     % Weibull parameters for Contrast
-    gt.contrast_alpha = 0.20 + 0.08 * randn();
-    gt.contrast_alpha = max(0.10, min(0.45, gt.contrast_alpha));
-    gt.contrast_beta = 2.0 + 0.5 * randn();
-    gt.contrast_beta = max(1.0, min(4.0, gt.contrast_beta));
+    gt.contrast_alpha = 0.4288 + 0.1017 * randn();
+    gt.contrast_alpha = max(0.1236, min(0.7339, gt.contrast_alpha));
+    gt.contrast_beta  = 2.7876 + 0.7375 * randn();
+    gt.contrast_beta  = max(0.5753, min(5.0000, gt.contrast_beta));
 
-    % PTM parameters for Filter Width (Lu & Dosher, 2008)
-    % d' = Signal^g / sqrt((1+Nm^2)*fw^(2g) + Nm^2*Signal^(2g) + Na^2)
-    % gamma fixed at 2.0; fit Signal, N_mul, N_add
-    gt.filter_gamma = 2.0;
-    gt.filter_signal = 35 + 8 * randn();
-    gt.filter_signal = max(15, min(60, gt.filter_signal));
-    gt.filter_nmul = 0.25 + 0.08 * randn();
-    gt.filter_nmul = max(0.05, min(0.50, gt.filter_nmul));
-    gt.filter_nadd = 150 + 50 * randn();
-    gt.filter_nadd = max(30, min(400, gt.filter_nadd));
+    % Weibull parameters for Filter Width (on precision = 1/fw axis)
+    % Same Weibull function as contrast, but the independent variable is
+    % precision = 1/filter_width so that performance rises with x.
+    % alpha_fw is the threshold in precision units (1/deg).
+    % Filter widths range 10-80 deg -> precision range 0.0125-0.10.
+    gt.filter_alpha = 0.0513 + 0.0119 * randn();
+    gt.filter_alpha = max(0.0157, min(0.0870, gt.filter_alpha));
+    gt.filter_beta  = 2.8027 + 0.7324 * randn();
+    gt.filter_beta  = max(0.6054, min(5.0000, gt.filter_beta));
 
     gt.lambda = 0.01; % Lapse rate
 
     % --- Serial Dependence Parameters ---
     if inject_calib_correlation
         % Baseline SD amplitude correlated with psychometric parameters.
-        % N_mul scales inversely with perceptual precision; higher N_mul
-        % → noisier representation → more reliance on priors → more SD.
-        base_amp = 3 + 8.0 * gt.filter_nmul + 5.0 * gt.contrast_alpha + 0.5 * randn();
+        % Higher alpha_fw (precision threshold) means the observer needs
+        % narrower filters to perform well → more noise-sensitive → more SD.
+        base_amp = 3 + 50.0 * gt.filter_alpha + 5.0 * gt.contrast_alpha + 0.5 * randn();
     else
         base_amp = 7.0 + 1.5 * randn();
     end
@@ -176,9 +175,17 @@ for i = 1:num_subjs
         signs(signs == 0) = 1;
         probe_offsets = probe_offsets .* signs;
 
-        probe_orientations = test_orientations + probe_offsets';
+        probe_orientations = mod(test_orientations + probe_offsets', 180);
         p.trial_events(:,:,n_block) = [test_orientations, probe_orientations, level_order];
     end
+
+    % Save ground truth into p so validate_calibration.m can access it
+    p.true_params.alpha_c  = gt.contrast_alpha;
+    p.true_params.beta_c   = gt.contrast_beta;
+    p.true_params.alpha_fw = gt.filter_alpha;
+    p.true_params.beta_fw  = gt.filter_beta;
+    p.true_params.guess_rate = 0.5;
+    p.true_params.lambda   = gt.lambda;
 
     % Simulate Responses
     [responses, correct] = simulate_responses(p, gt);
@@ -200,11 +207,7 @@ end
 
 disp('--- Running fit_calibration.m ---');
 
-% Use system or run directly
 cd('../calibration');
-% We need to modify fit_calibration dynamically to only process these subjects,
-% or just pass subj_IDs. Since fit_calibration.m has hardcoded subj_IDs = {'999'};
-% we will read it, change it temporarily, run it, and change it back.
 
 calib_script = fileread('fit_calibration.m');
 orig_subjs_line = regexp(calib_script, 'subj_IDs = \{[^}]+\};', 'match', 'once');
@@ -213,13 +216,13 @@ new_subjs_str = ['subj_IDs = {''' strjoin({gt_all.subj_id}, ''', ''') '''};'];
 % Apply modifications to the calibration script
 calib_script_mod = strrep(calib_script, 'clear all; close all; clc;', '% clear all; close all; clc;');
 calib_script_mod = strrep(calib_script_mod, orig_subjs_line, new_subjs_str);
+calib_script_mod = strrep(calib_script_mod, 'data_base_dir = ''../data'';', 'data_base_dir = fullfile(base_dir, ''data'');');
 
 % Fix the save directory for figures to place them directly in the subject's simulation output folder
-calib_script_mod = strrep(calib_script_mod, 'fig_dir = [script_dir ''/figures''];', 'fig_dir = [base_dir ''/experiment/figures/subject/'' subj_ID];');
+calib_script_mod = strrep(calib_script_mod, 'fig_dir = fullfile(script_dir, ''figures'');', 'fig_dir = fullfile(base_dir, ''experiment'', ''figures'', ''subject'', ''calibration'');');
 
 % Ensure we close the figure at the end of the loop so we don't spawn 20+ windows
 calib_script_mod = strrep(calib_script_mod, 'print(gcf, fig_filename, ''-dpdf'', ''-bestfit'');', 'print(gcf, fig_filename, ''-dpdf'', ''-bestfit''); close(gcf);');
-calib_script_mod = strrep(calib_script_mod, 'exportgraphics(gcf, fig_filename, ''ContentType'', ''vector'');', 'exportgraphics(gcf, fig_filename, ''ContentType'', ''vector''); close(gcf);');
 
 fid = fopen('fit_calibration_sim.m', 'w');
 fwrite(fid, calib_script_mod);
@@ -272,7 +275,7 @@ for i = 1:num_subjs
 
         % Initialize stimuli parameters (this will load S9XX_calibrated_levels.mat)
         % Note: init_stimuli_params requires dirs.data_dir
-        dirs.data_dir = fullfile(dirs.project_dir, 'data');
+        dirs.data_dir = fullfile(base_dir, 'data');
 
         try
             init_stimuli_params;
@@ -303,7 +306,7 @@ for i = 1:num_subjs
             signs(signs == 0) = 1;
             probe_offsets = probe_offsets .* signs;
 
-            probe_orientations = test_orientations + probe_offsets';
+            probe_orientations = mod(test_orientations + probe_offsets', 180);
             p.trial_events(:,:,n_block) = [test_orientations, probe_orientations, level_order];
         end
 

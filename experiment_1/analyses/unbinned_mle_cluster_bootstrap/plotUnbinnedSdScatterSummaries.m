@@ -54,7 +54,10 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
         && isequal(size(ci_hi), size(param_data)) && any(isfinite(ci_lo(:)) | isfinite(ci_hi(:)));
 
     num_conds = size(param_data, 3);
-    fig = figure('Color', plot_opts.figure_color, 'Visible', 'off');
+    fig = figure('Color', plot_opts.figure_color, 'Visible', 'off', ...
+        'Units', 'inches', 'Position', [1 1 11 5], ...
+        'PaperUnits', 'inches', 'PaperSize', [11 5], ...
+        'PaperPositionMode', 'manual', 'PaperPosition', [0 0 11 5]);
 
     for cond = 1:num_conds
 

@@ -12,7 +12,7 @@ ps = plotSettings();
 
 %% 1. Set subject IDs and directories
 % You can add multiple subject IDs to this cell array
-subj_IDs = {'777', '000'};
+subj_IDs = {'000'};
 
 data_base_dir = '../data';
 
@@ -262,7 +262,7 @@ for s = 1:length(subj_IDs)
     % Determine axis limits dynamically to include both data and extrapolated targets
     min_x_c = min([unique_c; calib_contrast(:)]);
     max_x_c = max([unique_c; calib_contrast(:)]);
-    
+
     x_fit_c = logspace(log10(min_x_c*0.7), log10(max_x_c*1.3), 100);
     plot(x_fit_c, weibull_prob(x_fit_c, alpha_c, beta_c), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     xl_c = xlim;
@@ -305,22 +305,22 @@ for s = 1:length(subj_IDs)
     % Dynamically generate xticks for precision based on the plotted range
     possible_fws = [180, 140, 100, 80, 60, 40, 20, 10, 5, 2];
     valid_fws = possible_fws(1./possible_fws >= min_x_prec*0.7 & 1./possible_fws <= max_x_prec*1.3);
-    
+
     % If for some reason none fell perfectly in range, grab the min and max bounds
     if isempty(valid_fws)
         valid_fws = [round(1/min_x_prec), round(1/max_x_prec)];
     end
-    
+
     prec_ticks = sort(1 ./ valid_fws, 'ascend');
-    
+
     % Sort valid_fws descending to match the ascending precision ticks
     valid_fws = sort(valid_fws, 'descend');
-    
+
     tick_labels = cell(1, length(valid_fws));
     for i = 1:length(valid_fws)
         tick_labels{i} = ['1/' num2str(valid_fws(i))];
     end
-    
+
     xticks(prec_ticks);
     xticklabels(tick_labels);
 

@@ -20,6 +20,22 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
 %                                 results.contrast_table is added on success.
 %   'contrast_params' ({'A'}) -- subset of {'A','w','sigma','beta'} to test contrasts on.
 %   'contrast_specs' ([]) -- override specs; if empty, uses buildStandardContrasts.
+%   'subject_influence' (true) -- per-subject leverage diagnostic from the jackknife.
+%   'amplitude_sigma_correlation' (true) -- per-subject DoG fits + S&S Fig 1H scatter.
+%   'demean_x_probe' (false) -- if true, subtract a per-subject Gaussian-psychometric
+%                                baseline mu_i from x_probe before all SD fits.
+%                                Computed once on the full data and reused across
+%                                bootstrap and jackknife replicates. Saves a
+%                                diagnostic figure and CSV under subject/baseline_bias/.
+%   'skip_at_bound_baseline' (true) -- if true, subjects whose baseline sigma_i
+%                                lands at either bound of the [1, 90] deg search
+%                                range are NOT demeaned (mu_i = 0 used instead).
+%                                Their trials still enter the bootstrap pool.
+%                                Set to false to demean every subject regardless
+%                                of fit quality.
+%   'subject_data_quality' (true) -- per-subject diagnostic figure with trial
+%                                counts per cell, empirical psychometric, and
+%                                summary stats. Saved under subject/data_quality/.
 
     ip = inputParser;
     addParameter(ip, 'B', 2000, @(x) isnumeric(x) && isscalar(x) && x >= 1);
@@ -42,6 +58,12 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
     addParameter(ip, 'compute_contrasts', true, @(x) islogical(x) && isscalar(x));
     addParameter(ip, 'contrast_params', {'A'}, @(x) iscell(x));   % which DoG params to test contrasts on
     addParameter(ip, 'contrast_specs', [], @(x) isempty(x) || isstruct(x));   % override; empty => use buildStandardContrasts
+    addParameter(ip, 'subject_influence', true, @(x) islogical(x) && isscalar(x));
+    addParameter(ip, 'amplitude_sigma_correlation', true, @(x) islogical(x) && isscalar(x));
+    addParameter(ip, 'demean_x_probe', false, @(x) islogical(x) && isscalar(x));   % per-subject baseline demean before fitting
+    addParameter(ip, 'skip_at_bound_baseline', true, @(x) islogical(x) && isscalar(x));  % skip demean for subjects whose sigma_baseline saturates
+    addParameter(ip, 'subject_data_quality', true, @(x) islogical(x) && isscalar(x));   % per-subject trial counts + empirical psychometric figure
+    addParameter(ip, 'subj_labels', {}, @(x) iscell(x));   % human-readable subject IDs for diagnostics
     parse(ip, varargin{:});
 
     B = ip.Results.B;
@@ -72,12 +94,55 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
     else
         fig_dir = fullfile(this_dir, 'figures', fig_subdir);
     end
-    if ~exist(fig_dir, 'dir')
-        mkdir(fig_dir);
+    super_subj_dir = fullfile(fig_dir, 'super_subject');
+    subj_dir = fullfile(fig_dir, 'subject');
+    for d = {fig_dir, super_subj_dir, subj_dir}
+        if ~exist(d{1}, 'dir'); mkdir(d{1}); end
     end
 
     addpath(this_dir);
     addpath(fullfile(this_dir, '..', 'functions'));
+
+    % Capture the pre-demean trial table for the data-quality diagnostic
+    tbl_trials_raw = tbl_trials;
+
+    % -------- Optional per-subject demean of x_probe (D1-D8 confirmed plan) --------
+    %   Compute mu_i once on the full data using fitSubjectBaselineBias (Gaussian
+    %   psychometric, no DoG, ignoring Delta-theta), then subtract mu_i from
+    %   x_probe per trial. The same mu_i is reused across all bootstrap and
+    %   jackknife replicates. beta remains free in the SD model and is expected
+    %   to fit near zero after demean.
+    %
+    %   When skip_at_bound_baseline = true (default), subjects whose baseline
+    %   sigma_i saturates at its upper or lower bound are NOT demeaned (mu_i = 0
+    %   used instead). Their data stays in the bootstrap pool with x_probe raw.
+    baseline_bias_table = table();
+    if ip.Results.demean_x_probe
+        try
+            baseline_fit_opts = struct('guess_rate', guess_rate);
+            [tbl_trials, baseline_bias_table] = demeanTrialTable( ...
+                tbl_trials_raw, baseline_fit_opts, ip.Results.skip_at_bound_baseline);
+
+            bb_dir = fullfile(subj_dir, 'baseline_bias');
+            plotSubjectBaselineBias(baseline_bias_table, bb_dir, ip.Results.subj_labels);
+        catch demeanErr
+            warning('runUnbinnedMLEClusterBootstrap:demeanFailed', ...
+                'Demean step failed: %s. Proceeding with un-demeaned x_probe.', demeanErr.message);
+            baseline_bias_table = table();
+            tbl_trials = tbl_trials_raw;
+        end
+    end
+
+    % -------- Per-subject data quality diagnostic (uses the raw, pre-demean table) --------
+    if ip.Results.subject_data_quality
+        try
+            dq_dir = fullfile(subj_dir, 'data_quality');
+            plotSubjectDataQuality(tbl_trials_raw, dq_dir, ip.Results.subj_labels, baseline_bias_table);
+        catch dqErr
+            warning('runUnbinnedMLEClusterBootstrap:dataQualityFailed', ...
+                'Subject data quality figure failed: %s.', dqErr.message);
+        end
+    end
 
     subj_list = unique(tbl_trials.subject_id, 'stable');
     n_subj = numel(subj_list);
@@ -99,8 +164,8 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
     fwhm_max_deg = 120;
     w_lb_def = (2 * sqrt(log(2))) / fwhm_max_deg;
     w_ub_def = (2 * sqrt(log(2))) / fwhm_min_deg;
-    lb_default = [-30; w_lb_def;   1; -5];   % sigma_lb 1 deg (was 0.1)
-    ub_default = [ 30; w_ub_def;  90;  5];
+    lb_default = [-30; w_lb_def;   1; -10];   % beta_lb widened to -10 (was -5)
+    ub_default = [ 30; w_ub_def;  90;  10];
 
     if isfield(fit_opts, 'lb') && ~isempty(fit_opts.lb)
         lb_used = fit_opts.lb(:);
@@ -359,6 +424,9 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
     results.ci_method        = ci_method;
     results.compute_jackknife = compute_jackknife;
     results.guess_rate       = guess_rate;
+    results.demean_x_probe   = ip.Results.demean_x_probe;
+    results.skip_at_bound_baseline = ip.Results.skip_at_bound_baseline;
+    results.baseline_bias    = baseline_bias_table;
     results.lb               = lb_used(:)';
     results.ub               = ub_used(:)';
     results.bound_tol        = bound_tol;
@@ -384,8 +452,8 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
         end
         try
             results.contrast_table = computeUnbinnedContrasts(results, cspecs);
-            % Save CSV alongside the figures
-            csv_path = fullfile(fig_dir, 'contrasts_bca.csv');
+            % Save CSV alongside the super-subject figures (it's a super-subject output)
+            csv_path = fullfile(super_subj_dir, 'contrasts_bca.csv');
             try
                 writetable(results.contrast_table, csv_path);
             catch %#ok<CTCH>
@@ -404,9 +472,44 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
         results.contrast_table = table();
     end
 
+    % -------- Subject-influence diagnostic (uses leave-one-subject-out jackknife) --------
+    if ip.Results.subject_influence
+        if ~compute_jackknife
+            warning('runUnbinnedMLEClusterBootstrap:noJackknifeForInfluence', ...
+                'subject_influence requested but compute_jackknife = false; skipping.');
+            results.subject_influence = struct();
+        else
+            try
+                influence = computeSubjectInfluence(results);
+                results.subject_influence = influence;
+                inf_dir = fullfile(subj_dir, 'subject_influence');
+                plotSubjectInfluence(influence, inf_dir, ip.Results.subj_labels);
+            catch infErr
+                warning('runUnbinnedMLEClusterBootstrap:subjectInfluenceFailed', ...
+                    'Subject-influence diagnostic failed: %s', infErr.message);
+                results.subject_influence = struct();
+            end
+        end
+    end
+
+    % -------- Per-subject per-manipulation DoG fits + S&S Fig 1H analog --------
+    if ip.Results.amplitude_sigma_correlation
+        try
+            per_subj_fits = fitPerSubjectPerManipulation(tbl_trials, fit_opts, ip.Results.subj_labels);
+            results.per_subject_per_manip_fits = per_subj_fits;
+            corr_dir = fullfile(subj_dir, 'amplitude_sigma_correlation');
+            r_summary = plotAmplitudeSigmaCorrelation(per_subj_fits, corr_dir);
+            results.amplitude_sigma_correlation = r_summary;
+        catch corrErr
+            warning('runUnbinnedMLEClusterBootstrap:amplitudeSigmaFailed', ...
+                'Amplitude vs sigma correlation diagnostic failed: %s', corrErr.message);
+            results.amplitude_sigma_correlation = struct();
+        end
+    end
+
     % -------- Plots --------
     ps = plotSettings();
-    plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, ci_pct, ...
+    plotDoGMLEBootstrapFigures(ps, super_subj_dir, curve_boot, grid, params_boot, ci_pct, ...
         'contrast_labels', ip.Results.contrast_labels, ...
         'precision_labels', ip.Results.precision_labels, ...
         'mu_bounds', ip.Results.mu_bounds, ...
@@ -416,7 +519,7 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
         'curve_hi', active.curve_hi, ...
         'ci_method', ci_method);
 
-    plotUnbinnedSdScatterSummaries(fig_dir, summary_table, ...
+    plotUnbinnedSdScatterSummaries(super_subj_dir, summary_table, ...
         ip.Results.contrast_labels, ip.Results.precision_labels, ps, ci_pct);
 
 end

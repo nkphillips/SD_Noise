@@ -24,12 +24,34 @@ end
 
 textures_path = [dirs.texture_dir '/' textures_filename];
 
-if ~exist(textures_path, 'file')
+% Build a signature of the stimulus parameters that affect texture content.
+% If any of these change, cached textures are stale and must be regenerated.
+stim_sig = struct( ...
+    'training',                   p.training, ...
+    'calibration',                p.calibration, ...
+    'contrast',                   p.contrast, ...
+    'orientation_bp_filter_width',p.orientation_bp_filter_width, ...
+    'sf_bp_filter_cutoffs',       p.sf_bp_filter_cutoffs, ...
+    'num_noise_samples',          p.num_noise_samples, ...
+    'num_levels',                 p.num_levels, ...
+    'height_px',                  p.height_px, ...
+    'width_px',                   p.width_px, ...
+    'aperture_radius_px',         p.aperture_radius_px, ...
+    'display_setup',              p.display_setup);
+
+if exist(textures_path, 'file')
+    cached = load(textures_path, 'stim_sig');
+    if isfield(cached, 'stim_sig') && isequaln(cached.stim_sig, stim_sig)
+        stimuli.generate_textures = 0;
+        stimuli.save_textures = 0;
+    else
+        disp('Cached textures are stale (parameters changed). Regenerating...');
+        stimuli.generate_textures = 1;
+        stimuli.save_textures = 1;
+    end
+else
     stimuli.generate_textures = 1;
     stimuli.save_textures = 1;
-else
-    stimuli.generate_textures = 0;
-    stimuli.save_textures = 0;
 end
 
 %% Aperture
@@ -112,7 +134,7 @@ if stimuli.generate_textures
     %% Save textures
 
     if stimuli.save_textures
-        save(textures_path, 'stimuli', '-v7.3');
+        save(textures_path, 'stimuli', 'stim_sig', '-v7.3');
     end
 
 else

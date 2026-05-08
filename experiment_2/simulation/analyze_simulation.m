@@ -5,10 +5,10 @@
 clear all; close all; clc;
 
 % Directories
-sim_dir = pwd;
+sim_dir = fileparts(mfilename('fullpath'));
 exp_dir = fullfile(sim_dir, 'experiment');
 figs_grp_dir = fullfile(exp_dir, 'figures', 'group');
-data_dir = fullfile(sim_dir, '../../data');
+data_dir = fullfile(sim_dir, 'data');
 
 if ~exist(figs_grp_dir, 'dir'), mkdir(figs_grp_dir); end
 
@@ -34,7 +34,7 @@ for i = 1:num_subjs
     subj_id = gt_all(i).subj_id;
     disp(['Analyzing S' subj_id '...']);
 
-    figs_subj_dir = fullfile(exp_dir, 'figures', 'subject', subj_id);
+    figs_subj_dir = fullfile(exp_dir, 'figures', 'subject', 'sd');
     if ~exist(figs_subj_dir, 'dir'), mkdir(figs_subj_dir); end
 
     % Aggregate data for the subject (Sessions 2-5 are saved as SD_Noise_Exp2_S9XX_RunX.mat)
@@ -174,7 +174,9 @@ for i = 1:num_subjs
         end
     end
 
-    exportgraphics(fig, fullfile(figs_subj_dir, sprintf('S%s_SD_recovery.pdf', subj_id)), 'ContentType', 'vector');
+    set(gcf, 'PaperPositionMode', 'auto');
+    set(gcf, 'PaperOrientation', 'landscape');
+    print(fig, fullfile(figs_subj_dir, sprintf('S%s_SD_recovery.pdf', subj_id)), '-dpdf', '-bestfit');
     close(fig);
 
     recovered_all(i).subj_id = subj_id;
@@ -267,11 +269,13 @@ xticks([1 2 3]);
 set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
 box off; axis square;
 
-exportgraphics(fig_grp, fullfile(figs_grp_dir, 'Group_Amplitude_Recovery.pdf'), 'ContentType', 'vector');
+set(gcf, 'PaperPositionMode', 'auto');
+set(gcf, 'PaperOrientation', 'landscape');
+print(fig_grp, fullfile(figs_grp_dir, 'Group_Amplitude_Recovery.pdf'), '-dpdf', '-bestfit');
 close(fig_grp);
 
 %% Calibration vs. SD Correlation Analysis
-calib_params = nan(n_valid, 5); % [alpha, beta, signal, nmul, nadd]
+calib_params = nan(n_valid, 4); % [contrast_alpha, contrast_beta, filter_alpha, filter_beta]
 mean_rec_amp_subj = nan(n_valid, 1);
 
 for idx = 1:n_valid
@@ -282,21 +286,20 @@ for idx = 1:n_valid
         tmp = load(calib_file, 'calib');
         calib_params(idx, 1) = tmp.calib.fit_params.contrast_alpha;
         calib_params(idx, 2) = tmp.calib.fit_params.contrast_beta;
-        calib_params(idx, 3) = tmp.calib.fit_params.filter_signal;
-        calib_params(idx, 4) = tmp.calib.fit_params.filter_nmul;
-        calib_params(idx, 5) = tmp.calib.fit_params.filter_nadd;
+        calib_params(idx, 3) = tmp.calib.fit_params.filter_alpha;
+        calib_params(idx, 4) = tmp.calib.fit_params.filter_beta;
     end
     mean_rec_amp_subj(idx) = mean(rec_amps_matrix(idx, :), 'all', 'omitnan');
 end
 
-% Plot correlation figure (now 5 panels for PTM)
+% Plot correlation figure (4 panels: 2 contrast + 2 filter Weibull params)
 fig_corr = figure('Visible', 'off', 'Position', [300, 300, 1200, 500], 'Name', 'Calibration vs SD', 'Color', 'w');
-tiledlayout(fig_corr, 1, 5, 'Padding', 'compact');
-labels = {'Contrast \alpha', 'Contrast \beta', 'PTM Signal', 'PTM N_{mul}', 'PTM N_{add}'};
-corr_r = zeros(1,5);
-corr_p = zeros(1,5);
+tiledlayout(fig_corr, 1, 4, 'Padding', 'compact');
+labels = {'Contrast \alpha', 'Contrast \beta', 'Filter \alpha_{fw}', 'Filter \beta_{fw}'};
+corr_r = zeros(1,4);
+corr_p = zeros(1,4);
 
-for p_idx = 1:5
+for p_idx = 1:4
     nexttile;
     x_data = calib_params(:, p_idx);
     y_data = mean_rec_amp_subj;
@@ -326,7 +329,9 @@ for p_idx = 1:5
     set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
 end
-exportgraphics(fig_corr, fullfile(figs_grp_dir, 'Group_Calibration_SD_Correlation.pdf'), 'ContentType', 'vector');
+set(gcf, 'PaperPositionMode', 'auto');
+set(gcf, 'PaperOrientation', 'landscape');
+print(fig_corr, fullfile(figs_grp_dir, 'Group_Calibration_SD_Correlation.pdf'), '-dpdf', '-bestfit');
 close(fig_corr);
 
 %% Write Outputs
@@ -354,11 +359,10 @@ fprintf(fid, '\nMean Ground Truth Widths (Precision): %.3f, %.3f, %.3f\n', mean_
 fprintf(fid, 'Mean Recovered Widths (Precision): %.3f, %.3f, %.3f\n', mean_rec_w(2,1), mean_rec_w(2,2), mean_rec_w(2,3));
 
 fprintf(fid, '\n--- Calibration vs SD Correlations ---\n');
-fprintf(fid, 'Contrast Alpha vs Mean SD: r = %.3f, p = %.3f\n', corr_r(1), corr_p(1));
-fprintf(fid, 'Contrast Beta vs Mean SD:  r = %.3f, p = %.3f\n', corr_r(2), corr_p(2));
-fprintf(fid, 'PTM Signal vs Mean SD: r = %.3f, p = %.3f\n', corr_r(3), corr_p(3));
-fprintf(fid, 'PTM N_mul vs Mean SD: r = %.3f, p = %.3f\n', corr_r(4), corr_p(4));
-fprintf(fid, 'PTM N_add vs Mean SD: r = %.3f, p = %.3f\n', corr_r(5), corr_p(5));
+fprintf(fid, 'Contrast Alpha vs Mean SD:    r = %.3f, p = %.3f\n', corr_r(1), corr_p(1));
+fprintf(fid, 'Contrast Beta vs Mean SD:     r = %.3f, p = %.3f\n', corr_r(2), corr_p(2));
+fprintf(fid, 'Filter Alpha_fw vs Mean SD:   r = %.3f, p = %.3f\n', corr_r(3), corr_p(3));
+fprintf(fid, 'Filter Beta_fw vs Mean SD:    r = %.3f, p = %.3f\n', corr_r(4), corr_p(4));
 fclose(fid);
 
 % 2. Markdown report
@@ -392,9 +396,8 @@ fprintf(fid, '## Calibration vs Serial Dependence\n');
 fprintf(fid, 'Correlations between individual differences in psychometric parameters and baseline Serial Dependence (Mean Amplitude):\n\n');
 fprintf(fid, '- **Contrast Threshold ($\\alpha$)**: $r = %.3f$, $p = %.3f$\n', corr_r(1), corr_p(1));
 fprintf(fid, '- **Contrast Slope ($\\beta$)**: $r = %.3f$, $p = %.3f$\n', corr_r(2), corr_p(2));
-fprintf(fid, '- **PTM Signal**: $r = %.3f$, $p = %.3f$\n', corr_r(3), corr_p(3));
-fprintf(fid, '- **PTM $N_{mul}$**: $r = %.3f$, $p = %.3f$\n', corr_r(4), corr_p(4));
-fprintf(fid, '- **PTM $N_{add}$**: $r = %.3f$, $p = %.3f$\n\n', corr_r(5), corr_p(5));
+fprintf(fid, '- **Filter Threshold ($\\alpha_{fw}$)**: $r = %.3f$, $p = %.3f$\n', corr_r(3), corr_p(3));
+fprintf(fid, '- **Filter Slope ($\\beta_{fw}$)**: $r = %.3f$, $p = %.3f$\n\n', corr_r(4), corr_p(4));
 
 fprintf(fid, '## Verification of Statistical Tests\n');
 fprintf(fid, 'If the `%s` hypothesis was injected, you should see:\n', hypothesis);

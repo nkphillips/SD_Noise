@@ -109,7 +109,10 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
             y_lims = [min(rb_lo, y_min - y_pad), max(rb_hi, y_max + y_pad)];
         end
 
-        fig = figure('Color', ps.figure_color, 'Visible', 'off');
+        fig = figure('Color', ps.figure_color, 'Visible', 'off', ...
+            'Units', 'inches', 'Position', [1 1 11 11], ...
+            'PaperUnits', 'inches', 'PaperSize', [11 11], ...
+            'PaperPositionMode', 'manual', 'PaperPosition', [0 0 11 11]);
         tl = tiledlayout(num_levels, num_levels, 'Padding', 'compact', 'TileSpacing', 'compact');
 
         for prev = 1:num_levels
