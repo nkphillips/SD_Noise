@@ -1,4 +1,4 @@
-function plotUnbinnedSdScatterSummaries(fig_dir, summary_table, contrast_lbl, precision_lbl, ps, ci_pct)
+function plotUnbinnedSdScatterSummaries(fig_dir, summary_table, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
 % plotUnbinnedSdScatterSummaries  Super-Subj-style SD amplitude & FWHM scatter (3 lines × 3 currents).
 % Mirrors plotSerialDependence scatter layout (experiment_1/analyses/plotting/plotSerialDependence.m).
 %
@@ -9,22 +9,25 @@ function plotUnbinnedSdScatterSummaries(fig_dir, summary_table, contrast_lbl, pr
     if nargin < 6 || isempty(ci_pct)
         ci_pct = [2.5, 97.5];
     end
+    if nargin < 7 || isempty(ci_method)
+        ci_method = 'bootstrap';
+    end
 
     pack = packUnbinnedScatterParams(summary_table);
     plot_opts = local_buildPlotOpts(ps);
 
     % Equal-tailed interval: e.g. [2.5 97.5] -> 95% nominal coverage
     ci_nominal_pct = ci_pct(2) - ci_pct(1);
-    ci_lbl = sprintf('%.0f%% bootstrap CI', ci_nominal_pct);
+    ci_lbl = sprintf('%.0f%% %s CI', ci_nominal_pct, local_ciLabel(ci_method));
 
     local_renderOne(fig_dir, pack.amp, pack.amp_lo, pack.amp_hi, ...
         'Amplitude', 'unbinned_mle_super_sd_amplitude_scatter.pdf', ...
-        'Unbinned MLE (bootstrap): SD amplitude', ...
-        contrast_lbl, precision_lbl, plot_opts, ci_lbl, 'nonneg');
+        sprintf('Unbinned MLE: SD amplitude (%s)', ci_lbl), ...
+        contrast_lbl, precision_lbl, plot_opts, ci_lbl, 'general');
 
     local_renderOne(fig_dir, pack.fwhm, pack.fwhm_lo, pack.fwhm_hi, ...
-        'Width (FWHM, °)', 'unbinned_mle_super_sd_width_fwhm_scatter.pdf', ...
-        'Unbinned MLE (bootstrap): SD width (FWHM)', ...
+        'Width FWHM (deg)', 'unbinned_mle_super_sd_width_fwhm_scatter.pdf', ...
+        sprintf('Unbinned MLE: SD width (FWHM; %s)', ci_lbl), ...
         contrast_lbl, precision_lbl, plot_opts, ci_lbl, 'general');
 
 end
@@ -52,6 +55,7 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
 
     has_ci = ~isempty(ci_lo) && ~isempty(ci_hi) && isequal(size(ci_lo), size(param_data)) ...
         && isequal(size(ci_hi), size(param_data)) && any(isfinite(ci_lo(:)) | isfinite(ci_hi(:)));
+    y_lims = local_commonYLimits(param_data, ci_lo, ci_hi, has_ci, ylim_mode);
 
     num_conds = size(param_data, 3);
     fig = figure('Color', plot_opts.figure_color, 'Visible', 'off', ...
@@ -74,6 +78,7 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
         marker_colors = repmat(base_color, size(param_data, 1), 1) .* [1 0.70 0.25]';
 
         x = 1:3;
+        x_dodge = linspace(-0.08, 0.08, size(param_data, 1));
         y = fliplr(cond_data)';
 
         if has_ci
@@ -87,13 +92,14 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
         hold(ax, 'on');
 
         for i = 1:size(y, 2)
-            plot(ax, x, y(:, i), '-', 'Color', marker_colors(i, :), 'LineWidth', plot_opts.line_width, 'HandleVisibility', 'off');
-            scatter(ax, x, y(:, i), plot_opts.marker_size_scatter, 'MarkerFaceColor', marker_colors(i, :), ...
+            xi = x + x_dodge(i);
+            plot(ax, xi, y(:, i), '-', 'Color', marker_colors(i, :), 'LineWidth', plot_opts.line_width, 'HandleVisibility', 'off');
+            scatter(ax, xi, y(:, i), plot_opts.marker_size_scatter, 'MarkerFaceColor', marker_colors(i, :), ...
                 'MarkerEdgeColor', [1 1 1], 'MarkerFaceAlpha', 0.75, 'LineWidth', plot_opts.line_width);
             if has_ci
                 yneg = max(0, y(:, i) - lo_y(:, i));
                 ypos = max(0, hi_y(:, i) - y(:, i));
-                errorbar(ax, x, y(:, i), yneg, ypos, 'Color', marker_colors(i, :) * 0.8, ...
+                errorbar(ax, xi, y(:, i), yneg, ypos, 'Color', marker_colors(i, :) * 0.8, ...
                     'CapSize', 0, 'LineStyle', 'none', 'LineWidth', plot_opts.line_width, 'HandleVisibility', 'off');
             end
         end
@@ -113,37 +119,21 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
         xlabel(ax, 'Current level', 'FontSize', plot_opts.axes_label_font_size);
         ylabel(ax, ylabel_str, 'FontSize', plot_opts.axes_label_font_size);
         if has_ci && ~isempty(ci_label)
-            text(ax, 0.02, 0.02, ci_label, 'Units', 'normalized', ...
-                'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', ...
+            % Top-left: legend(...,'Location','best') ignores text; bottom-left overlapped CI.
+            text(ax, 0.02, 0.98, ci_label, 'Units', 'normalized', ...
+                'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', ...
                 'FontSize', 7, 'Color', plot_opts.colors.gray);
         end
 
-        y_limit_vals = y(:);
-        if has_ci
-            y_limit_vals = [y_limit_vals; lo_y(:); hi_y(:)];
-        end
-        y_limit_vals = y_limit_vals(isfinite(y_limit_vals));
-        if ~isempty(y_limit_vals)
-            y_min = min(y_limit_vals);
-            y_max = max(y_limit_vals);
-            if y_min == y_max
-                y_pad = max(abs(y_min), 1) * 0.1;
-            else
-                y_pad = 0.08 * (y_max - y_min);
-            end
-            if strcmp(ylim_mode, 'nonneg')
-                ylim(ax, [max(0, y_min - y_pad), y_max + y_pad]);
-            else
-                ylim(ax, [y_min - y_pad, y_max + y_pad]);
-            end
-        end
+        xlim(ax, [0.75, 3.25]);
+        ylim(ax, y_lims);
 
         axis(ax, 'square');
         box(ax, 'off');
         set(ax, 'TickDir', 'out', 'TickLength', [plot_opts.tick_length, plot_opts.tick_length], ...
             'LineWidth', plot_opts.line_width, 'FontSize', plot_opts.axes_tick_font_size);
 
-        legend(ax, legend_vals, 'Location', 'best');
+        legend(ax, legend_vals, 'Location', 'best', 'Interpreter', 'none');
     end
 
     sgtitle(fig, sg_title, 'FontSize', plot_opts.axes_label_font_size + 1);
@@ -152,4 +142,43 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
     exportgraphics(fig, out_pdf, 'ContentType', 'vector');
     close(fig);
 
+end
+
+function y_lims = local_commonYLimits(param_data, ci_lo, ci_hi, has_ci, ylim_mode)
+    y_limit_vals = param_data(:);
+    if has_ci
+        y_limit_vals = [y_limit_vals; ci_lo(:); ci_hi(:)];
+    end
+    y_limit_vals = y_limit_vals(isfinite(y_limit_vals));
+
+    if isempty(y_limit_vals)
+        y_lims = [-1, 1];
+        return
+    end
+
+    y_min = min(y_limit_vals);
+    y_max = max(y_limit_vals);
+    if y_min == y_max
+        y_pad = max(abs(y_min), 1) * 0.1;
+    else
+        y_pad = 0.08 * (y_max - y_min);
+    end
+
+    if strcmp(ylim_mode, 'nonneg')
+        y_lims = [max(0, y_min - y_pad), y_max + y_pad];
+    else
+        y_lims = [y_min - y_pad, y_max + y_pad];
+    end
+end
+
+function s = local_ciLabel(ci_method)
+    ci_method = lower(char(ci_method));
+    switch ci_method
+        case 'bca'
+            s = 'BCa';
+        case 'percentile'
+            s = 'percentile';
+        otherwise
+            s = char(ci_method);
+    end
 end

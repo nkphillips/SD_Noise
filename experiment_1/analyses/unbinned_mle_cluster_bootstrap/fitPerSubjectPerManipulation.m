@@ -26,12 +26,9 @@ function T = fitPerSubjectPerManipulation(tbl_trials, fit_opts, subj_labels)
     end
 
     % Reproduce bounds used by fitConditionMLE so we can flag at-bound fits.
-    fwhm_min_deg = 8;
-    fwhm_max_deg = 120;
-    w_lb_def = (2 * sqrt(log(2))) / fwhm_max_deg;
-    w_ub_def = (2 * sqrt(log(2))) / fwhm_min_deg;
-    lb = [-30; w_lb_def;  1; -10];
-    ub = [ 30; w_ub_def; 90;  10];
+    defaults = unbinnedMLEFitDefaults();
+    lb = defaults.lb;
+    ub = defaults.ub;
     if isfield(fit_opts, 'lb') && ~isempty(fit_opts.lb), lb = fit_opts.lb(:); end
     if isfield(fit_opts, 'ub') && ~isempty(fit_opts.ub), ub = fit_opts.ub(:); end
     span = max(abs(ub - lb), eps);

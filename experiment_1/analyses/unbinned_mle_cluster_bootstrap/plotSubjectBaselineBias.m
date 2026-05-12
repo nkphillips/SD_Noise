@@ -12,10 +12,10 @@ function plotSubjectBaselineBias(baselines, fig_dir, subj_labels)
     end
 
     fig = figure('Color', 'w', 'Visible', 'off', ...
-        'Units', 'inches', 'Position', [1 1 11 4.5], ...
-        'PaperUnits', 'inches', 'PaperSize', [11 4.5], ...
-        'PaperPositionMode', 'manual', 'PaperPosition', [0 0 11 4.5]);
-    tl = tiledlayout(1, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
+        'Units', 'inches', 'Position', [1 1 12 5.5], ...
+        'PaperUnits', 'inches', 'PaperSize', [12 5.5], ...
+        'PaperPositionMode', 'manual', 'PaperPosition', [0 0 12 5.5]);
+    tl = tiledlayout(1, 2, 'Padding', 'loose', 'TileSpacing', 'loose');
 
     % Detect skipped column (added in newer demeanTrialTable)
     has_skip = ismember('skipped', baselines.Properties.VariableNames);
@@ -38,9 +38,9 @@ function plotSubjectBaselineBias(baselines, fig_dir, subj_labels)
     end
     yline(ax, 0, 'k:', 'HandleVisibility', 'off');
     set(ax, 'XTick', 1:n_subj, 'XTickLabel', subj_labels, 'XTickLabelRotation', 45, ...
-            'TickDir', 'out');
+            'TickDir', 'out', 'FontSize', 9);
     ylabel(ax, 'baseline mu_i (deg)');
-    title(ax, 'Per-subject baseline response bias mu_i (red = skipped, mu_i = 0 applied)');
+    title(ax, 'Baseline response bias');
     box(ax, 'off');
 
     % Sigma
@@ -55,12 +55,14 @@ function plotSubjectBaselineBias(baselines, fig_dir, subj_labels)
         end
     end
     set(ax, 'XTick', 1:n_subj, 'XTickLabel', subj_labels, 'XTickLabelRotation', 45, ...
-            'TickDir', 'out');
+            'TickDir', 'out', 'FontSize', 9);
     ylabel(ax, 'baseline sigma_i (deg)');
-    title(ax, 'Per-subject baseline psychometric noise sigma_i (saturation at bound triggers skip)');
+    title(ax, 'Baseline psychometric noise');
     box(ax, 'off');
 
-    title(tl, 'Per-subject baseline psychometric (no DoG, ignoring Delta-theta)');
+    title(tl, {'Per-subject baseline psychometric', ...
+        'No DoG; Delta-theta ignored. Red bars were skipped for demeaning.'}, ...
+        'FontSize', 11);
 
     exportgraphics(fig, fullfile(fig_dir, 'subject_baseline_bias.pdf'), 'ContentType', 'vector');
     close(fig);

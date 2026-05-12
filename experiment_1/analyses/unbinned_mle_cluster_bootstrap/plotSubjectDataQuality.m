@@ -34,13 +34,13 @@ function plotSubjectDataQuality(tbl_trials, fig_dir, subj_labels, baselines)
     n_subj = numel(subj_list);
 
     % Layout: n_subj rows x 3 columns
-    row_h_in = 1.6;
-    fig_h = max(1.5 + n_subj * row_h_in, 6);
+    row_h_in = 1.9;
+    fig_h = max(2.0 + n_subj * row_h_in, 7);
     fig = figure('Color', 'w', 'Visible', 'off', ...
-        'Units', 'inches', 'Position', [1 1 13 fig_h], ...
-        'PaperUnits', 'inches', 'PaperSize', [13 fig_h], ...
-        'PaperPositionMode', 'manual', 'PaperPosition', [0 0 13 fig_h]);
-    tl = tiledlayout(n_subj, 3, 'Padding', 'compact', 'TileSpacing', 'compact');
+        'Units', 'inches', 'Position', [1 1 14 fig_h], ...
+        'PaperUnits', 'inches', 'PaperSize', [14 fig_h], ...
+        'PaperPositionMode', 'manual', 'PaperPosition', [0 0 14 fig_h]);
+    tl = tiledlayout(n_subj, 3, 'Padding', 'loose', 'TileSpacing', 'compact');
 
     summary_rows = cell(n_subj, 1);
 
@@ -93,7 +93,7 @@ function plotSubjectDataQuality(tbl_trials, fig_dir, subj_labels, baselines)
                 'XTickLabelRotation', 90, 'FontSize', 7);
         ylabel(ax, sprintf('%s\nn trials', subj_labels{s}), 'FontSize', 9, 'Interpreter', 'none');
         if s == 1
-            title(ax, 'Trials per (manip, prev, curr) cell', 'FontSize', 9);
+            title(ax, 'Trials per condition cell', 'FontSize', 9);
         end
         box(ax, 'off');
 
@@ -130,7 +130,7 @@ function plotSubjectDataQuality(tbl_trials, fig_dir, subj_labels, baselines)
         xlabel(ax, 'x_probe (deg)', 'FontSize', 8, 'Interpreter', 'none');
         ylabel(ax, 'P(CW)', 'FontSize', 8);
         if s == 1
-            title(ax, 'Empirical psychometric (red = baseline fit)', 'FontSize', 9);
+            title(ax, 'Empirical psychometric', 'FontSize', 9);
         end
         set(ax, 'TickDir', 'out', 'FontSize', 7);
         box(ax, 'off');
@@ -165,7 +165,7 @@ function plotSubjectDataQuality(tbl_trials, fig_dir, subj_labels, baselines)
             };
         text(ax, 0.05, 0.95, strjoin(txt, newline), 'Units', 'normalized', ...
              'VerticalAlignment', 'top', 'HorizontalAlignment', 'left', ...
-             'FontSize', 8, 'FontName', 'Courier');
+             'FontSize', 7.5, 'FontName', 'Courier');
         if s == 1
             title(ax, 'Summary stats', 'FontSize', 9);
         end
@@ -175,9 +175,15 @@ function plotSubjectDataQuality(tbl_trials, fig_dir, subj_labels, baselines)
                            bl_mu, bl_sigma};
     end
 
-    title(tl, 'Per-subject data quality diagnostic (top-down browse)', 'FontSize', 11);
+    title(tl, 'Per-subject raw-data quality diagnostic', 'FontSize', 11);
     out_pdf = fullfile(fig_dir, 'subject_data_quality.pdf');
-    exportgraphics(fig, out_pdf, 'ContentType', 'vector');
+    try
+        exportgraphics(fig, out_pdf, 'ContentType', 'vector');
+    catch exportErr
+        warning('plotSubjectDataQuality:vectorExportFailed', ...
+            'Vector export failed (%s). Falling back to raster PDF.', exportErr.message);
+        exportgraphics(fig, out_pdf, 'ContentType', 'image', 'Resolution', 200);
+    end
     close(fig);
 
     summary_table = cell2table(vertcat(summary_rows{:}), ...

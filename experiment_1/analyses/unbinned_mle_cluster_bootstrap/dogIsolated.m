@@ -5,7 +5,8 @@ function y = dogIsolated(dtheta, A, w)
 %
 % Matches Eq. 1 of Sheehan & Serences 2022 PLoS Biology and the legacy
 % calcDoG.m parameterization (w in 1/deg). Peak amplitude = A at
-% dtheta = 1/(w*sqrt(2)); Gaussian-envelope FWHM = 2*sqrt(log(2))/w.
+% dtheta = 1/(w*sqrt(2)); reported FWHM is the numerically estimated
+% DoG-lobe width at half peak height.
 %
 % dtheta : column vector (deg). A, w : scalars (or conformable for broadcasting).
 

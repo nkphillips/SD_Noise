@@ -1,10 +1,11 @@
-function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate(tbl_trials, plan_row, grid, fit_opts, lb, ub, bound_tol)
+function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate(tbl_trials, plan_row, grid, fit_opts, lb, ub, bound_tol, bootstrap_unit)
 % Single bootstrap iteration: 18 x 4 params, 18 x nGrid isolated DoG curves,
 % 18 x 1 exit flags, 18 x 4 at-bound flags (for admission filtering downstream).
 
     if nargin < 5, lb = []; end
     if nargin < 6, ub = []; end
     if nargin < 7 || isempty(bound_tol), bound_tol = 1e-4; end
+    if nargin < 8 || isempty(bootstrap_unit), bootstrap_unit = 'subject'; end
 
     n_grid = numel(grid);
     num_conds = 18;
@@ -19,7 +20,7 @@ function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate
         span = [];
     end
 
-    packed = generateClusterSample(tbl_trials, plan_row);
+    packed = generateBootstrapSample(tbl_trials, plan_row, bootstrap_unit);
 
     for c = 1:num_conds
         [m, prev, curr] = conditionSubscriptsFromIndex(c);

@@ -8,6 +8,8 @@ function m = binaryFitR2Metrics(y, p_hat)
 %              Often ~0.02–0.2 for trial-level psychometrics even when NLL fit is good.
 %   .tjur     — Tjur (2009): mean(p̂|y=1) - mean(p̂|y=0); discrimination coefficient, typically > Efron.
 %   .mcfadden — McFadden pseudo-R²: 1 - LL_model/LL_null (intercept-only); can be negative.
+%   .nll_per_trial / .null_nll_per_trial — average negative log likelihood for
+%              model and intercept-only null model. Lower is better.
 
     y = double(y(:));
     p_hat = double(p_hat(:));
@@ -22,8 +24,16 @@ function m = binaryFitR2Metrics(y, p_hat)
         m.efron = nan;
         m.tjur = nan;
         m.mcfadden = nan;
+        m.n = 0;
+        m.ll_model = nan;
+        m.ll_null = nan;
+        m.nll = nan;
+        m.null_nll = nan;
+        m.nll_per_trial = nan;
+        m.null_nll_per_trial = nan;
         return
     end
+    m.n = numel(y);
 
     m.efron = calcR2(y, p_hat);
 
@@ -41,6 +51,12 @@ function m = binaryFitR2Metrics(y, p_hat)
     p0 = mean(y);
     p0 = min(max(p0, eps_log), 1 - eps_log);
     LL_0 = sum(y .* log(p0) + (1 - y) .* log(1 - p0));
+    m.ll_model = LL_m;
+    m.ll_null = LL_0;
+    m.nll = -LL_m;
+    m.null_nll = -LL_0;
+    m.nll_per_trial = m.nll / m.n;
+    m.null_nll_per_trial = m.null_nll / m.n;
     if LL_0 ~= 0 && isfinite(LL_m) && isfinite(LL_0)
         m.mcfadden = 1 - LL_m / LL_0;
     else

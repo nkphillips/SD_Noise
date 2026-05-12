@@ -37,16 +37,10 @@ function [params, exit_flag] = fitConditionMLE(delta_theta, x_probe, response, o
     x_probe = x_probe(valid);
     response = response(valid);
 
-    % Default bounds match legacy (S&S parameterization, w in 1/deg).
-    % FWHM bounds 8 deg .. 120 deg under FWHM = 2*sqrt(log(2))/w.
-    fwhm_min_deg = 8;
-    fwhm_max_deg = 120;
-    w_lb = (2 * sqrt(log(2))) / fwhm_max_deg;
-    w_ub = (2 * sqrt(log(2))) / fwhm_min_deg;
-
-    lb = [-30; w_lb;   1; -10];    % [A; w; sigma; beta] -- beta_lb/ub widened to +-10 deg (some observers have CW/CCW response biases >5 deg)
-    ub = [ 30; w_ub;  90;  10];
-    x0 = [  1;  0.1;   5;   0];
+    defaults = unbinnedMLEFitDefaults();
+    lb = defaults.lb;
+    ub = defaults.ub;
+    x0 = defaults.x0;
 
     if isfield(opts, 'lb') && ~isempty(opts.lb), lb = opts.lb(:); end
     if isfield(opts, 'ub') && ~isempty(opts.ub), ub = opts.ub(:); end

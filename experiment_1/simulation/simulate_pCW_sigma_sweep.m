@@ -36,6 +36,11 @@ max_offset    = 20;
 min_offset    = -max_offset;
 probe_offset  = min_offset:0.1:max_offset;
 
+x_lim   = [min_offset max_offset];
+y_lim   = [0 1];
+x_ticks = min_offset:5:max_offset;
+y_ticks = 0:0.1:1;
+
 sigma_levels = [2, 5, 10];          % increasing sensory noise (deg)
 sigma_labels = arrayfun(@(s) sprintf('\\sigma = %g', s), sigma_levels, 'UniformOutput', false);
 
@@ -66,10 +71,10 @@ for i = 1:n_sig
     plot(probe_offset, norm_pdf, 'LineStyle', '--', 'Color', ps.colors.black, 'LineWidth', ps.line_width);
     xline(0, 'Color', ps.colors.black, 'LineWidth', ps.line_width);
 
-    xlim([min_offset max_offset]);
-    ylim([0 1]);
-    xticks(min_offset:5:max_offset);
-    yticks(0:0.1:1);
+    xlim(x_lim);
+    ylim(y_lim);
+    xticks(x_ticks);
+    yticks(y_ticks);
 
     xlabel('\delta\theta (°)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     ylabel('P(RespCW)',        'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
@@ -98,8 +103,8 @@ for i = 1:n_sig
     h_cdf(i) = plot(probe_offset, p_cw, 'Color', color_map(i,:), 'LineWidth', ps.line_width);
 end
 xline(0, 'Color', ps.colors.black, 'LineWidth', ps.line_width);
-xlim([min_offset max_offset]); ylim([0 1]);
-xticks(min_offset:5:max_offset); yticks(0:0.1:1);
+xlim(x_lim); ylim(y_lim);
+xticks(x_ticks); yticks(y_ticks);
 xlabel('\delta\theta (°)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
 ylabel('P(RespCW)',        'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
 title('CDF: \mu = 0, varying \sigma', 'FontSize', ps.axes_label_font_size, ...
@@ -120,8 +125,8 @@ for i = 1:n_sig
     h_pdf(i) = plot(probe_offset, norm_pdf, '--', 'Color', color_map(i,:), 'LineWidth', ps.line_width);
 end
 xline(0, 'Color', ps.colors.black, 'LineWidth', ps.line_width);
-xlim([min_offset max_offset]); ylim([0 1]);
-xticks(min_offset:5:max_offset); yticks(0:0.1:1);
+xlim(x_lim); ylim(y_lim);
+xticks(x_ticks); yticks(y_ticks);
 xlabel('\delta\theta (°)', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
 ylabel('Normalized density', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
 title('PDF: \mu = 0, varying \sigma', 'FontSize', ps.axes_label_font_size, ...

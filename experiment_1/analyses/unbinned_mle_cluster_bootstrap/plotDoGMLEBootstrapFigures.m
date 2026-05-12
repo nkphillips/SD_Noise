@@ -2,7 +2,8 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
 % plotDoGMLEBootstrapFigures  3×3 grids per manipulation: binned μ MLE from trials + bootstrap μ(Δθ) + CI.
 % curve_boot stores isolated DoG on grid; params_boot(:,c,4) adds β so ribbons match μ = DoG+β.
 % Styling follows Super Subj Bias with DoG * (SD_Noise_Analyses_And_Figures.m): contrast=blue,
-% precision=green; α, w, β on panels (σ only in table/results); R²_Δθ only.
+% precision=green; α, w, β on panels (σ only in table/results);
+% R²_Δθ (binned visual fit) and McFadden R² (trial-level likelihood fit).
 
     if nargin < 6 || isempty(ci_pct)
         ci_pct = [2.5, 97.5];
@@ -18,6 +19,8 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
     addParameter(ip, 'curve_lo', [], @(x) isempty(x) || isnumeric(x));   % num_conds x n_grid (S&S BCa or percentile)
     addParameter(ip, 'curve_hi', [], @(x) isempty(x) || isnumeric(x));
     addParameter(ip, 'ci_method', 'percentile', @(x) ischar(x) || isstring(x));
+    addParameter(ip, 'bootstrap_unit', 'subject', @(x) ischar(x) || isstring(x));
+    addParameter(ip, 'folded_delta_theta', false, @(x) islogical(x) && isscalar(x));
     parse(ip, varargin{:});
 
     contrast_lbl = ip.Results.contrast_labels;
@@ -30,6 +33,15 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
     curve_lo_in = ip.Results.curve_lo;                 % overrides in-figure percentile when supplied
     curve_hi_in = ip.Results.curve_hi;
     ci_method = lower(char(ip.Results.ci_method));
+    bootstrap_unit = lower(char(ip.Results.bootstrap_unit));
+    folded_delta_theta = ip.Results.folded_delta_theta;
+    if strcmpi(bootstrap_unit, 'subject')
+        ci_unit_label = 'subject-cluster';
+    else
+        ci_unit_label = 'trial-bootstrap';
+    end
+    ci_nominal_pct = ci_pct(2) - ci_pct(1);
+    ci_label = sprintf('%.0f%% %s %s CI', ci_nominal_pct, local_ciLabel(ci_method), ci_unit_label);
 
     axes_fs = 14;
     tick_fs = 13;
@@ -40,7 +52,6 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
     end
 
     num_levels = 3;
-    B = size(curve_boot, 1);
     has_overlay = ~isempty(overlay) && isfield(overlay, 'params_point') && isfield(overlay, 'mu_bin_mle');
 
     for m = 1:2
@@ -90,8 +101,11 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
                 if has_overlay && cidx <= numel(overlay.mu_bin_mle) && ~isempty(overlay.mu_bin_mle{cidx})
                     mb = overlay.mu_bin_mle{cidx};
                     yy = mb.mu_deg(:)';
+                    if folded_delta_theta
+                        [~, yy] = local_mirrorFoldedMuBins(mb.delta_centers, yy);
+                    end
                     yy = yy(isfinite(yy));
-                    all_y = [all_y, yy]; %#ok<AGROW>
+                    all_y = [all_y, yy(:)']; %#ok<AGROW>
                 end
             end
         end
@@ -129,6 +143,9 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
                     mb = overlay.mu_bin_mle{cidx};
                     dx = mb.delta_centers;
                     ydat = mb.mu_deg;
+                    if folded_delta_theta
+                        [dx, ydat] = local_mirrorFoldedMuBins(dx, ydat);
+                    end
                     idx = isfinite(ydat);
                     if any(idx)
                         plot(ax, dx(idx), ydat(idx), '-', 'LineWidth', ps.line_width, 'Color', cond_color);
@@ -197,14 +214,21 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
                     yticks(ax, yt);
                 end
 
-                % Annotations: binned Δθ R² top-left; DoG + μ baseline only bottom-right (σ is psychometric—omitted here)
+                % Annotations: binned Δθ R² + McFadden R² top-left; DoG + baseline bottom-right.
                 if has_overlay && cidx <= size(overlay.params_point, 1)
                     pf = overlay.params_point(cidx, :);
+                    r2_lines = {};
                     if isfield(overlay, 'r2_delta_bins') && ~isnan(overlay.r2_delta_bins(cidx))
-                        text(ax, 0.05, 0.90, sprintf('$R^{2}_{\\Delta\\theta} = %.2f$', overlay.r2_delta_bins(cidx)), ...
+                        r2_lines{end+1} = sprintf('R² Δθ = %.2f', overlay.r2_delta_bins(cidx)); %#ok<AGROW>
+                    end
+                    if isfield(overlay, 'r2_mcfadden') && ~isnan(overlay.r2_mcfadden(cidx))
+                        r2_lines{end+1} = sprintf('R² MF = %.2f', overlay.r2_mcfadden(cidx)); %#ok<AGROW>
+                    end
+                    if ~isempty(r2_lines)
+                        text(ax, 0.05, 0.90, strjoin(r2_lines, newline), ...
                             'Units', 'normalized', 'HorizontalAlignment', 'left', ...
-                            'VerticalAlignment', 'top', 'FontWeight', 'normal', 'FontSize', 10, ...
-                            'Color', ps.colors.black, 'Interpreter', 'latex');
+                            'VerticalAlignment', 'top', 'FontWeight', 'normal', 'FontSize', 9, ...
+                            'Color', ps.colors.black, 'Interpreter', 'none');
                     end
                     if ~all(isnan([pf(1), pf(2), pf(4)]))
                         if isfinite(pf(2)) && pf(2) > 0
@@ -212,24 +236,60 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
                         else
                             fwhm_pf = NaN;
                         end
-                        param_latex = sprintf([ ...
-                            '$A = %.2f^\\circ$' newline ...
-                            '$\\mathrm{FWHM} = %.1f^\\circ$' newline ...
-                            '$\\beta = %.2f^\\circ$' ], pf(1), fwhm_pf, pf(4));
-                        text(ax, 0.95, 0.10, param_latex, ...
+                        param_text = sprintf([ ...
+                            'A = %.2f°' newline ...
+                            'FWHM = %.1f°' newline ...
+                            'β = %.2f°' ], pf(1), fwhm_pf, pf(4));
+                        text(ax, 0.95, 0.10, param_text, ...
                             'Units', 'normalized', 'HorizontalAlignment', 'right', ...
                             'VerticalAlignment', 'bottom', 'FontWeight', 'normal', 'FontSize', 10, ...
-                            'Color', ps.colors.black, 'Interpreter', 'latex');
+                            'Color', ps.colors.black, 'Interpreter', 'none');
                     end
                 end
             end
         end
 
-        title(tl, sprintf('Unbinned MLE (S&S DoG, 25%% lapse) + %s subject-cluster CI: %s', upper(ci_method), cond_name_title), 'FontSize', axes_fs + 1);
+        if folded_delta_theta
+            title_prefix = 'Folded \Delta\theta unbinned MLE';
+        else
+            title_prefix = 'Unbinned MLE';
+        end
+        title(tl, sprintf('%s (S&S DoG, 25%% lapse) + %s: %s', title_prefix, ci_label, cond_name_title), 'FontSize', axes_fs + 1);
 
         out_pdf = fullfile(fig_dir, sprintf('unbinned_mle_isolated_dog_%s.pdf', mname_file));
         exportgraphics(fig, out_pdf, 'ContentType', 'vector');
         close(fig);
     end
 
+end
+
+function s = local_ciLabel(ci_method)
+    ci_method = lower(char(ci_method));
+    switch ci_method
+        case 'bca'
+            s = 'BCa';
+        case 'percentile'
+            s = 'percentile';
+        otherwise
+            s = char(ci_method);
+    end
+end
+
+function [dx_out, mu_out] = local_mirrorFoldedMuBins(dx, mu)
+    dx = dx(:);
+    mu = mu(:);
+
+    keep = isfinite(dx) & isfinite(mu) & dx >= 0;
+    dx_pos = dx(keep);
+    mu_pos = mu(keep);
+
+    [dx_pos, ord] = sort(dx_pos);
+    mu_pos = mu_pos(ord);
+
+    is_zero = abs(dx_pos) < eps;
+    dx_neg = -flipud(dx_pos(~is_zero));
+    mu_neg = -flipud(mu_pos(~is_zero));
+
+    dx_out = [dx_neg; dx_pos];
+    mu_out = [mu_neg; mu_pos];
 end

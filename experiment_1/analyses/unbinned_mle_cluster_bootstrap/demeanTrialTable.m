@@ -32,7 +32,10 @@ function [tbl_demeaned, baselines] = demeanTrialTable(tbl_trials, fit_opts, skip
     if nargin < 2 || isempty(fit_opts); fit_opts = struct(); end
     if nargin < 3 || isempty(skip_at_bound_baseline); skip_at_bound_baseline = true; end
 
-    % Recover sigma bounds for the at-bound check
+    fit_opts = local_baselineFitOpts(fit_opts);
+
+    % Recover sigma bounds for the at-bound check. These are baseline
+    % psychometric [mu; sigma] bounds, not unbinned [A; w; sigma; beta] bounds.
     sigma_lb = 1;   sigma_ub = 90;
     if isfield(fit_opts, 'lb') && ~isempty(fit_opts.lb), sigma_lb = fit_opts.lb(2); end
     if isfield(fit_opts, 'ub') && ~isempty(fit_opts.ub), sigma_ub = fit_opts.ub(2); end
@@ -95,5 +98,28 @@ function [tbl_demeaned, baselines] = demeanTrialTable(tbl_trials, fit_opts, skip
         sid = subj_list(i);
         mask = tbl_demeaned.subject_id == sid;
         tbl_demeaned.x_probe(mask) = tbl_demeaned.x_probe(mask) - mu_per_subj(i);
+    end
+end
+
+function fit_opts = local_baselineFitOpts(fit_opts)
+    fields = {'lb', 'ub', 'x0'};
+    defaults = struct('lb', [-15; 1], 'ub', [15; 90], 'x0', [0; 5]);
+
+    for i = 1:numel(fields)
+        f = fields{i};
+        if ~isfield(fit_opts, f) || isempty(fit_opts.(f))
+            continue
+        end
+
+        vals = fit_opts.(f)(:);
+        if numel(vals) ~= 2
+            warning('demeanTrialTable:badBaselineBounds', ...
+                ['Ignoring fit_opts.%s with %d values. Baseline demeaning expects ', ...
+                 '[mu; sigma] bounds, not unbinned [A; w; sigma; beta] bounds.'], ...
+                f, numel(vals));
+            fit_opts.(f) = defaults.(f);
+        else
+            fit_opts.(f) = vals;
+        end
     end
 end

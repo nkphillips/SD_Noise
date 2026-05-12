@@ -10,3 +10,13 @@
 *.txt
 *.md
 *.csv
+*.csv
+*.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/1_back/subject/amplitude_sigma_correlation/per_subject_per_manipulation_fits.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/1_back/subject/baseline_bias/subject_baseline_bias.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/1_back/subject/data_quality/subject_data_quality_summary.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/1_back/subject/subject_influence/subject_influence_long.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/1_back/super_subject/contrasts_bca.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_back/subject/baseline_bias/subject_baseline_bias.csv
+experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_back/subject/data_quality/subject_data_quality_summary.csv
+*.html
