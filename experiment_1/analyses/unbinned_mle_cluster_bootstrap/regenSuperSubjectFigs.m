@@ -29,13 +29,13 @@ function out = regenSuperSubjectFigs(sd_noise, opts)
                 continue
             end
 
-            res = local_withCIMethod(sd_noise.results.(key), ci_method);
+            res = local_withCIMethod(sd_noise.results.(key), ci_method, n_back);
             local_renderSuperSubjectResult(sd_noise, key, res, opts, n_back, ci_subdir);
 
             folded_key = sprintf('n%d_folded_delta_theta', n_back);
             if opts.regenerate_folded_delta_theta && isfield(sd_noise.results, folded_key) && ...
                     ~isempty(sd_noise.results.(folded_key))
-                res_folded = local_withCIMethod(sd_noise.results.(folded_key), ci_method);
+                res_folded = local_withCIMethod(sd_noise.results.(folded_key), ci_method, n_back);
                 local_renderSuperSubjectResult(sd_noise, folded_key, res_folded, opts, n_back, ...
                     fullfile(ci_subdir, 'folded_delta_theta'));
             end
@@ -56,6 +56,26 @@ function out = regenSuperSubjectFigs(sd_noise, opts)
             plotTargetedDoGEndpointEffectsByNBack(cross_dir, ci_results, opts.n_back_list, ...
                 opts.contrast_labels, opts.precision_labels, opts.ps, ...
                 'show_middle_level', opts.show_middle_level_endpoint);
+            trend_dir = fullfile(cross_dir, 'all_level_trends');
+            trend_tests = local_collectAllLevelTrendTests(ci_results, opts.n_back_list);
+            if ~isempty(trend_tests) && height(trend_tests) > 0
+                if ~exist(trend_dir, 'dir')
+                    mkdir(trend_dir);
+                end
+                writetable(trend_tests, fullfile(trend_dir, 'all_level_trend_tests.csv'));
+                plotUnbinnedAllLevelTrendTestsByNBack(trend_dir, trend_tests, opts.ps, ci_method);
+            end
+            simple_dir = fullfile(cross_dir, 'simple_slope_trends');
+            simple_tests = local_collectSimpleSlopeTrendTests(ci_results, opts.n_back_list);
+            if ~isempty(simple_tests) && height(simple_tests) > 0
+                if ~exist(simple_dir, 'dir')
+                    mkdir(simple_dir);
+                end
+                writetable(simple_tests, fullfile(simple_dir, 'simple_slope_trend_tests.csv'));
+                plotUnbinnedSimpleSlopeTrendTestsByNBack(simple_dir, simple_tests, opts.ps, ci_method, ...
+                    opts.contrast_labels, opts.precision_labels);
+                writeUnbinnedSimpleSlopeTrendHtml(simple_dir, simple_tests, ci_method);
+            end
         end
     end
 
@@ -112,12 +132,15 @@ function results_out = local_resultsWithCIMethod(results_in, n_back_list, ci_met
     for i_nb = 1:numel(n_back_list)
         key = sprintf('n%d', n_back_list(i_nb));
         if isfield(results_out, key) && ~isempty(results_out.(key))
-            results_out.(key) = local_withCIMethod(results_out.(key), ci_method);
+            results_out.(key) = local_withCIMethod(results_out.(key), ci_method, n_back_list(i_nb));
         end
     end
 end
 
-function res = local_withCIMethod(res, ci_method)
+function res = local_withCIMethod(res, ci_method, n_back)
+    if nargin < 3 || isempty(n_back)
+        n_back = NaN;
+    end
     ci_method = lower(char(ci_method));
     ci_field = local_ciField(ci_method);
     if ~isfield(res, ci_field) || isempty(res.(ci_field))
@@ -152,6 +175,64 @@ function res = local_withCIMethod(res, ci_method)
         cspecs = buildStandardContrasts('params', {'A','w','sigma','beta'});
         res.contrast_table = computeUnbinnedContrasts(res, cspecs);
     catch
+    end
+    try
+        res.all_level_trend_tests = computeUnbinnedAllLevelTrendTests(res, n_back);
+    catch
+        res.all_level_trend_tests = table();
+    end
+    try
+        res.simple_slope_trend_tests = computeUnbinnedSimpleSlopeTrendTests(res, n_back);
+    catch
+        res.simple_slope_trend_tests = table();
+    end
+end
+
+function trend_tests = local_collectAllLevelTrendTests(results, n_back_list)
+    trend_tests = table();
+    for i_nb = 1:numel(n_back_list)
+        n_back = n_back_list(i_nb);
+        key = sprintf('n%d', n_back);
+        if ~isfield(results, key) || isempty(results.(key))
+            continue
+        end
+        res = results.(key);
+        if isfield(res, 'all_level_trend_tests') && ~isempty(res.all_level_trend_tests)
+            tbl = res.all_level_trend_tests;
+        else
+            try
+                tbl = computeUnbinnedAllLevelTrendTests(res, n_back);
+            catch
+                tbl = table();
+            end
+        end
+        if ~isempty(tbl) && height(tbl) > 0
+            trend_tests = [trend_tests; tbl]; %#ok<AGROW>
+        end
+    end
+end
+
+function simple_tests = local_collectSimpleSlopeTrendTests(results, n_back_list)
+    simple_tests = table();
+    for i_nb = 1:numel(n_back_list)
+        n_back = n_back_list(i_nb);
+        key = sprintf('n%d', n_back);
+        if ~isfield(results, key) || isempty(results.(key))
+            continue
+        end
+        res = results.(key);
+        if isfield(res, 'simple_slope_trend_tests') && ~isempty(res.simple_slope_trend_tests)
+            tbl = res.simple_slope_trend_tests;
+        else
+            try
+                tbl = computeUnbinnedSimpleSlopeTrendTests(res, n_back);
+            catch
+                tbl = table();
+            end
+        end
+        if ~isempty(tbl) && height(tbl) > 0
+            simple_tests = [simple_tests; tbl]; %#ok<AGROW>
+        end
     end
 end
 
@@ -262,6 +343,12 @@ function local_renderSuperSubjectResult(sd_noise, key, res, opts, n_back, result
         if strcmp(contrast_ci_method, 'bca')
             writetable(res.contrast_table, fullfile(super_dir, 'contrasts_bca.csv'));
         end
+    end
+    if isfield(res, 'all_level_trend_tests') && ~isempty(res.all_level_trend_tests)
+        writetable(res.all_level_trend_tests, fullfile(super_dir, 'all_level_trend_tests.csv'));
+    end
+    if isfield(res, 'simple_slope_trend_tests') && ~isempty(res.simple_slope_trend_tests)
+        writetable(res.simple_slope_trend_tests, fullfile(super_dir, 'simple_slope_trend_tests.csv'));
     end
     if isfield(res, 'close_far_sigma') && isfield(res.close_far_sigma, 'summary_table') && ...
             ~isempty(res.close_far_sigma.summary_table)

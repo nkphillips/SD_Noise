@@ -20,3 +20,4 @@ experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/1_b
 experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_back/subject/baseline_bias/subject_baseline_bias.csv
 experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_back/subject/data_quality/subject_data_quality_summary.csv
 *.html
+*.csv

@@ -690,6 +690,30 @@ function results = runUnbinnedMLEClusterBootstrap(tbl_trials, varargin)
         results.contrast_table = table();
     end
 
+    % -------- All-level 3 x 3 trend tests for A and FWHM --------
+    try
+        results.all_level_trend_tests = computeUnbinnedAllLevelTrendTests(results, ip.Results.n_back);
+        if ~isempty(results.all_level_trend_tests) && height(results.all_level_trend_tests) > 0
+            writetable(results.all_level_trend_tests, fullfile(super_subj_dir, 'all_level_trend_tests.csv'));
+        end
+    catch trendErr
+        warning('runUnbinnedMLEClusterBootstrap:allLevelTrendFailed', ...
+            'All-level trend test computation failed: %s', trendErr.message);
+        results.all_level_trend_tests = table();
+    end
+
+    % -------- Simple slopes within each 3-point subplot line --------
+    try
+        results.simple_slope_trend_tests = computeUnbinnedSimpleSlopeTrendTests(results, ip.Results.n_back);
+        if ~isempty(results.simple_slope_trend_tests) && height(results.simple_slope_trend_tests) > 0
+            writetable(results.simple_slope_trend_tests, fullfile(super_subj_dir, 'simple_slope_trend_tests.csv'));
+        end
+    catch simpleTrendErr
+        warning('runUnbinnedMLEClusterBootstrap:simpleSlopeTrendFailed', ...
+            'Simple-slope trend test computation failed: %s', simpleTrendErr.message);
+        results.simple_slope_trend_tests = table();
+    end
+
     % -------- Subject-influence diagnostic (uses leave-one-subject-out jackknife) --------
     if ip.Results.subject_influence
         if ~compute_jackknife
