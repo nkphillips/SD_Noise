@@ -34,8 +34,10 @@ if ps.save_sup_figures
     addpath(ps.sup_figure_path);
 end
 
-if ~exist('init/','dir'), mkdir('init/'); end
-addpath('init/');
+init_path = fullfile(script_dir, 'init');
+if exist(init_path,'dir')
+    addpath(init_path);
+end
 
 if ~exist('loading/','dir'), mkdir('loading/'); end
 addpath([script_dir '/loading']);
@@ -55,4 +57,3 @@ end
 if ~exist(reports_path, 'dir')
     mkdir(reports_path);
 end
-

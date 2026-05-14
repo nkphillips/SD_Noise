@@ -21,3 +21,4 @@ experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_b
 experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_back/subject/data_quality/subject_data_quality_summary.csv
 *.html
 *.csv
+*.log
