@@ -32,6 +32,10 @@ ps.colors.orange = [255 128 0]/255;
 ps.colors.yellow = [242 214 53]/255;
 ps.colors.gray   = [128 128 128]/255;
 
+ps.font_type = 'Helvetica';
+ps.axes_label_font_size = 14;
+ps.axes_tick_font_size = 13;
+
 ps.figure_color = ps.colors.white;
 ps.alpha_lvl    = 0.75;
 ps.fg_type      = 'pdf';

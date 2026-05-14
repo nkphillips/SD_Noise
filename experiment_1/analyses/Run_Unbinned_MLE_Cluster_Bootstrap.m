@@ -42,12 +42,16 @@ regenerate_subject = true;
 regenerate_folded_delta_theta = true;
 show_middle_level_endpoint = false;  % faded, unconnected L2 reference dot in endpoint-effect figures
 
+%% Condition names
+
 p.subj_IDs = {'001', '002', '003', '004', '006', '007', '008', '009', '010', '011', '013', '015'};
 p.cond_names = {'Contrast', 'Precision'};
 
 % Labels & y-scale limits for figures (match SD_Noise_Analyses_And_Figures.m Super Subj Bias with DoG *).
 p.contrast = {'90%', '50%', '25%'};
 p.precision = {'2°', '40°', '80°'};
+
+%% Model bounds 
 
 % Response-bias bounds (used as the y-axis range for figure ribbons; not for SD model fitting)
 mu_ub = 20;

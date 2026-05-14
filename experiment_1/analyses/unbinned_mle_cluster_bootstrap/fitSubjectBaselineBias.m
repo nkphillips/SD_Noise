@@ -69,7 +69,9 @@ function [mu_hat, sigma_hat, exit_flag] = fitSubjectBaselineBias(x_probe, respon
             mu_hat = theta_hat(1);
             sigma_hat = theta_hat(2);
         end
-    catch
+    catch ME
+        warning('fitSubjectBaselineBias:fminconError', ...
+            '%s', getReport(ME, 'extended', 'hyperlinks', 'off'));
         mu_hat = NaN; sigma_hat = NaN;
         exit_flag = -99;
     end
