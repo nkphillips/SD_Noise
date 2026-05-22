@@ -97,13 +97,13 @@ function plotUnbinnedR2CellScatter(fig_dir, summary_table, ps, n_back)
     end
 
     if isfinite(n_back)
-        title_str = sprintf('Unbinned MLE DoG fit quality: %d-back', n_back);
+        title_str = sprintf('Serial dependence fit quality: %d-back', n_back);
     else
-        title_str = 'Unbinned MLE DoG fit quality';
+        title_str = 'Serial dependence fit quality';
     end
     title(tl, title_str, 'FontSize', axes_fs + 1);
 
-    out_pdf = fullfile(fig_dir, 'unbinned_mle_r2_delta_bins_cell_scatter.pdf');
+    out_pdf = fullfile(fig_dir, 'serial_dependence_fit_quality_cell_scatter.pdf');
     exportgraphics(fig, out_pdf, 'ContentType', 'vector');
     close(fig);
 end

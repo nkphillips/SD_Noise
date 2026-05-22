@@ -291,12 +291,12 @@ function local_writeLinkBlock(fid, n_back)
     local_link(fid, base, 'Targeted hypothesis tests CSV', 'targeted_dog_hypothesis_tests.csv');
     local_link(fid, base, 'Amplitude endpoint effects', 'targeted_dog_endpoint_effects_amplitude.pdf');
     local_link(fid, base, 'FWHM endpoint effects', 'targeted_dog_endpoint_effects_fwhm.pdf');
-    local_link(fid, base, 'Amplitude scatter', 'unbinned_mle_super_sd_amplitude_scatter.pdf');
-    local_link(fid, base, 'Range/FWHM scatter', 'unbinned_mle_super_sd_width_fwhm_scatter.pdf');
-    local_link(fid, base, 'Amplitude pooled + subject points', 'unbinned_mle_super_sd_amplitude_pooled_subject_points.pdf');
-    local_link(fid, base, 'FWHM pooled + subject points', 'unbinned_mle_super_sd_width_fwhm_pooled_subject_points.pdf');
-    local_link(fid, base, 'DoG grid: contrast', 'unbinned_mle_isolated_dog_contrast.pdf');
-    local_link(fid, base, 'DoG grid: precision', 'unbinned_mle_isolated_dog_precision.pdf');
+    local_link(fid, base, 'Amplitude scatter', 'serial_dependence_amplitude_summary.pdf');
+    local_link(fid, base, 'Range/FWHM scatter', 'serial_dependence_fwhm_summary.pdf');
+    local_link(fid, base, 'Amplitude pooled + subject points', 'serial_dependence_amplitude_subject_points.pdf');
+    local_link(fid, base, 'FWHM pooled + subject points', 'serial_dependence_fwhm_subject_points.pdf');
+    local_link(fid, base, 'DoG grid: contrast', 'serial_dependence_contrast.pdf');
+    local_link(fid, base, 'DoG grid: precision', 'serial_dependence_precision.pdf');
     local_link(fid, base, 'All contrasts', 'contrasts.csv');
     local_link(fid, base, 'Close/far sigma delta tests', 'close_far_sigma_delta_tests.csv');
     fprintf(fid, '</article>');
@@ -307,8 +307,8 @@ function local_writeAcrossNBackLinkBlock(fid)
     fprintf(fid, '<article class="links"><h3>Across n-back</h3>');
     local_link(fid, base, 'Amplitude endpoint effects by n-back', 'targeted_dog_endpoint_effects_by_nback_amplitude.pdf');
     local_link(fid, base, 'FWHM endpoint effects by n-back', 'targeted_dog_endpoint_effects_by_nback_fwhm.pdf');
-    local_link(fid, base, 'Amplitude by n-back, past level', 'unbinned_mle_sd_amplitude_by_nback_by_past_level.pdf');
-    local_link(fid, base, 'FWHM by n-back, contrast', 'unbinned_mle_super_sd_width_fwhm_scatter_by_nback_contrast.pdf');
+    local_link(fid, base, 'Amplitude by n-back, past level', 'serial_dependence_amplitude_by_nback_by_past_level.pdf');
+    local_link(fid, base, 'FWHM by n-back, contrast', 'serial_dependence_fwhm_by_nback_contrast.pdf');
     fprintf(fid, '</article>');
 end
 

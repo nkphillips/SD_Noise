@@ -1,12 +1,15 @@
-function overlay = computePooledFitsAndOverlay(tbl_trials, delta_centers, window_width, guess_rate, fit_opts)
-% Per-condition pooled MLE on full tbl_trials (S&S parameterization, 25% guess rate),
-% fit metrics vs predicted P(CW), binned μ MLE for figures.
+function overlay = computePooledFitsAndOverlay(tbl_trials, delta_centers, window_width, guess_rate, fit_opts, fit_method)
+% Per-condition point estimates on full tbl_trials (S&S parameterization,
+% 25% guess rate), fit metrics vs predicted P(CW), binned μ MLE for figures.
 
     if nargin < 4 || isempty(guess_rate)
         guess_rate = 0.25;
     end
     if nargin < 5 || isempty(fit_opts)
         fit_opts = struct();
+    end
+    if nargin < 6 || isempty(fit_method)
+        fit_method = 'pooled';
     end
     fit_opts.guess_rate = guess_rate;
 
@@ -32,11 +35,12 @@ function overlay = computePooledFitsAndOverlay(tbl_trials, delta_centers, window
         man(cm == 'precision') = 2;
         mask = man == m & tbl_trials.cond_prev == prev & tbl_trials.cond_curr == curr;
 
-        dt = tbl_trials.delta_theta(mask);
-        xp = tbl_trials.x_probe(mask);
-        rv = tbl_trials.response(mask);
+        tbl_cond = tbl_trials(mask, {'subject_id', 'delta_theta', 'x_probe', 'response'});
+        dt = tbl_cond.delta_theta;
+        xp = tbl_cond.x_probe;
+        rv = tbl_cond.response;
 
-        pfit = fitConditionMLE(dt, xp, rv, fit_opts);
+        pfit = fitConditionByMethod(tbl_cond, fit_opts, fit_method);
         overlay.params_point(c, :) = pfit;
 
         if all(isnan(pfit))

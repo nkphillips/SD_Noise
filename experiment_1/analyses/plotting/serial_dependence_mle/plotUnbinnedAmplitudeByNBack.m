@@ -56,11 +56,11 @@ function plotUnbinnedAmplitudeByNBack(fig_dir, results, n_back_list, contrast_lb
 
     local_renderByFixedAxis(fig_dir, amp, amp_lo, amp_hi, n_back_list, y_lims, ...
         contrast_lbl, precision_lbl, plot_opts, ci_label, ...
-        'past', 'current', 'unbinned_mle_sd_amplitude_by_nback_by_past_level.pdf');
+        'past', 'current', 'serial_dependence_amplitude_by_nback_by_past_level.pdf');
 
     local_renderByFixedAxis(fig_dir, amp, amp_lo, amp_hi, n_back_list, y_lims, ...
         contrast_lbl, precision_lbl, plot_opts, ci_label, ...
-        'current', 'past', 'unbinned_mle_sd_amplitude_by_nback_by_current_level.pdf');
+        'current', 'past', 'serial_dependence_amplitude_by_nback_by_current_level.pdf');
 
 end
 
@@ -147,7 +147,7 @@ function local_renderByFixedAxis(fig_dir, amp, amp_lo, amp_hi, n_back_list, y_li
         end
     end
 
-    title(tl, sprintf('Unbinned MLE: amplitude across n-back, subplots by %s level (%s)', ...
+    title(tl, sprintf('Serial dependence amplitude across n-back, subplots by %s level (%s)', ...
         fixed_axis, ci_label), 'FontSize', plot_opts.axes_label_font_size + 1);
 
     out_pdf = fullfile(fig_dir, out_name);

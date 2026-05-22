@@ -99,8 +99,12 @@ function opts = local_defaults(sd_noise, opts)
         opts.subj_labels = sd_noise.config.p.subj_IDs;
     end
     if ~isfield(opts, 'output_root') || isempty(opts.output_root)
-        opts.output_root = fullfile('unbinned_mle_cluster_bootstrap', 'figures', ...
-            sd_noise.meta.analysis_datetime);
+        if isfield(sd_noise, 'paths') && isfield(sd_noise.paths, 'figure_root')
+            opts.output_root = sd_noise.paths.figure_root;
+        else
+            fit_method = char(sd_noise.config.bootstrap.fit_method);
+            opts.output_root = fullfile('figures', fit_method, sd_noise.meta.analysis_datetime);
+        end
     end
     if ~isfield(opts, 'regenerate_folded_delta_theta') || isempty(opts.regenerate_folded_delta_theta)
         opts.regenerate_folded_delta_theta = true;

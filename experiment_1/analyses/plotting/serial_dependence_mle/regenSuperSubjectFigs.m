@@ -111,8 +111,12 @@ function opts = local_defaults(sd_noise, opts)
         opts.ci_prctile = sd_noise.config.bootstrap.ci_prctile;
     end
     if ~isfield(opts, 'output_root') || isempty(opts.output_root)
-        opts.output_root = fullfile('unbinned_mle_cluster_bootstrap', 'figures', ...
-            sd_noise.meta.analysis_datetime);
+        if isfield(sd_noise, 'paths') && isfield(sd_noise.paths, 'figure_root')
+            opts.output_root = sd_noise.paths.figure_root;
+        else
+            fit_method = char(sd_noise.config.bootstrap.fit_method);
+            opts.output_root = fullfile('figures', fit_method, sd_noise.meta.analysis_datetime);
+        end
     end
     if ~isfield(opts, 'regenerate_folded_delta_theta') || isempty(opts.regenerate_folded_delta_theta)
         opts.regenerate_folded_delta_theta = true;
@@ -393,9 +397,9 @@ function local_renderSuperSubjectResult(sd_noise, key, res, opts, n_back, result
     end
 
     if is_folded
-        title_tag = sprintf('Folded delta-theta unbinned MLE (95%% %s CI)', local_ciLabel(res.ci_method));
+        title_tag = sprintf('Folded delta-theta serial dependence (95%% %s CI)', local_ciLabel(res.ci_method));
     else
-        title_tag = sprintf('Unbinned MLE (95%% %s CI)', local_ciLabel(res.ci_method));
+        title_tag = sprintf('Serial dependence (95%% %s CI)', local_ciLabel(res.ci_method));
     end
 
     sd = local_getDerivedSd(sd_noise, key, res);

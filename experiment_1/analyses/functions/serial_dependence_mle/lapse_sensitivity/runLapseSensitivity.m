@@ -10,7 +10,7 @@ function results = runLapseSensitivity(tbl_trials, varargin)
 %   'use_parallel'    -- logical (default true)
 %   'num_workers'     -- [] (default) uses parpool default
 %   'fig_subdir'      -- e.g. '1_back'; figures saved under
-%                        unbinned_mle_cluster_bootstrap/lapse_sensitivity/figures/<subdir>/
+%                        figures/lapse_sensitivity/<subdir>/
 %   'contrast_labels' -- {'90%','50%','25%'}
 %   'precision_labels'-- {'2°','40°','80°'}
 
@@ -31,16 +31,18 @@ function results = runLapseSensitivity(tbl_trials, varargin)
     fit_opts = ip.Results.fit_opts;
 
     this_dir = fileparts(mfilename('fullpath'));
+    analysis_dir = fullfile(this_dir, '..', '..', '..');
     fig_subdir = char(ip.Results.fig_subdir);
     if isempty(fig_subdir)
-        fig_dir = fullfile(this_dir, 'figures');
+        fig_dir = fullfile(analysis_dir, 'figures', 'lapse_sensitivity');
     else
-        fig_dir = fullfile(this_dir, 'figures', fig_subdir);
+        fig_dir = fullfile(analysis_dir, 'figures', 'lapse_sensitivity', fig_subdir);
     end
     if ~exist(fig_dir, 'dir'); mkdir(fig_dir); end
 
     addpath(fullfile(this_dir, '..'));        % access fitConditionMLE, dogIsolated, etc.
-    addpath(fullfile(this_dir, '..', '..', 'functions'));
+    addpath(fullfile(analysis_dir, 'functions'));
+    addpath(fullfile(analysis_dir, 'plotting', 'serial_dependence_mle', 'lapse_sensitivity'));
 
     num_conds = 18;
 

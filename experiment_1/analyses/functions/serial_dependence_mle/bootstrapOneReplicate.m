@@ -1,4 +1,4 @@
-function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate(tbl_trials, plan_row, grid, fit_opts, lb, ub, bound_tol, bootstrap_unit)
+function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate(tbl_trials, plan_row, grid, fit_opts, lb, ub, bound_tol, bootstrap_unit, fit_method)
 % Single bootstrap iteration: 18 x 4 params, 18 x nGrid isolated DoG curves,
 % 18 x 1 exit flags, 18 x 4 at-bound flags (for admission filtering downstream).
 
@@ -6,6 +6,7 @@ function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate
     if nargin < 6, ub = []; end
     if nargin < 7 || isempty(bound_tol), bound_tol = 1e-4; end
     if nargin < 8 || isempty(bootstrap_unit), bootstrap_unit = 'subject'; end
+    if nargin < 9 || isempty(fit_method), fit_method = 'pooled'; end
 
     n_grid = numel(grid);
     num_conds = 18;
@@ -26,7 +27,8 @@ function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate
         [m, prev, curr] = conditionSubscriptsFromIndex(c);
         mask = packed.manipulation == m & packed.cond_prev == prev & packed.cond_curr == curr;
 
-        [pfit, exitf] = fitConditionMLE(packed.delta_theta(mask), packed.x_probe(mask), packed.response(mask), fit_opts);
+        tbl_cond = packedConditionTable(packed, mask);
+        [pfit, exitf] = fitConditionByMethod(tbl_cond, fit_opts, fit_method);
         params_row(c, :) = pfit;
         exit_row(c) = exitf;
 
@@ -43,4 +45,13 @@ function [params_row, curve_row, exit_row, at_bound_row] = bootstrapOneReplicate
         end
     end
 
+end
+
+function tbl_cond = packedConditionTable(packed, mask)
+    tbl_cond = table( ...
+        packed.subject_id(mask), ...
+        packed.delta_theta(mask), ...
+        packed.x_probe(mask), ...
+        packed.response(mask), ...
+        'VariableNames', {'subject_id', 'delta_theta', 'x_probe', 'response'});
 end

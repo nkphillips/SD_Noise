@@ -1,9 +1,9 @@
 function ct = computeUnbinnedContrasts(results, contrast_specs)
 % computeUnbinnedContrasts  Bootstrap CIs on linear-combination contrasts of the
-% per-cell bootstrap parameters from runUnbinnedMLEClusterBootstrap.
+% per-cell bootstrap parameters from runSerialDependenceMLEBootstrap.
 %
 % Inputs:
-%   results        - results struct from runUnbinnedMLEClusterBootstrap. Must
+%   results        - results struct from runSerialDependenceMLEBootstrap. Must
 %                    contain params_boot, jackknife.params, overlay.params_point,
 %                    admitted, ci_prctile, B, n_subj.
 %   contrast_specs - struct array with fields:

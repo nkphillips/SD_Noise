@@ -52,6 +52,8 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
     end
 
     num_levels = 3;
+    n_boot = size(curve_boot, 1);
+    n_grid = numel(grid);
     has_overlay = ~isempty(overlay) && isfield(overlay, 'params_point') && isfield(overlay, 'mu_bin_mle');
 
     for m = 1:2
@@ -74,8 +76,9 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
         for prev = 1:num_levels
             for curr = 1:num_levels
                 cidx = conditionIndexUnbinned(m, prev, curr);
-                slice_iso = squeeze(curve_boot(:, cidx, :));
-                slice = slice_iso + params_boot(:, cidx, 4);
+                slice_iso = reshape(curve_boot(:, cidx, :), [n_boot, n_grid]);
+                beta_b = reshape(params_boot(:, cidx, 4), [n_boot, 1]);
+                slice = slice_iso + beta_b;
                 if ~isempty(admitted)
                     adm_c = logical(admitted(:, cidx));
                     if any(adm_c)
@@ -152,8 +155,8 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
                     end
                 end
 
-                slice_iso = squeeze(curve_boot(:, cidx, :));
-                beta_b = params_boot(:, cidx, 4);
+                slice_iso = reshape(curve_boot(:, cidx, :), [n_boot, n_grid]);
+                beta_b = reshape(params_boot(:, cidx, 4), [n_boot, 1]);
                 slice = slice_iso + beta_b;
                 if ~isempty(admitted)
                     adm_c = logical(admitted(:, cidx));
@@ -250,13 +253,13 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
         end
 
         if folded_delta_theta
-            title_prefix = 'Folded \Delta\theta unbinned MLE';
+            title_prefix = 'Folded \Delta\theta Serial Dependence';
         else
-            title_prefix = 'Unbinned MLE';
+            title_prefix = 'Serial Dependence';
         end
-        title(tl, sprintf('%s (S&S DoG, 25%% lapse) + %s: %s', title_prefix, ci_label, cond_name_title), 'FontSize', axes_fs + 1);
+        title(tl, sprintf('%s: %s (%s)', title_prefix, cond_name_title, ci_label), 'FontSize', axes_fs + 1);
 
-        out_pdf = fullfile(fig_dir, sprintf('unbinned_mle_isolated_dog_%s.pdf', mname_file));
+        out_pdf = fullfile(fig_dir, sprintf('serial_dependence_%s.pdf', mname_file));
         exportgraphics(fig, out_pdf, 'ContentType', 'vector');
         close(fig);
     end

@@ -5,7 +5,7 @@
 % lambda. NO bootstrap is performed -- the goal is to verify that
 % directional conclusions about the manipulation contrasts do not depend on
 % the choice of lambda. Results land under
-% unbinned_mle_cluster_bootstrap/lapse_sensitivity/figures/<n_back>_back/.
+% figures/lapse_sensitivity/<n_back>_back/.
 
 %% Prepare workspace
 close all; clear all; clc;
@@ -33,8 +33,9 @@ p.num_workers = [];
 
 %% Paths & dependencies
 addpath('functions');
-addpath('unbinned_mle_cluster_bootstrap');
-addpath('unbinned_mle_cluster_bootstrap/lapse_sensitivity');
+addpath(fullfile('functions', 'serial_dependence_mle'));
+addpath(fullfile('functions', 'serial_dependence_mle', 'lapse_sensitivity'));
+addpath(fullfile('plotting', 'serial_dependence_mle', 'lapse_sensitivity'));
 addpath('loading');
 
 ps = plotSettings();
@@ -98,4 +99,4 @@ end
 elapsed_s = toc(analysis_tic);
 disp(' ');
 fprintf('Total sensitivity sweep duration: %.1f s (%.2f min)\n', elapsed_s, elapsed_s / 60);
-disp('Finished. Vector figures: unbinned_mle_cluster_bootstrap/lapse_sensitivity/figures/.');
+disp('Finished. Vector figures: figures/lapse_sensitivity/.');

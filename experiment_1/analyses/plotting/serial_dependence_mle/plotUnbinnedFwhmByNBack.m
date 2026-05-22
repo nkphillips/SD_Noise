@@ -56,11 +56,11 @@ function plotUnbinnedFwhmByNBack(fig_dir, results, n_back_list, contrast_lbl, pr
 
     local_renderByFixedAxis(fig_dir, fwhm, fwhm_lo, fwhm_hi, n_back_list, y_lims, ...
         contrast_lbl, precision_lbl, plot_opts, ci_label, ...
-        'past', 'current', 'unbinned_mle_sd_fwhm_by_nback_by_past_level.pdf');
+        'past', 'current', 'serial_dependence_fwhm_by_nback_by_past_level.pdf');
 
     local_renderByFixedAxis(fig_dir, fwhm, fwhm_lo, fwhm_hi, n_back_list, y_lims, ...
         contrast_lbl, precision_lbl, plot_opts, ci_label, ...
-        'current', 'past', 'unbinned_mle_sd_fwhm_by_nback_by_current_level.pdf');
+        'current', 'past', 'serial_dependence_fwhm_by_nback_by_current_level.pdf');
 
 end
 
@@ -146,7 +146,7 @@ function local_renderByFixedAxis(fig_dir, fwhm, fwhm_lo, fwhm_hi, n_back_list, y
         end
     end
 
-    title(tl, sprintf('Unbinned MLE: DoG-lobe FWHM across n-back, subplots by %s level (%s)', ...
+    title(tl, sprintf('Serial dependence FWHM across n-back, subplots by %s level (%s)', ...
         fixed_axis, ci_label), 'FontSize', plot_opts.axes_label_font_size + 1);
 
     out_pdf = fullfile(fig_dir, out_name);

@@ -7,7 +7,7 @@ function [params, exit_flag] = fitConditionMLE(delta_theta, x_probe, response, o
 % params = [A, w, sigma, beta] (1x4); w in 1/deg. NaN(1,4) if no trials.
 % exit_flag is the fmincon exit flag (NaN on missing data, < 1 means failed/at-bound stop).
 
-    if nargin < 4
+    if nargin < 4 || isempty(opts)
         opts = struct();
     end
 
@@ -61,7 +61,8 @@ function [params, exit_flag] = fitConditionMLE(delta_theta, x_probe, response, o
         fmin_opts = opts.fmincon_options;
     end
 
-    objective = @(theta) nllUnbinned(theta, delta_theta, x_probe, response, guess_rate);
+    map_opts = resolveMapOptions(opts, lb, ub, x0);
+    objective = @(theta) objectiveUnbinned(theta, delta_theta, x_probe, response, guess_rate, map_opts);
 
     try
         [theta_hat, ~, exit_flag] = fmincon(objective, x0, [], [], [], [], lb, ub, [], fmin_opts);
@@ -75,6 +76,58 @@ function [params, exit_flag] = fitConditionMLE(delta_theta, x_probe, response, o
         exit_flag = -99;
     end
 
+end
+
+function map_opts = resolveMapOptions(opts, lb, ub, x0)
+    map_opts.use_map = false;
+    if isfield(opts, 'use_map') && ~isempty(opts.use_map)
+        map_opts.use_map = logical(opts.use_map);
+    end
+
+    map_opts.prior_means = x0(:)';
+    if isfield(opts, 'prior_means') && ~isempty(opts.prior_means)
+        map_opts.prior_means = opts.prior_means(:)';
+    end
+
+    map_opts.map_lambda = 0.5;
+    if isfield(opts, 'map_lambda') && ~isempty(opts.map_lambda)
+        map_opts.map_lambda = opts.map_lambda;
+    end
+
+    default_scales = ub(:)' - lb(:)';
+    map_opts.param_scales = default_scales;
+    if isfield(opts, 'param_scales') && ~isempty(opts.param_scales)
+        map_opts.param_scales = opts.param_scales(:)';
+    end
+
+    if numel(map_opts.prior_means) ~= 4
+        map_opts.prior_means = x0(:)';
+    end
+    if numel(map_opts.param_scales) ~= 4
+        map_opts.param_scales = default_scales;
+    end
+
+    bad_scales = ~isfinite(map_opts.param_scales) | map_opts.param_scales <= 0;
+    if any(bad_scales)
+        fallback_scales = default_scales;
+        fallback_scales(~isfinite(fallback_scales) | fallback_scales <= 0) = eps;
+        map_opts.param_scales(bad_scales) = fallback_scales(bad_scales);
+    end
+
+    if ~isscalar(map_opts.map_lambda) || ~isfinite(map_opts.map_lambda)
+        map_opts.map_lambda = 0.5;
+    end
+end
+
+function cost = objectiveUnbinned(theta, delta_theta, x_probe, response, guess_rate, map_opts)
+    nll = nllUnbinned(theta, delta_theta, x_probe, response, guess_rate);
+    cost = nll;
+
+    if map_opts.use_map
+        z_scores = (theta(:)' - map_opts.prior_means) ./ map_opts.param_scales;
+        penalty = map_opts.map_lambda * sum(z_scores .^ 2);
+        cost = nll + penalty;
+    end
 end
 
 function nll = nllUnbinned(theta, delta_theta, x_probe, response, guess_rate)
