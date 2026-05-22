@@ -92,7 +92,7 @@ n_back_list = [1 2 3];
 
 %% bootstrap settings
 
-bootstrap.B = 2; % 10000
+bootstrap.B = 10000; % 10000
 bootstrap.seed = 1;
 bootstrap.B_grid = 100;
 bootstrap.use_parallel = true;

@@ -16,10 +16,10 @@ function out = plotUnbinnedSimpleSlopeTrendTestsByNBack(fig_dir, simple_tests, p
 
     out = struct();
     out.amplitude_by_past_pdf = local_render(fig_dir, simple_tests, 'A', 'previous_level', ...
-        'Current-level slope within fixed previous level', 'A slope (deg / current-level step)', ...
+        'Current-level slope within fixed previous level', 'Amplitude trend (deg/level)', ...
         'simple_slope_trends_amplitude_by_past_level.pdf', ps, ci_method, contrast_lbl, precision_lbl);
     out.amplitude_by_current_pdf = local_render(fig_dir, simple_tests, 'A', 'current_level', ...
-        'Previous-level slope within fixed current level', 'A slope (deg / previous-level step)', ...
+        'Previous-level slope within fixed current level', 'Amplitude trend (deg/level)', ...
         'simple_slope_trends_amplitude_by_current_level.pdf', ps, ci_method, contrast_lbl, precision_lbl);
     out.fwhm_by_past_pdf = local_render(fig_dir, simple_tests, 'FWHM', 'previous_level', ...
         'Current-level slope within fixed previous level', 'FWHM slope (deg / current-level step)', ...
@@ -38,8 +38,8 @@ function out_pdf = local_render(fig_dir, T, parameter, fixed_axis, title_str, x_
     end
 
     n_back_list = unique(T.n_back(:))';
-    manips = {'contrast', 'precision'};
-    manip_labels = {'Contrast', 'Precision'};
+    manips = {'precision', 'contrast'};
+    manip_labels = {'Precision', 'Contrast'};
     fixed_levels = 1:3;
     colors = local_colors(ps);
     plot_opts = local_plotOpts(ps);
@@ -67,7 +67,7 @@ function out_pdf = local_render(fig_dir, T, parameter, fixed_axis, title_str, x_
             ax = nexttile(tl);
             level_labels = local_levelLabels(manips{i_m}, contrast_lbl, precision_lbl);
             local_plotPanel(ax, T, n_back_list(i_nb), manips{i_m}, fixed_levels, ...
-                level_labels, colors(i_m, :), x_lims, x_label, plot_opts);
+                level_labels, colors(i_m, :), x_lims, fixed_axis, plot_opts);
             if i_nb == 1
                 title(ax, manip_labels{i_m}, 'FontSize', plot_opts.axes_tick_font_size, 'Interpreter', 'none');
             end
@@ -91,7 +91,7 @@ function out_pdf = local_render(fig_dir, T, parameter, fixed_axis, title_str, x_
     close(fig);
 end
 
-function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels, color, x_lims, x_label, plot_opts)
+function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels, color, x_lims, fixed_axis, plot_opts)
     hold(ax, 'on');
     xline(ax, 0, 'k-', 'HandleVisibility', 'off');
     y = 1:numel(fixed_levels);
@@ -106,18 +106,15 @@ function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels
         est = row.estimate(1);
         lo = row.bca_lo(1);
         hi = row.bca_hi(1);
-        ok = local_isValid(row);
         shade = 0.45 + 0.22 * i_level;
         c = min(color .* shade, 1);
-        if ok
-            marker_face = c;
-            line_style = '-';
+        if strcmp(fixed_axis, 'current_level')
+            marker_face = [1 1 1];   % slope by past level
         else
-            marker_face = [1 1 1];
-            line_style = '--';
+            marker_face = c;
         end
         if isfinite(lo) && isfinite(hi)
-            plot(ax, [lo, hi], [y(i_level), y(i_level)], line_style, ...
+            plot(ax, [lo, hi], [y(i_level), y(i_level)], '-', ...
                 'Color', c * 0.85, 'LineWidth', plot_opts.line_width, ...
                 'HandleVisibility', 'off');
         end
@@ -140,7 +137,6 @@ function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels
     box(ax, 'off');
     set(ax, 'TickDir', 'out', 'TickLength', [plot_opts.tick_length, plot_opts.tick_length], ...
         'LineWidth', plot_opts.line_width, 'FontSize', plot_opts.axes_tick_font_size);
-    xlabel(ax, x_label, 'FontSize', plot_opts.axes_label_font_size, 'Interpreter', 'none');
 end
 
 function labels = local_levelLabels(manipulation, contrast_lbl, precision_lbl)
@@ -166,16 +162,6 @@ function labels = local_fixedLevelTickLabels(fixed_levels, level_labels)
     end
 end
 
-function tf = local_isValid(row)
-    tf = true;
-    if ismember('valid_for_inference', row.Properties.VariableNames)
-        tf = tf && logical(row.valid_for_inference(1));
-    end
-    if ismember('supports_effect', row.Properties.VariableNames)
-        tf = tf && logical(row.supports_effect(1));
-    end
-end
-
 function s = local_sigLabel(row)
     s = '';
     if ismember('supports_effect', row.Properties.VariableNames) && ~logical(row.supports_effect(1))
@@ -183,14 +169,14 @@ function s = local_sigLabel(row)
     end
     if ismember('p_fdr_bh_label', row.Properties.VariableNames)
         val = char(row.p_fdr_bh_label(1));
-        if contains(val, '*')
+        if ~isempty(strtrim(val))
             s = ['q=' val];
             return
         end
     end
     if ismember('p_bca_label', row.Properties.VariableNames)
         val = char(row.p_bca_label(1));
-        if contains(val, '*')
+        if ~isempty(strtrim(val))
             s = ['p=' val];
         end
     end
@@ -204,7 +190,7 @@ function c = local_colors(ps)
         green = ps.colors.green;
     catch
     end
-    c = [blue; green];
+    c = [green; blue];
 end
 
 function plot_opts = local_plotOpts(ps)

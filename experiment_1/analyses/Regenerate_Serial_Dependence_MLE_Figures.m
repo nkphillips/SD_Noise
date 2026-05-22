@@ -15,7 +15,7 @@ clc;
 % Leave empty to use the newest saved sd_noise file.
 analysis_datetime = '';
 sd_noise_file = '';
-fit_method = 'pooled';   % 'pooled' | 'hierarchical_map'
+fit_method = 'hierarchical_map';   % 'pooled' | 'hierarchical_map'
 
 % false: write into figures/<analysis_datetime>/regen_<timestamp>/
 % true : overwrite/regenerate figures under figures/<analysis_datetime>/

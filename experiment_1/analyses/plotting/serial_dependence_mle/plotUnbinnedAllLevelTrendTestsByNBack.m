@@ -10,7 +10,7 @@ function out = plotUnbinnedAllLevelTrendTestsByNBack(fig_dir, trend_tests, ps, c
 
     out = struct();
     out.amplitude_pdf = local_renderParameter(fig_dir, trend_tests, 'A', ...
-        'Amplitude A trend (deg / level)', 'all_level_trend_tests_amplitude_by_nback.pdf', ps, ci_method);
+        'Amplitude trend (deg/level)', 'all_level_trend_tests_amplitude_by_nback.pdf', ps, ci_method);
     out.fwhm_pdf = local_renderParameter(fig_dir, trend_tests, 'FWHM', ...
         'FWHM trend (deg / level)', 'all_level_trend_tests_fwhm_by_nback.pdf', ps, ci_method);
 end
@@ -25,8 +25,8 @@ function out_pdf = local_renderParameter(fig_dir, T, parameter, x_label, fname, 
     n_back_list = unique(T.n_back(:))';
     terms = {'previous_slope', 'current_slope', 'previous_current_interaction'};
     term_labels = {'Previous-level slope', 'Current-level slope', 'Previous x current'};
-    row_names = {'contrast', 'precision', 'precision_minus_contrast'};
-    row_labels = {'Contrast', 'Precision', 'Precision - contrast'};
+    row_names = {'precision', 'contrast', 'precision_minus_contrast'};
+    row_labels = {'Precision', 'Contrast', 'Precision - contrast'};
     colors = local_colors(ps);
     plot_opts = local_plotOpts(ps);
 
@@ -80,7 +80,7 @@ function out_pdf = local_renderParameter(fig_dir, T, parameter, x_label, fname, 
     close(fig);
 end
 
-function local_plotOnePanel(ax, T, n_back, term, row_names, row_labels, colors, x_lims, x_label, plot_opts)
+function local_plotOnePanel(ax, T, n_back, term, row_names, row_labels, colors, x_lims, ~, plot_opts)
     hold(ax, 'on');
     xline(ax, 0, 'k-', 'HandleVisibility', 'off');
     y = numel(row_names):-1:1;
@@ -94,16 +94,13 @@ function local_plotOnePanel(ax, T, n_back, term, row_names, row_labels, colors, 
         est = row.estimate(1);
         lo = row.bca_lo(1);
         hi = row.bca_hi(1);
-        ok = local_isValid(row);
-        if ok
-            marker_face = colors(i_row, :);
-            line_style = '-';
-        else
+        if strcmp(term, 'previous_slope')
             marker_face = [1 1 1];
-            line_style = '--';
+        else
+            marker_face = colors(i_row, :);
         end
         if isfinite(lo) && isfinite(hi)
-            plot(ax, [lo, hi], [y(i_row), y(i_row)], line_style, ...
+            plot(ax, [lo, hi], [y(i_row), y(i_row)], '-', ...
                 'Color', colors(i_row, :) * 0.85, 'LineWidth', plot_opts.line_width, ...
                 'HandleVisibility', 'off');
         end
@@ -126,31 +123,20 @@ function local_plotOnePanel(ax, T, n_back, term, row_names, row_labels, colors, 
     box(ax, 'off');
     set(ax, 'TickDir', 'out', 'TickLength', [plot_opts.tick_length, plot_opts.tick_length], ...
         'LineWidth', plot_opts.line_width, 'FontSize', plot_opts.axes_tick_font_size);
-    xlabel(ax, x_label, 'FontSize', plot_opts.axes_label_font_size, 'Interpreter', 'none');
-end
-
-function tf = local_isValid(row)
-    tf = true;
-    if ismember('valid_for_inference', row.Properties.VariableNames)
-        tf = tf && logical(row.valid_for_inference(1));
-    end
-    if ismember('supports_effect', row.Properties.VariableNames)
-        tf = tf && logical(row.supports_effect(1));
-    end
 end
 
 function s = local_sigLabel(row)
     s = '';
     if ismember('p_fdr_bh_label', row.Properties.VariableNames)
         val = char(row.p_fdr_bh_label(1));
-        if contains(val, '*')
+        if ~isempty(strtrim(val))
             s = ['q=' val];
             return
         end
     end
     if ismember('p_bca_label', row.Properties.VariableNames)
         val = char(row.p_bca_label(1));
-        if contains(val, '*')
+        if ~isempty(strtrim(val))
             s = ['p=' val];
         end
     end
@@ -166,7 +152,7 @@ function c = local_colors(ps)
         red = ps.colors.red;
     catch
     end
-    c = [blue; green; red];
+    c = [green; blue; red];
 end
 
 function plot_opts = local_plotOpts(ps)
