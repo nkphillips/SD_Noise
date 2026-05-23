@@ -635,6 +635,8 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
     results.overlay  = overlay;
     results.empirical_delta_centers = delta_centers_emp;
     results.empirical_window_width  = empirical_window_width;
+    results.delta_theta_performance = computeDeltaThetaPerformanceFromTrialTable( ...
+        tbl_trials_raw, delta_centers_emp, empirical_window_width);
     results.jackknife = jk;
     results.ci_percentile = ci_perc;
     results.ci_bca = ci_bca;
@@ -774,6 +776,21 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
     % -------- Plots --------
     if ip.Results.make_figures
         ps = plotSettings();
+        try
+            p_plot = struct();
+            p_plot.cond_names = {'Contrast', 'Precision'};
+            p_plot.contrast = ip.Results.contrast_labels;
+            p_plot.precision = ip.Results.precision_labels;
+            plotPerformance(delta_centers_emp, ...
+                results.delta_theta_performance.performance, ...
+                results.delta_theta_performance.pCW, ...
+                p_plot, ...
+                ps, 'Super Subj Delta Theta', [], super_subj_dir, true);
+        catch perfPlotErr
+            warning('runSerialDependenceMLEBootstrap:deltaThetaPerformanceFailed', ...
+                'Delta-theta performance figure failed: %s', perfPlotErr.message);
+        end
+
         plotDoGMLEBootstrapFigures(ps, super_subj_dir, curve_boot, grid, params_boot, ci_pct, ...
             'contrast_labels', ip.Results.contrast_labels, ...
             'precision_labels', ip.Results.precision_labels, ...

@@ -361,6 +361,21 @@ function local_renderSuperSubjectResult(sd_noise, key, res, opts, n_back, result
             opts.contrast_labels, opts.precision_labels, opts.ps, res.ci_prctile, n_back, res.ci_method);
     end
 
+    try
+        perf = local_deltaThetaPerformance(sd_noise, key, res);
+        if ~isempty(perf)
+            p_plot = struct();
+            p_plot.cond_names = {'Contrast', 'Precision'};
+            p_plot.contrast = opts.contrast_labels;
+            p_plot.precision = opts.precision_labels;
+            plotPerformance(perf.delta_theta_centers, perf.performance, perf.pCW, ...
+                p_plot, opts.ps, 'Super Subj Delta Theta', [], super_dir, true);
+        end
+    catch perfPlotErr
+        warning('regenSuperSubjectFigs:deltaThetaPerformanceFailed', ...
+            'Delta-theta performance figure failed for %s: %s', key, perfPlotErr.message);
+    end
+
     is_folded = ~isempty(result_subdir) && strcmp(result_subdir, 'folded_delta_theta');
     if isfield(res, 'folded_delta_theta') && ~isempty(res.folded_delta_theta)
         is_folded = logical(res.folded_delta_theta);
@@ -439,4 +454,34 @@ function ci_method = local_contrastCIMethod(res)
     else
         ci_method = 'bca';
     end
+end
+
+function perf = local_deltaThetaPerformance(sd_noise, key, res)
+    if isfield(res, 'delta_theta_performance') && ~isempty(res.delta_theta_performance)
+        perf = res.delta_theta_performance;
+        return
+    end
+
+    perf = [];
+    if isfield(sd_noise, 'trials') && isfield(sd_noise.trials, key) && ...
+            isfield(sd_noise.trials.(key), 'raw') && ~isempty(sd_noise.trials.(key).raw)
+        tbl_trials = sd_noise.trials.(key).raw;
+    elseif isfield(res, 'tbl_trials_raw') && ~isempty(res.tbl_trials_raw)
+        tbl_trials = res.tbl_trials_raw;
+    else
+        return
+    end
+
+    if isfield(res, 'empirical_delta_centers') && ~isempty(res.empirical_delta_centers)
+        delta_centers = res.empirical_delta_centers;
+    else
+        delta_centers = -90:2:90;
+    end
+    if isfield(res, 'empirical_window_width') && ~isempty(res.empirical_window_width)
+        delta_width = res.empirical_window_width;
+    else
+        delta_width = 32;
+    end
+
+    perf = computeDeltaThetaPerformanceFromTrialTable(tbl_trials, delta_centers, delta_width);
 end
