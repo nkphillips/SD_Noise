@@ -21,7 +21,7 @@ function out = plotTargetedDoGEndpointEffects(fig_dir, results, tests, contrast_
         mkdir(fig_dir);
     end
 
-    pack = packUnbinnedScatterParams(results.summary_table);
+    pack = packSerialDependenceScatterParams(results.summary_table);
     plot_opts = local_buildPlotOpts(ps);
     ci_label = local_ciLabelFromTests(tests);
 

@@ -26,7 +26,7 @@ function T = fitPerSubjectPerManipulation(tbl_trials, fit_opts, subj_labels)
     end
 
     % Reproduce bounds used by fitConditionMLE so we can flag at-bound fits.
-    defaults = unbinnedMLEFitDefaults();
+    defaults = serialDependenceMLEFitDefaults();
     lb = defaults.lb;
     ub = defaults.ub;
     if isfield(fit_opts, 'lb') && ~isempty(fit_opts.lb), lb = fit_opts.lb(:); end
@@ -58,7 +58,7 @@ function T = fitPerSubjectPerManipulation(tbl_trials, fit_opts, subj_labels)
 
                 if all(isfinite(pf))
                     A = pf(1); w = pf(2); sg = pf(3); b = pf(4);
-                    fwhm = unbinnedWtoFwhm(w);
+                    fwhm = serialDependenceWtoFwhm(w);
 
                     pf_col = pf(:);
                     bound_hits = (abs(pf_col - lb) ./ span < bound_tol) | ...

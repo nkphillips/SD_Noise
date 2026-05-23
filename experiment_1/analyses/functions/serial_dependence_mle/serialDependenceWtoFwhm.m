@@ -1,5 +1,5 @@
-function fwhm = unbinnedWtoFwhm(w)
-% unbinnedWtoFwhm  Map S&S DoG width w (1/deg) to DoG-lobe FWHM in deg.
+function fwhm = serialDependenceWtoFwhm(w)
+% serialDependenceWtoFwhm  Map S&S DoG width w (1/deg) to DoG-lobe FWHM in deg.
 %
 % After reparameterization to Sheehan & Serences (2022) Eq. 1
 % (y = x*A*w*c*exp(-(w*x)^2), c = sqrt(2e), w in 1/deg), S&S report

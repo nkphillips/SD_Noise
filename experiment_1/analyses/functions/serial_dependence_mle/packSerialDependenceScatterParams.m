@@ -1,5 +1,5 @@
-function pack = packUnbinnedScatterParams(summary_table)
-% packUnbinnedScatterParams  Build 3×3×2 grids from results.summary_table for scatter plots.
+function pack = packSerialDependenceScatterParams(summary_table)
+% packSerialDependenceScatterParams  Build 3×3×2 grids from results.summary_table for scatter plots.
 %
 % pack.amp, pack.fwhm — point estimates from the pooled full-data fit.
 % pack.amp_lo/hi, pack.fwhm_lo/hi — active bootstrap CI bounds from summary_table.

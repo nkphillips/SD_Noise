@@ -1,5 +1,5 @@
-function r2_summary = writeUnbinnedR2Summary(fig_dir, summary_table)
-% writeUnbinnedR2Summary  Aggregate per-cell DoG R2 metrics for reporting.
+function r2_summary = writeSerialDependenceR2Summary(fig_dir, summary_table)
+% writeSerialDependenceR2Summary  Aggregate per-cell DoG R2 metrics for reporting.
 %
 % summary_table already stores one R2 per previous x current x manipulation
 % cell. This helper reports the mean, SD, and SEM across those cells.

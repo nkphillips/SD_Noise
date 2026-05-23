@@ -4,7 +4,7 @@ function [mu_hat, sigma_hat, exit_flag] = fitSubjectBaselineBias(x_probe, respon
 % Maximum-likelihood fit of (mu, sigma) for a Gaussian psychometric with a
 % Sheehan & Serences 2022 25% lapse rate, ignoring trial-by-trial Delta-theta
 % structure. Used to estimate each subject's response-bias baseline before
-% (optional) demeaning of x_probe in the unbinned SD pipeline.
+% (optional) demeaning of x_probe in the serial-dependence MLE pipeline.
 %
 %   P(CW | x) = (1 - lambda) * normcdf(x; mu, sigma) + 0.5 * lambda
 %

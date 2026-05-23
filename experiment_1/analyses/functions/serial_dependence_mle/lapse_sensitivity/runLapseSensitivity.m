@@ -99,7 +99,7 @@ function results = runLapseSensitivity(tbl_trials, varargin)
         for c = 1:num_conds
             wc = per_cell_params(c, 2);
             if isfinite(wc) && wc > 0
-                fwhm_grid(il, c) = unbinnedWtoFwhm(wc);
+                fwhm_grid(il, c) = serialDependenceWtoFwhm(wc);
             end
         end
         fprintf('  lambda = %.2f done\n', lambda);

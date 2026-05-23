@@ -1,5 +1,5 @@
-function plotUnbinnedSdScatterByNBack(fig_dir, results, n_back_list, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
-% plotUnbinnedSdScatterByNBack  Scatter summaries split by manipulation across n-back.
+function plotSerialDependenceScatterByNBack(fig_dir, results, n_back_list, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
+% plotSerialDependenceScatterByNBack  Scatter summaries split by manipulation across n-back.
 %
 % For each metric (amplitude, FWHM) and manipulation (contrast, precision),
 % renders one figure with one subplot per n-back. Axes are shared within each
@@ -33,7 +33,7 @@ function plotUnbinnedSdScatterByNBack(fig_dir, results, n_back_list, contrast_lb
         if isempty(res_i) || ~isfield(res_i, 'summary_table') || isempty(res_i.summary_table)
             continue
         end
-        pack = packUnbinnedScatterParams(res_i.summary_table);
+        pack = packSerialDependenceScatterParams(res_i.summary_table);
         amp(:, :, :, i_nb) = pack.amp;
         amp_lo(:, :, :, i_nb) = pack.amp_lo;
         amp_hi(:, :, :, i_nb) = pack.amp_hi;

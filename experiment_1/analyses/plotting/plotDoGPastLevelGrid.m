@@ -5,7 +5,8 @@ function plotDoGPastLevelGrid(sd, contrast_lbl, precision_lbl, opts)
 % Each panel draws the super-subject DoG for all three current levels (uses
 % sd.all.params_est(prev, curr, cond, 1:3) = [A, w, baseline] with calcDoG).
 %
-% No file I/O: pass sd (and labels) from the caller. For unbinned outputs, use
+% No file I/O: pass sd (and labels) from the caller. For serial-dependence
+% MLE outputs, use
 % sd.all.params_est = packSummaryTableToSdParamsEst(results.summary_table).
 %
 % Inputs:
@@ -16,7 +17,7 @@ function plotDoGPastLevelGrid(sd, contrast_lbl, precision_lbl, opts)
 % opts fields (all optional except fig layout):
 %   .n_back         - scalar for figure title (default 1)
 %   .cond_names     - 1x2 cell (default {'Contrast','Precision'})
-%   .title_tag      - short suffix for sgtitle, e.g. 'unbinned MLE (BCa)'
+%   .title_tag      - short suffix for sgtitle, e.g. 'serial-dependence MLE (BCa)'
 %   .save           - logical (default false)
 %   .fig_dir        - if .save true, directory for PDF
 %   .fname          - if nonempty and .save, filename; default DoG Past Level Grid <n_back>.pdf

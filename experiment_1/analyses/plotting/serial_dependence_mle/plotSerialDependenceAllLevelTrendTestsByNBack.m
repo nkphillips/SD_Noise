@@ -1,5 +1,5 @@
-function out = plotUnbinnedAllLevelTrendTestsByNBack(fig_dir, trend_tests, ps, ci_method)
-% plotUnbinnedAllLevelTrendTestsByNBack  Forest plots for all-level trend tests.
+function out = plotSerialDependenceAllLevelTrendTestsByNBack(fig_dir, trend_tests, ps, ci_method)
+% plotSerialDependenceAllLevelTrendTestsByNBack  Forest plots for all-level trend tests.
 
     if nargin < 4 || isempty(ci_method)
         ci_method = local_tableCIMethod(trend_tests);
@@ -94,10 +94,10 @@ function local_plotOnePanel(ax, T, n_back, term, row_names, row_labels, colors, 
         est = row.estimate(1);
         lo = row.bca_lo(1);
         hi = row.bca_hi(1);
-        if strcmp(term, 'previous_slope')
-            marker_face = [1 1 1];
-        else
+        if local_isSignificant(row)
             marker_face = colors(i_row, :);
+        else
+            marker_face = [1 1 1];
         end
         if isfinite(lo) && isfinite(hi)
             plot(ax, [lo, hi], [y(i_row), y(i_row)], '-', ...
@@ -139,6 +139,16 @@ function s = local_sigLabel(row)
         if ~isempty(strtrim(val))
             s = ['p=' val];
         end
+    end
+end
+
+function tf = local_isSignificant(row)
+    tf = false;
+    if ismember('p_fdr_bh_label', row.Properties.VariableNames)
+        tf = tf || contains(char(row.p_fdr_bh_label(1)), '*');
+    end
+    if ismember('p_bca_label', row.Properties.VariableNames)
+        tf = tf || contains(char(row.p_bca_label(1)), '*');
     end
 end
 

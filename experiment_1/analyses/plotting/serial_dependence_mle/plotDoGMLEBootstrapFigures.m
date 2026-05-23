@@ -75,7 +75,7 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
         all_y = [];
         for prev = 1:num_levels
             for curr = 1:num_levels
-                cidx = conditionIndexUnbinned(m, prev, curr);
+                cidx = conditionIndexSerialDependence(m, prev, curr);
                 slice_iso = reshape(curve_boot(:, cidx, :), [n_boot, n_grid]);
                 beta_b = reshape(params_boot(:, cidx, 4), [n_boot, 1]);
                 slice = slice_iso + beta_b;
@@ -134,7 +134,7 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
 
         for prev = 1:num_levels
             for curr = 1:num_levels
-                cidx = conditionIndexUnbinned(m, prev, curr);
+                cidx = conditionIndexSerialDependence(m, prev, curr);
                 ax = nexttile(tl);
 
                 fg_title = sprintf('%s \\rightarrow %s', labels{prev}, labels{curr});
@@ -235,7 +235,7 @@ function plotDoGMLEBootstrapFigures(ps, fig_dir, curve_boot, grid, params_boot, 
                     end
                     if ~all(isnan([pf(1), pf(2), pf(4)]))
                         if isfinite(pf(2)) && pf(2) > 0
-                            fwhm_pf = unbinnedWtoFwhm(pf(2));
+                            fwhm_pf = serialDependenceWtoFwhm(pf(2));
                         else
                             fwhm_pf = NaN;
                         end

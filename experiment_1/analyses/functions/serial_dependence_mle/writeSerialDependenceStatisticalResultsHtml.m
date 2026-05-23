@@ -1,5 +1,5 @@
-function out = writeUnbinnedStatisticalResultsHtml(sd_noise, output_root, opts)
-% writeUnbinnedStatisticalResultsHtml  Interactive HTML summary for saved analyses.
+function out = writeSerialDependenceStatisticalResultsHtml(sd_noise, output_root, opts)
+% writeSerialDependenceStatisticalResultsHtml  Interactive HTML summary for saved analyses.
 
     if nargin < 3 || isempty(opts)
         opts = struct();
@@ -49,7 +49,7 @@ end
 function local_writeHtml(html_path, sd_noise, opts, all_tests)
     fid = fopen(html_path, 'w');
     if fid == -1
-        error('writeUnbinnedStatisticalResultsHtml:openFailed', ...
+        error('writeSerialDependenceStatisticalResultsHtml:openFailed', ...
             'Could not open HTML output for writing: %s', html_path);
     end
     cleanup_obj = onCleanup(@() fclose(fid));

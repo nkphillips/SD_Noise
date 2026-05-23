@@ -258,7 +258,7 @@ for i_n_back = 1:length(n_back_conditions)
     %%% Serial dependence model parameters %%%
     p.sd_init_params = [1, 0.1, 0, 5]; % [amplitude, width (1/deg), baseline, sigma]
     sd_mu_lb = -30;  % allow repulsive amplitudes; was 1 (forbade negative A)
-    sd_mu_ub = 30;   % was 20; aligned with unbinned pipeline
+    sd_mu_ub = 30;   % was 20; aligned with serial-dependence MLE pipeline
 
     % Set width bounds via FWHM bounds (more interpretable), then convert to w = 1.6651 / FWHM
     fwhm_min_deg = 8;
@@ -266,7 +266,7 @@ for i_n_back = 1:length(n_back_conditions)
     w_lb = 1.6651 / fwhm_max_deg;
     w_ub = 1.6651 / fwhm_min_deg;
 
-    p.sd_bounds = [sd_mu_ub, w_ub, 10, p.rb_bounds(1,2); sd_mu_lb, w_lb, -10, p.rb_bounds(2,2)]; % [upper; lower]; baseline b widened to +-10 deg to align with unbinned pipeline
+    p.sd_bounds = [sd_mu_ub, w_ub, 10, p.rb_bounds(1,2); sd_mu_lb, w_lb, -10, p.rb_bounds(2,2)]; % [upper; lower]; baseline b widened to +-10 deg to align with serial-dependence MLE pipeline
     p.sd_objective = toggles.sd_objective; % 'nll' or 'sse' for serial dependence estimation
     p.sd_min_windows = max(3, floor(num.delta_theta_windows / 4)); % minimum finite mu(delta-theta) points required for subject-level DoG fits
     p.sd_lobe_edges  = [-90 -15 15 90]; % require >=1 finite mu in each of: left lobe, center, right lobe (used by bootstrap admission)

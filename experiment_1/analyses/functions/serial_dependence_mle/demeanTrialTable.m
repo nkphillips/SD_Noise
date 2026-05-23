@@ -35,7 +35,7 @@ function [tbl_demeaned, baselines] = demeanTrialTable(tbl_trials, fit_opts, skip
     fit_opts = local_baselineFitOpts(fit_opts);
 
     % Recover sigma bounds for the at-bound check. These are baseline
-    % psychometric [mu; sigma] bounds, not unbinned [A; w; sigma; beta] bounds.
+    % psychometric [mu; sigma] bounds, not serial-dependence [A; w; sigma; beta] bounds.
     sigma_lb = 1;   sigma_ub = 90;
     if isfield(fit_opts, 'lb') && ~isempty(fit_opts.lb), sigma_lb = fit_opts.lb(2); end
     if isfield(fit_opts, 'ub') && ~isempty(fit_opts.ub), sigma_ub = fit_opts.ub(2); end
@@ -115,7 +115,7 @@ function fit_opts = local_baselineFitOpts(fit_opts)
         if numel(vals) ~= 2
             warning('demeanTrialTable:badBaselineBounds', ...
                 ['Ignoring fit_opts.%s with %d values. Baseline demeaning expects ', ...
-                 '[mu; sigma] bounds, not unbinned [A; w; sigma; beta] bounds.'], ...
+                 '[mu; sigma] bounds, not serial-dependence [A; w; sigma; beta] bounds.'], ...
                 f, numel(vals));
             fit_opts.(f) = defaults.(f);
         else

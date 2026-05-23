@@ -1,5 +1,5 @@
-function sd = deriveSdStructFromUnbinnedResult(result)
-% deriveSdStructFromUnbinnedResult  Build legacy-style sd struct for plot helpers.
+function sd = deriveSdStructFromSerialDependenceResult(result)
+% deriveSdStructFromSerialDependenceResult  Build legacy-style sd struct for plot helpers.
 
     sd = struct();
     sd.all = struct();

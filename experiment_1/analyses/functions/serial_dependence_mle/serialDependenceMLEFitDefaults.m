@@ -1,5 +1,5 @@
-function d = unbinnedMLEFitDefaults()
-% unbinnedMLEFitDefaults  Central defaults for unbinned DoG + psychometric MLE.
+function d = serialDependenceMLEFitDefaults()
+% serialDependenceMLEFitDefaults  Central defaults for serial-dependence DoG + psychometric MLE.
 %
 % Parameters are ordered as [A; w; sigma; beta]. FWHM bounds are expressed
 % in degrees under the numerically estimated S&S DoG-lobe FWHM convention.
@@ -16,8 +16,8 @@ function d = unbinnedMLEFitDefaults()
     d.beta_ub = 10;
     d.beta_lb = -d.beta_ub;
 
-    d.w_lb = unbinnedFwhmToW(d.fwhm_max_deg);
-    d.w_ub = unbinnedFwhmToW(d.fwhm_min_deg);
+    d.w_lb = serialDependenceFwhmToW(d.fwhm_max_deg);
+    d.w_ub = serialDependenceFwhmToW(d.fwhm_min_deg);
 
     d.lb = [d.A_lb; d.w_lb; d.sigma_lb; d.beta_lb];
     d.ub = [d.A_ub; d.w_ub; d.sigma_ub; d.beta_ub];

@@ -67,7 +67,7 @@ sigma_lb = 1;
 p.rb_bounds = [mu_ub, sigma_ub;
     mu_lb,sigma_lb];
 
-% --- DoG-model bounds for the unbinned MLE (used for fmincon in fitConditionMLE) ---
+% --- DoG-model bounds for the trial-level MLE (used for fmincon in fitConditionMLE) ---
 % Order: [A (deg); w (1/deg); sigma (deg); beta (deg)]
 %   A    : DoG peak amplitude. Allow attractive AND repulsive serial dependence.
 %   w    : DoG width (1/deg) under the S&S 2022 parameterization. Specified via
@@ -75,7 +75,7 @@ p.rb_bounds = [mu_ub, sigma_ub;
 %   sigma: psychometric noise (deg). Lower bound 1 deg avoids lapse-sigma confound at the corner.
 %   beta : global response-bias offset (deg). +-10 deg accommodates observers
 %          with strong CW/CCW response biases.
-fit_defaults = unbinnedMLEFitDefaults();
+fit_defaults = serialDependenceMLEFitDefaults();
 p.fwhm_min_deg = fit_defaults.fwhm_min_deg;
 p.fwhm_max_deg = fit_defaults.fwhm_max_deg;
 

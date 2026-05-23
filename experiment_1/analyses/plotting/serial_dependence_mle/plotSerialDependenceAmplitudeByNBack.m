@@ -1,5 +1,5 @@
-function plotUnbinnedAmplitudeByNBack(fig_dir, results, n_back_list, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
-% plotUnbinnedAmplitudeByNBack  Amplitude decay across n-back.
+function plotSerialDependenceAmplitudeByNBack(fig_dir, results, n_back_list, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
+% plotSerialDependenceAmplitudeByNBack  Amplitude decay across n-back.
 %
 % Renders two 2 x 3 grids:
 %   1) columns are past level; within each panel, lines are current levels.
@@ -30,7 +30,7 @@ function plotUnbinnedAmplitudeByNBack(fig_dir, results, n_back_list, contrast_lb
         if isempty(res_i) || ~isfield(res_i, 'summary_table') || isempty(res_i.summary_table)
             continue
         end
-        pack = packUnbinnedScatterParams(res_i.summary_table);
+        pack = packSerialDependenceScatterParams(res_i.summary_table);
         amp(:, :, :, i_nb) = pack.amp;
         amp_lo(:, :, :, i_nb) = pack.amp_lo;
         amp_hi(:, :, :, i_nb) = pack.amp_hi;
@@ -77,7 +77,9 @@ function local_renderByFixedAxis(fig_dir, amp, amp_lo, amp_hi, n_back_list, y_li
 
     dodge = linspace(-0.16, 0.16, num_levels);
 
-    for cond = 1:num_conds
+    cond_order = [2 1];   % precision first, contrast second
+    for row = 1:num_conds
+        cond = cond_order(row);
         if cond == 1
             base_color = plot_opts.colors.blue;
             labels = contrast_lbl;
@@ -133,13 +135,13 @@ function local_renderByFixedAxis(fig_dir, amp, amp_lo, amp_hi, n_back_list, y_li
 
             title(ax, sprintf('%s: %s %s', row_lbl, fixed_axis, labels{fixed_level}), ...
                 'FontSize', plot_opts.axes_tick_font_size, 'Interpreter', 'none');
-            if cond == num_conds
+            if row == num_conds
                 xlabel(ax, 'n-back', 'FontSize', plot_opts.axes_label_font_size);
             else
                 set(ax, 'XTickLabel', []);
             end
             if fixed_level == 1
-                ylabel(ax, 'Amplitude A (deg)', 'FontSize', plot_opts.axes_label_font_size);
+                ylabel(ax, 'Amplitude (deg)', 'FontSize', plot_opts.axes_label_font_size);
             end
             if fixed_level == num_levels
                 legend(ax, 'Location', 'best', 'Interpreter', 'none', 'FontSize', 9);

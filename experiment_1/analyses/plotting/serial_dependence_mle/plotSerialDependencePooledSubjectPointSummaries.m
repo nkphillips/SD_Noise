@@ -1,5 +1,5 @@
-function plotUnbinnedPooledSubjectPointSummaries(fig_dir, summary_table, subject_cell_fits, contrast_lbl, precision_lbl, ps)
-% plotUnbinnedPooledSubjectPointSummaries  Pooled estimates with faint subject points.
+function plotSerialDependencePooledSubjectPointSummaries(fig_dir, summary_table, subject_cell_fits, contrast_lbl, precision_lbl, ps)
+% plotSerialDependencePooledSubjectPointSummaries  Pooled estimates with faint subject points.
 
     if isempty(subject_cell_fits) || height(subject_cell_fits) == 0
         return
@@ -8,7 +8,7 @@ function plotUnbinnedPooledSubjectPointSummaries(fig_dir, summary_table, subject
         mkdir(fig_dir);
     end
 
-    pack = packUnbinnedScatterParams(summary_table);
+    pack = packSerialDependenceScatterParams(summary_table);
     subj_pack = local_packSubjectFits(subject_cell_fits);
     plot_opts = local_buildPlotOpts(ps);
 
@@ -80,7 +80,9 @@ function local_renderOne(fig_dir, pooled_data, subj_data, subj_at_bound, ylabel_
         'PaperUnits', 'inches', 'PaperSize', [11 5], ...
         'PaperPositionMode', 'manual', 'PaperPosition', [0 0 11 5]);
 
-    for cond = 1:num_conds
+    cond_order = [2 1];   % precision first, contrast second
+    for panel = 1:num_conds
+        cond = cond_order(panel);
         if cond == 1
             base_color = plot_opts.colors.blue;
             legend_vals = contrast_lbl;
@@ -96,7 +98,7 @@ function local_renderOne(fig_dir, pooled_data, subj_data, subj_at_bound, ylabel_
         x_dodge = linspace(-0.08, 0.08, size(pooled_data, 1));
         pooled_y = fliplr(pooled_data(:, :, cond))';
 
-        ax = subplot(1, num_conds, cond);
+        ax = subplot(1, num_conds, panel);
         hold(ax, 'on');
 
         for s = 1:size(subj_data, 1)

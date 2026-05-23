@@ -1,5 +1,5 @@
-function html_path = writeUnbinnedSimpleSlopeTrendHtml(fig_dir, simple_tests, ci_method)
-% writeUnbinnedSimpleSlopeTrendHtml  Write browser-readable simple-slope report.
+function html_path = writeSerialDependenceSimpleSlopeTrendHtml(fig_dir, simple_tests, ci_method)
+% writeSerialDependenceSimpleSlopeTrendHtml  Write browser-readable simple-slope report.
 
     if nargin < 3 || isempty(ci_method)
         ci_method = local_tableCIMethod(simple_tests);
@@ -11,7 +11,7 @@ function html_path = writeUnbinnedSimpleSlopeTrendHtml(fig_dir, simple_tests, ci
 
     fid = fopen(html_path, 'w');
     if fid < 0
-        error('writeUnbinnedSimpleSlopeTrendHtml:openFailed', ...
+        error('writeSerialDependenceSimpleSlopeTrendHtml:openFailed', ...
             'Could not open HTML report for writing: %s', html_path);
     end
     cleaner = onCleanup(@() fclose(fid));

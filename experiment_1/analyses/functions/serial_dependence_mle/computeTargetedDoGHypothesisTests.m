@@ -275,7 +275,7 @@ function vals = local_values(results, parameter)
             vals = reshape(results.params_boot(:, :, 1), [results.B, 18]);
         case 'FWHM'
             w = reshape(results.params_boot(:, :, 2), [], 1);
-            f = unbinnedWtoFwhm(w);
+            f = serialDependenceWtoFwhm(w);
             vals = reshape(f, [results.B, 18]);
         otherwise
             error('computeTargetedDoGHypothesisTests:badParameter', 'Unknown parameter: %s', parameter);
@@ -289,7 +289,7 @@ function vals = local_jackknifeValues(results, parameter)
             vals = reshape(results.jackknife.params(:, :, 1), [n_subj, 18]);
         case 'FWHM'
             w = reshape(results.jackknife.params(:, :, 2), [], 1);
-            f = unbinnedWtoFwhm(w);
+            f = serialDependenceWtoFwhm(w);
             vals = reshape(f, [n_subj, 18]);
     end
 end
@@ -299,7 +299,7 @@ function vals = local_pointValues(results, parameter)
         case 'A'
             vals = results.overlay.params_point(:, 1);
         case 'FWHM'
-            vals = unbinnedWtoFwhm(results.overlay.params_point(:, 2));
+            vals = serialDependenceWtoFwhm(results.overlay.params_point(:, 2));
     end
     vals = vals(:);
 end

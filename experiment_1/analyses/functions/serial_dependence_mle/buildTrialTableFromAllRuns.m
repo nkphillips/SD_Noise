@@ -1,5 +1,5 @@
 function tbl_trials = buildTrialTableFromAllRuns(all_runs, p, num, n_back)
-% buildTrialTableFromAllRuns  Trial-level table for unbinned MLE (no delta-theta windows).
+% buildTrialTableFromAllRuns  Trial-level table for serial-dependence MLE (no delta-theta windows).
 
     subj_id_col = [];
     run_id_col = [];

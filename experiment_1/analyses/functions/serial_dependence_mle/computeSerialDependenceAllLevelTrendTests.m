@@ -1,8 +1,9 @@
-function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
-% computeUnbinnedSimpleSlopeTrendTests  Bootstrap simple slopes within plot subpanels.
+function tt = computeSerialDependenceAllLevelTrendTests(results, n_back)
+% computeSerialDependenceAllLevelTrendTests  Bootstrap trend tests over all 3 x 3 cells.
 %
-% Tests three-point linear trends that map directly onto the by-past and
-% by-current n-back figures. Levels are coded [-1, 0, +1].
+% Fits metric ~ previous_level + current_level + previous_level:current_level
+% to each manipulation's 3 x 3 cell estimates, with levels coded [-1, 0, +1].
+% A and FWHM use parameter-specific bootstrap/jackknife admission.
 
     if nargin < 2 || isempty(n_back)
         n_back = NaN;
@@ -21,16 +22,16 @@ function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
     required_fields = {'params_boot', 'admitted', 'overlay', 'ci_prctile'};
     for i = 1:numel(required_fields)
         if ~isfield(results, required_fields{i})
-            st = table();
+            tt = table();
             return
         end
     end
     if ~isfield(results.overlay, 'params_point')
-        st = table();
+        tt = table();
         return
     end
     if use_bca && (~isfield(results, 'jackknife') || ~isfield(results.jackknife, 'params'))
-        st = table();
+        tt = table();
         return
     end
 
@@ -45,15 +46,9 @@ function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
     parameter = strings(n_specs, 1);
     parameter_label = strings(n_specs, 1);
     manipulation = strings(n_specs, 1);
-    fixed_axis = strings(n_specs, 1);
-    fixed_level = zeros(n_specs, 1);
-    fixed_level_label = strings(n_specs, 1);
-    slope_axis = strings(n_specs, 1);
+    term = strings(n_specs, 1);
+    comparison = strings(n_specs, 1);
     estimate = nan(n_specs, 1);
-    middle_value = nan(n_specs, 1);
-    endpoint_midpoint = nan(n_specs, 1);
-    middle_deviation = nan(n_specs, 1);
-    point_monotonic = false(n_specs, 1);
     boot_median = nan(n_specs, 1);
     boot_mean = nan(n_specs, 1);
     bca_lo = nan(n_specs, 1);
@@ -75,28 +70,20 @@ function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
     valid_for_inference = false(n_specs, 1);
     ci_method_col = repmat(string(ci_method), n_specs, 1);
 
-    cache = struct();
-    cache.A = local_metricCache(results, 'A');
-    cache.FWHM = local_metricCache(results, 'FWHM');
+    coeffs = local_coeffDistributions(results);
 
     for i_spec = 1:n_specs
         spec = specs(i_spec);
-        vals = cache.(spec.parameter);
-        [est, boot_v, jk_v, n_good, point_diag] = local_evalSpec(vals, spec, use_bca);
+        vals = coeffs.(spec.parameter);
+        [est, boot_v, jk_v, n_good] = local_evalSpec(vals, spec, use_bca);
 
         name(i_spec) = string(spec.name);
         parameter(i_spec) = string(spec.parameter);
         parameter_label(i_spec) = string(spec.parameter_label);
         manipulation(i_spec) = string(spec.manipulation);
-        fixed_axis(i_spec) = string(spec.fixed_axis);
-        fixed_level(i_spec) = spec.fixed_level;
-        fixed_level_label(i_spec) = string(spec.fixed_level_label);
-        slope_axis(i_spec) = string(spec.slope_axis);
+        term(i_spec) = string(spec.term);
+        comparison(i_spec) = string(spec.comparison);
         estimate(i_spec) = est;
-        middle_value(i_spec) = point_diag.middle_value;
-        endpoint_midpoint(i_spec) = point_diag.endpoint_midpoint;
-        middle_deviation(i_spec) = point_diag.middle_deviation;
-        point_monotonic(i_spec) = point_diag.point_monotonic;
         n_admit(i_spec) = n_good;
         admit_fraction(i_spec) = n_good ./ results.B;
         low_admit_fraction(i_spec) = admit_fraction(i_spec) < min_admit_fraction;
@@ -124,7 +111,6 @@ function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
             bca_hi(i_spec) = pc_hi(i_spec);
             p_bca(i_spec) = local_percentileTwoSidedPValue(boot_v);
         end
-
         z0_col(i_spec) = z0;
         acc_col(i_spec) = acc;
         estimate_in_bca_ci(i_spec) = local_inInterval(est, bca_lo(i_spec), bca_hi(i_spec));
@@ -140,20 +126,16 @@ function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
     p_bca_label = arrayfun(@local_formatPLabel, p_bca);
     p_holm_label = arrayfun(@local_formatPLabel, p_holm);
     p_fdr_bh_label = arrayfun(@local_formatPLabel, p_fdr_bh);
-    supports_effect = valid_for_inference & bca_excludes_zero & pc_excludes_zero & point_monotonic;
+    supports_effect = valid_for_inference & bca_excludes_zero & pc_excludes_zero;
 
-    st = table(n_back_col, name, parameter, parameter_label, manipulation, ...
-        fixed_axis, fixed_level, fixed_level_label, slope_axis, estimate, ...
-        middle_value, endpoint_midpoint, middle_deviation, point_monotonic, ...
-        boot_median, boot_mean, bca_lo, bca_hi, pc_lo, pc_hi, ...
+    tt = table(n_back_col, name, parameter, parameter_label, manipulation, term, ...
+        comparison, estimate, boot_median, boot_mean, bca_lo, bca_hi, pc_lo, pc_hi, ...
         p_bca, p_bca_label, p_holm, p_holm_label, p_fdr_bh, p_fdr_bh_label, ...
         supports_effect, n_admit, admit_fraction, z0_col, acc_col, ...
         estimate_in_pc_ci, estimate_in_bca_ci, pc_excludes_zero, bca_excludes_zero, ...
         bca_pc_conflict, extreme_z0, low_admit_fraction, valid_for_inference, ci_method_col, ...
         'VariableNames', {'n_back', 'name', 'parameter', 'parameter_label', ...
-        'manipulation', 'fixed_axis', 'fixed_level', 'fixed_level_label', ...
-        'slope_axis', 'estimate', 'middle_value', 'endpoint_midpoint', ...
-        'middle_deviation', 'point_monotonic', 'boot_median', 'boot_mean', ...
+        'manipulation', 'term', 'comparison', 'estimate', 'boot_median', 'boot_mean', ...
         'bca_lo', 'bca_hi', 'pc_lo', 'pc_hi', 'p_bca', 'p_bca_label', ...
         'p_holm', 'p_holm_label', 'p_fdr_bh', 'p_fdr_bh_label', ...
         'supports_effect', 'n_admit', 'admit_fraction', 'z0', 'acc', ...
@@ -163,50 +145,75 @@ function st = computeUnbinnedSimpleSlopeTrendTests(results, n_back)
 end
 
 function specs = local_buildSpecs()
+    specs = struct('name', {}, 'parameter', {}, 'parameter_label', {}, ...
+        'manipulation', {}, 'term', {}, 'comparison', {});
     params = {'A', 'FWHM'};
     labels = {'Amplitude A (deg)', 'Range FWHM (deg)'};
+    terms = {'previous_slope', 'current_slope', 'previous_current_interaction'};
     manips = {'contrast', 'precision'};
-    specs = struct('name', {}, 'parameter', {}, 'parameter_label', {}, ...
-        'manipulation', {}, 'fixed_axis', {}, 'fixed_level', {}, ...
-        'fixed_level_label', {}, 'slope_axis', {}, 'cell_indices', {});
 
     for i_param = 1:numel(params)
-        for m = 1:numel(manips)
-            for prev = 1:3
-                idx = arrayfun(@(curr) local_cidx(m, prev, curr), 1:3);
-                specs(end+1) = local_spec(params{i_param}, labels{i_param}, manips{m}, ... %#ok<AGROW>
-                    'previous_level', prev, 'current_level', idx);
+        for i_manip = 1:numel(manips)
+            for i_term = 1:numel(terms)
+                specs(end+1) = local_spec(params{i_param}, labels{i_param}, ... %#ok<AGROW>
+                    manips{i_manip}, terms{i_term}, 'within_manipulation');
             end
-            for curr = 1:3
-                idx = arrayfun(@(prev) local_cidx(m, prev, curr), 1:3);
-                specs(end+1) = local_spec(params{i_param}, labels{i_param}, manips{m}, ... %#ok<AGROW>
-                    'current_level', curr, 'previous_level', idx);
-            end
+        end
+        for i_term = 1:numel(terms)
+            specs(end+1) = local_spec(params{i_param}, labels{i_param}, ... %#ok<AGROW>
+                'precision_minus_contrast', terms{i_term}, 'between_manipulation');
         end
     end
 end
 
-function spec = local_spec(parameter, parameter_label, manipulation, fixed_axis, fixed_level, slope_axis, idx)
-    fixed_level_label = sprintf('L%d', fixed_level);
-    spec = struct('name', sprintf('%s.%s.%s_%s%d.%s_slope', ...
-        parameter, manipulation, fixed_axis, fixed_axis(1), fixed_level, slope_axis), ...
+function spec = local_spec(parameter, parameter_label, manipulation, term, comparison)
+    spec = struct('name', sprintf('%s.%s.%s', parameter, manipulation, term), ...
         'parameter', parameter, ...
         'parameter_label', parameter_label, ...
         'manipulation', manipulation, ...
-        'fixed_axis', fixed_axis, ...
-        'fixed_level', fixed_level, ...
-        'fixed_level_label', fixed_level_label, ...
-        'slope_axis', slope_axis, ...
-        'cell_indices', idx(:)');
+        'term', term, ...
+        'comparison', comparison);
 end
 
-function cache = local_metricCache(results, parameter)
-    cache = struct();
-    cache.metric_boot = local_metricValues(results, parameter);
-    cache.metric_point = local_pointValues(results, parameter);
-    cache.metric_jk = local_jackknifeValues(results, parameter);
-    cache.admitted = local_paramAdmission(results, parameter);
-    cache.jk_bound = local_jackknifeBound(results, parameter);
+function coeffs = local_coeffDistributions(results)
+    coeffs = struct();
+    coeffs.A = local_oneParameterDistributions(results, 'A');
+    coeffs.FWHM = local_oneParameterDistributions(results, 'FWHM');
+end
+
+function vals = local_oneParameterDistributions(results, parameter)
+    B = results.B;
+    n_subj = results.n_subj;
+    vals = struct();
+    vals.point = nan(2, 3);
+    vals.boot = nan(B, 2, 3);
+    vals.boot_good = false(B, 2);
+    vals.jk = nan(n_subj, 2, 3);
+    vals.jk_good = false(n_subj, 2);
+
+    metric_boot = local_metricValues(results, parameter);
+    metric_point = local_pointValues(results, parameter);
+    metric_jk = local_jackknifeValues(results, parameter);
+    adm = local_paramAdmission(results, parameter);
+    jk_bound = local_jackknifeBound(results, parameter);
+    X = local_designMatrix();
+
+    for m = 1:2
+        idx = local_manipIndices(m);
+        vals.point(m, :) = local_fitTrend(metric_point(idx), X);
+
+        boot_good = all(adm(:, idx), 2) & all(isfinite(metric_boot(:, idx)), 2);
+        vals.boot_good(:, m) = boot_good;
+        for b = find(boot_good)'
+            vals.boot(b, m, :) = local_fitTrend(metric_boot(b, idx)', X);
+        end
+
+        jk_good = all(isfinite(metric_jk(:, idx)), 2) & ~any(jk_bound(:, idx), 2);
+        vals.jk_good(:, m) = jk_good;
+        for s = find(jk_good)'
+            vals.jk(s, m, :) = local_fitTrend(metric_jk(s, idx)', X);
+        end
+    end
 end
 
 function metric = local_metricValues(results, parameter)
@@ -215,9 +222,9 @@ function metric = local_metricValues(results, parameter)
             metric = reshape(results.params_boot(:, :, 1), [results.B, 18]);
         case 'FWHM'
             w = reshape(results.params_boot(:, :, 2), [], 1);
-            metric = reshape(unbinnedWtoFwhm(w), [results.B, 18]);
+            metric = reshape(serialDependenceWtoFwhm(w), [results.B, 18]);
         otherwise
-            error('computeUnbinnedSimpleSlopeTrendTests:badParameter', 'Unknown parameter: %s', parameter);
+            error('computeSerialDependenceAllLevelTrendTests:badParameter', 'Unknown parameter: %s', parameter);
     end
 end
 
@@ -226,7 +233,7 @@ function metric = local_pointValues(results, parameter)
         case 'A'
             metric = results.overlay.params_point(:, 1);
         case 'FWHM'
-            metric = unbinnedWtoFwhm(results.overlay.params_point(:, 2));
+            metric = serialDependenceWtoFwhm(results.overlay.params_point(:, 2));
     end
     metric = metric(:);
 end
@@ -241,7 +248,7 @@ function metric = local_jackknifeValues(results, parameter)
             metric = reshape(results.jackknife.params(:, :, 1), [results.n_subj, 18]);
         case 'FWHM'
             w = reshape(results.jackknife.params(:, :, 2), [], 1);
-            metric = reshape(unbinnedWtoFwhm(w), [results.n_subj, 18]);
+            metric = reshape(serialDependenceWtoFwhm(w), [results.n_subj, 18]);
     end
 end
 
@@ -275,63 +282,71 @@ function jk_bound = local_jackknifeBound(results, parameter)
     jk_bound = reshape(results.jackknife.at_bound(:, :, k), [results.n_subj, 18]);
 end
 
-function [estimate, boot_v, jk_v, n_good, point_diag] = local_evalSpec(cache, spec, use_bca)
-    idx = spec.cell_indices;
-    x = [-1; 0; 1];
-    point_vals = cache.metric_point(idx);
-    estimate = local_fitSlope(point_vals, x);
-    point_diag = local_pointDiagnostics(point_vals, estimate);
-
-    good = all(cache.admitted(:, idx), 2) & all(isfinite(cache.metric_boot(:, idx)), 2);
-    boot_v = nan(size(cache.metric_boot, 1), 1);
-    for b = find(good)'
-        boot_v(b) = local_fitSlope(cache.metric_boot(b, idx)', x);
-    end
-    n_good = sum(good);
-
-    jk_good = all(isfinite(cache.metric_jk(:, idx)), 2) & ~any(cache.jk_bound(:, idx), 2);
-    jk_v = nan(size(cache.metric_jk, 1), 1);
-    if use_bca
-        for s = find(jk_good)'
-            jk_v(s) = local_fitSlope(cache.metric_jk(s, idx)', x);
+function X = local_designMatrix()
+    levels = [-1; 0; 1];
+    prev = zeros(9, 1);
+    curr = zeros(9, 1);
+    r = 0;
+    for p = 1:3
+        for c = 1:3
+            r = r + 1;
+            prev(r) = levels(p);
+            curr(r) = levels(c);
         end
     end
+    X = [ones(9, 1), prev, curr, prev .* curr];
 end
 
-function d = local_pointDiagnostics(y, slope)
+function idx = local_manipIndices(manipulation)
+    idx = (manipulation - 1) * 9 + (1:9);
+end
+
+function beta = local_fitTrend(y, X)
     y = y(:);
-    d = struct('middle_value', NaN, 'endpoint_midpoint', NaN, ...
-        'middle_deviation', NaN, 'point_monotonic', false);
-    if numel(y) < 3 || any(~isfinite(y(1:3)))
-        return
+    ok = isfinite(y);
+    beta_full = nan(4, 1);
+    if sum(ok) >= size(X, 2)
+        beta_full = X(ok, :) \ y(ok);
     end
-    d.middle_value = y(2);
-    d.endpoint_midpoint = mean([y(1), y(3)]);
-    d.middle_deviation = y(2) - d.endpoint_midpoint;
-    tol = 1e-10;
-    if slope > 0
-        d.point_monotonic = (y(1) <= y(2) + tol) && (y(2) <= y(3) + tol);
-    elseif slope < 0
-        d.point_monotonic = (y(1) >= y(2) - tol) && (y(2) >= y(3) - tol);
+    beta = beta_full(2:4)';
+end
+
+function [estimate, boot_v, jk_v, n_good] = local_evalSpec(vals, spec, use_bca)
+    term_idx = local_termIndex(spec.term);
+    if strcmp(spec.manipulation, 'contrast')
+        estimate = vals.point(1, term_idx);
+        boot_v = squeeze(vals.boot(:, 1, term_idx));
+        jk_v = squeeze(vals.jk(:, 1, term_idx));
+        good = vals.boot_good(:, 1) & isfinite(boot_v);
+    elseif strcmp(spec.manipulation, 'precision')
+        estimate = vals.point(2, term_idx);
+        boot_v = squeeze(vals.boot(:, 2, term_idx));
+        jk_v = squeeze(vals.jk(:, 2, term_idx));
+        good = vals.boot_good(:, 2) & isfinite(boot_v);
     else
-        d.point_monotonic = abs(y(1) - y(2)) <= tol && abs(y(2) - y(3)) <= tol;
+        estimate = vals.point(2, term_idx) - vals.point(1, term_idx);
+        boot_v = squeeze(vals.boot(:, 2, term_idx)) - squeeze(vals.boot(:, 1, term_idx));
+        jk_v = squeeze(vals.jk(:, 2, term_idx)) - squeeze(vals.jk(:, 1, term_idx));
+        good = vals.boot_good(:, 1) & vals.boot_good(:, 2) & isfinite(boot_v);
+    end
+    boot_v(~good) = NaN;
+    n_good = sum(good);
+    if ~use_bca
+        jk_v(:) = NaN;
     end
 end
 
-function slope = local_fitSlope(y, x)
-    y = y(:);
-    ok = isfinite(y) & isfinite(x);
-    if sum(ok) < 2
-        slope = NaN;
-        return
+function idx = local_termIndex(term)
+    switch char(term)
+        case 'previous_slope'
+            idx = 1;
+        case 'current_slope'
+            idx = 2;
+        case 'previous_current_interaction'
+            idx = 3;
+        otherwise
+            error('computeSerialDependenceAllLevelTrendTests:badTerm', 'Unknown term: %s', char(term));
     end
-    X = [ones(sum(ok), 1), x(ok)];
-    beta = X \ y(ok);
-    slope = beta(2);
-end
-
-function c = local_cidx(manipulation, prev, curr)
-    c = (manipulation - 1) * 9 + (prev - 1) * 3 + curr;
 end
 
 function tf = local_inInterval(x, lo, hi)

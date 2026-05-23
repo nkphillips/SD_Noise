@@ -1,5 +1,5 @@
-function diag_tbl = buildUnbinnedCIDiagnostics(results)
-% buildUnbinnedCIDiagnostics  Per-cell diagnostics comparing percentile and BCa CIs.
+function diag_tbl = buildSerialDependenceCIDiagnostics(results)
+% buildSerialDependenceCIDiagnostics  Per-cell diagnostics comparing percentile and BCa CIs.
 
     param_names = {'A', 'w', 'sigma', 'beta', 'FWHM'};
     num_conds = 18;
@@ -92,8 +92,8 @@ function diag_tbl = buildUnbinnedCIDiagnostics(results)
                 else
                     adm = results.admitted(:, c) & isfinite(vals_all_w);
                 end
-                vals = unbinnedWtoFwhm(vals_all_w(adm));
-                point(row) = unbinnedWtoFwhm(results.overlay.params_point(c, 2));
+                vals = serialDependenceWtoFwhm(vals_all_w(adm));
+                point(row) = serialDependenceWtoFwhm(results.overlay.params_point(c, 2));
                 pc_lo(row) = results.ci_percentile.fwhm_lo(c);
                 pc_hi(row) = results.ci_percentile.fwhm_hi(c);
                 bca_lo(row) = results.ci_bca.fwhm_lo(c);

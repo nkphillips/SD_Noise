@@ -1,5 +1,5 @@
-function plotUnbinnedSdScatterSummaries(fig_dir, summary_table, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
-% plotUnbinnedSdScatterSummaries  Super-Subj-style SD amplitude & FWHM scatter (3 lines × 3 currents).
+function plotSerialDependenceScatterSummaries(fig_dir, summary_table, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
+% plotSerialDependenceScatterSummaries  Super-Subj-style SD amplitude & FWHM scatter (3 lines × 3 currents).
 % Mirrors plotSerialDependence scatter layout (experiment_1/analyses/plotting/plotSerialDependence.m).
 %
 % Saves PDFs under fig_dir:
@@ -13,7 +13,7 @@ function plotUnbinnedSdScatterSummaries(fig_dir, summary_table, contrast_lbl, pr
         ci_method = 'bootstrap';
     end
 
-    pack = packUnbinnedScatterParams(summary_table);
+    pack = packSerialDependenceScatterParams(summary_table);
     plot_opts = local_buildPlotOpts(ps);
 
     % Equal-tailed interval: e.g. [2.5 97.5] -> 95% nominal coverage
@@ -21,12 +21,12 @@ function plotUnbinnedSdScatterSummaries(fig_dir, summary_table, contrast_lbl, pr
     ci_lbl = sprintf('%.0f%% %s CI', ci_nominal_pct, local_ciLabel(ci_method));
 
     local_renderOne(fig_dir, pack.amp, pack.amp_lo, pack.amp_hi, ...
-        'Amplitude', 'serial_dependence_amplitude_summary.pdf', ...
+        'Amplitude (deg)', 'serial_dependence_amplitude_summary.pdf', ...
         sprintf('Serial dependence amplitude (%s)', ci_lbl), ...
         contrast_lbl, precision_lbl, plot_opts, ci_lbl, 'general');
 
     local_renderOne(fig_dir, pack.fwhm, pack.fwhm_lo, pack.fwhm_hi, ...
-        'Width FWHM (deg)', 'serial_dependence_fwhm_summary.pdf', ...
+        'FWHM (deg)', 'serial_dependence_fwhm_summary.pdf', ...
         sprintf('Serial dependence width (FWHM; %s)', ci_lbl), ...
         contrast_lbl, precision_lbl, plot_opts, ci_lbl, 'general');
 
@@ -63,7 +63,9 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
         'PaperUnits', 'inches', 'PaperSize', [11 5], ...
         'PaperPositionMode', 'manual', 'PaperPosition', [0 0 11 5]);
 
-    for cond = 1:num_conds
+    cond_order = [2 1];   % precision first, contrast second
+    for panel = 1:num_conds
+        cond = cond_order(panel);
 
         cond_data = param_data(:, :, cond);
 
@@ -88,7 +90,7 @@ function local_renderOne(fig_dir, param_data, ci_lo, ci_hi, ylabel_str, fname, s
             hi_y = fliplr(ci_hi_cond)';
         end
 
-        ax = subplot(1, num_conds, cond);
+        ax = subplot(1, num_conds, panel);
         hold(ax, 'on');
 
         for i = 1:size(y, 2)

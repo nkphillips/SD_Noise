@@ -37,7 +37,7 @@ function [params, exit_flag] = fitConditionMLE(delta_theta, x_probe, response, o
     x_probe = x_probe(valid);
     response = response(valid);
 
-    defaults = unbinnedMLEFitDefaults();
+    defaults = serialDependenceMLEFitDefaults();
     lb = defaults.lb;
     ub = defaults.ub;
     x0 = defaults.x0;
@@ -62,7 +62,7 @@ function [params, exit_flag] = fitConditionMLE(delta_theta, x_probe, response, o
     end
 
     map_opts = resolveMapOptions(opts, lb, ub, x0);
-    objective = @(theta) objectiveUnbinned(theta, delta_theta, x_probe, response, guess_rate, map_opts);
+    objective = @(theta) objectiveSerialDependence(theta, delta_theta, x_probe, response, guess_rate, map_opts);
 
     try
         [theta_hat, ~, exit_flag] = fmincon(objective, x0, [], [], [], [], lb, ub, [], fmin_opts);
@@ -119,8 +119,8 @@ function map_opts = resolveMapOptions(opts, lb, ub, x0)
     end
 end
 
-function cost = objectiveUnbinned(theta, delta_theta, x_probe, response, guess_rate, map_opts)
-    nll = nllUnbinned(theta, delta_theta, x_probe, response, guess_rate);
+function cost = objectiveSerialDependence(theta, delta_theta, x_probe, response, guess_rate, map_opts)
+    nll = nllSerialDependence(theta, delta_theta, x_probe, response, guess_rate);
     cost = nll;
 
     if map_opts.use_map
@@ -130,7 +130,7 @@ function cost = objectiveUnbinned(theta, delta_theta, x_probe, response, guess_r
     end
 end
 
-function nll = nllUnbinned(theta, delta_theta, x_probe, response, guess_rate)
+function nll = nllSerialDependence(theta, delta_theta, x_probe, response, guess_rate)
     A     = theta(1);
     w     = theta(2);
     sigma = theta(3);

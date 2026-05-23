@@ -1,5 +1,5 @@
-function plotUnbinnedR2CellScatter(fig_dir, summary_table, ps, n_back)
-% plotUnbinnedR2CellScatter  Per-cell DoG R2 diagnostic scatter.
+function plotSerialDependenceR2CellScatter(fig_dir, summary_table, ps, n_back)
+% plotSerialDependenceR2CellScatter  Per-cell DoG R2 diagnostic scatter.
 %
 % Renders two panels, one per manipulation, with the 3 x 3 previous-current
 % cells shown as nine points. Uses r2_delta_bins, the Efron R2 aligned with

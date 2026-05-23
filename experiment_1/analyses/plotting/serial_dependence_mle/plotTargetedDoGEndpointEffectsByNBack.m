@@ -39,7 +39,7 @@ function out_pdf = local_renderMetric(fig_dir, results, n_back_list, parameter, 
         if isempty(res_i) || ~isfield(res_i, 'summary_table') || isempty(res_i.summary_table)
             continue
         end
-        packs{i_nb} = packUnbinnedScatterParams(res_i.summary_table);
+        packs{i_nb} = packSerialDependenceScatterParams(res_i.summary_table);
         tests{i_nb} = computeTargetedDoGHypothesisTests(res_i, n_back_list(i_nb));
         abs_vals = [abs_vals; local_collectAbsoluteValues(packs{i_nb}, parameter, axis_name, show_middle_level)]; %#ok<AGROW>
         delta_vals = [delta_vals; local_collectDeltaValues(tests{i_nb}, parameter)]; %#ok<AGROW>

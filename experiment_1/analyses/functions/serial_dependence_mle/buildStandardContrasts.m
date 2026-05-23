@@ -5,7 +5,7 @@ function specs = buildStandardContrasts(varargin)
 % three pairwise off-diagonal comparisons, and the manipulation-grand mean.
 % Defaults to amplitude only; pass 'params', {'A','w','sigma','beta'} for more.
 %
-% Cell indexing convention (conditionIndexUnbinned): c = (m-1)*9 + (prev-1)*3 + curr.
+% Cell indexing convention (conditionIndexSerialDependence): c = (m-1)*9 + (prev-1)*3 + curr.
 % Levels are ordered so that L1 = highest-information level (90% contrast or 2 deg precision)
 % and L3 = lowest-information level (25% contrast or 80 deg precision).
 %

@@ -1,5 +1,5 @@
 function out = regenSuperSubjectFigs(sd_noise, opts)
-% regenSuperSubjectFigs  Re-render super-subject unbinned MLE figures from sd_noise.
+% regenSuperSubjectFigs  Re-render super-subject trial-level MLE figures from sd_noise.
 %
 % This function performs no model fitting/bootstrap. It only consumes saved
 % results and writes figures/CSVs.
@@ -47,11 +47,11 @@ function out = regenSuperSubjectFigs(sd_noise, opts)
             ci_method = opts.ci_figure_methods{i_ci};
             ci_results = local_resultsWithCIMethod(sd_noise.results, opts.n_back_list, ci_method);
             cross_dir = fullfile(opts.output_root, 'across_n_back', local_ciSubdir(ci_method));
-            plotUnbinnedAmplitudeByNBack(cross_dir, ci_results, opts.n_back_list, ...
+            plotSerialDependenceAmplitudeByNBack(cross_dir, ci_results, opts.n_back_list, ...
                 opts.contrast_labels, opts.precision_labels, opts.ps, opts.ci_prctile, ci_method);
-            plotUnbinnedFwhmByNBack(cross_dir, ci_results, opts.n_back_list, ...
+            plotSerialDependenceFwhmByNBack(cross_dir, ci_results, opts.n_back_list, ...
                 opts.contrast_labels, opts.precision_labels, opts.ps, opts.ci_prctile, ci_method);
-            plotUnbinnedSdScatterByNBack(cross_dir, ci_results, opts.n_back_list, ...
+            plotSerialDependenceScatterByNBack(cross_dir, ci_results, opts.n_back_list, ...
                 opts.contrast_labels, opts.precision_labels, opts.ps, opts.ci_prctile, ci_method);
             plotTargetedDoGEndpointEffectsByNBack(cross_dir, ci_results, opts.n_back_list, ...
                 opts.contrast_labels, opts.precision_labels, opts.ps, ...
@@ -63,7 +63,7 @@ function out = regenSuperSubjectFigs(sd_noise, opts)
                     mkdir(trend_dir);
                 end
                 writetable(trend_tests, fullfile(trend_dir, 'all_level_trend_tests.csv'));
-                plotUnbinnedAllLevelTrendTestsByNBack(trend_dir, trend_tests, opts.ps, ci_method);
+                plotSerialDependenceAllLevelTrendTestsByNBack(trend_dir, trend_tests, opts.ps, ci_method);
             end
             simple_dir = fullfile(cross_dir, 'simple_slope_trends');
             simple_tests = local_collectSimpleSlopeTrendTests(ci_results, opts.n_back_list);
@@ -72,15 +72,15 @@ function out = regenSuperSubjectFigs(sd_noise, opts)
                     mkdir(simple_dir);
                 end
                 writetable(simple_tests, fullfile(simple_dir, 'simple_slope_trend_tests.csv'));
-                plotUnbinnedSimpleSlopeTrendTestsByNBack(simple_dir, simple_tests, opts.ps, ci_method, ...
+                plotSerialDependenceSimpleSlopeTrendTestsByNBack(simple_dir, simple_tests, opts.ps, ci_method, ...
                     opts.contrast_labels, opts.precision_labels);
-                writeUnbinnedSimpleSlopeTrendHtml(simple_dir, simple_tests, ci_method);
+                writeSerialDependenceSimpleSlopeTrendHtml(simple_dir, simple_tests, ci_method);
             end
         end
     end
 
     try
-        out.statistical_results = writeUnbinnedStatisticalResultsHtml(sd_noise, opts.output_root, opts);
+        out.statistical_results = writeSerialDependenceStatisticalResultsHtml(sd_noise, opts.output_root, opts);
     catch reportErr
         warning('regenSuperSubjectFigs:statisticalReportFailed', ...
             'Statistical results HTML report failed: %s', reportErr.message);
@@ -157,10 +157,10 @@ function res = local_withCIMethod(res, ci_method, n_back)
     res.ci_active = res.(ci_field);
     if isfield(res, 'summary_table') && ~isempty(res.summary_table)
         res.summary_table = local_summaryWithActiveCI(res.summary_table, res.ci_active, ci_method);
-        res.r2_summary = writeUnbinnedR2Summary([], res.summary_table);
+        res.r2_summary = writeSerialDependenceR2Summary([], res.summary_table);
     end
     try
-        res.summary_table_ci_diagnostics = buildUnbinnedCIDiagnostics(res);
+        res.summary_table_ci_diagnostics = buildSerialDependenceCIDiagnostics(res);
     catch
         res.summary_table_ci_diagnostics = table();
     end
@@ -177,16 +177,16 @@ function res = local_withCIMethod(res, ci_method, n_back)
     res.contrast_table = table();
     try
         cspecs = buildStandardContrasts('params', {'A','w','sigma','beta'});
-        res.contrast_table = computeUnbinnedContrasts(res, cspecs);
+        res.contrast_table = computeSerialDependenceContrasts(res, cspecs);
     catch
     end
     try
-        res.all_level_trend_tests = computeUnbinnedAllLevelTrendTests(res, n_back);
+        res.all_level_trend_tests = computeSerialDependenceAllLevelTrendTests(res, n_back);
     catch
         res.all_level_trend_tests = table();
     end
     try
-        res.simple_slope_trend_tests = computeUnbinnedSimpleSlopeTrendTests(res, n_back);
+        res.simple_slope_trend_tests = computeSerialDependenceSimpleSlopeTrendTests(res, n_back);
     catch
         res.simple_slope_trend_tests = table();
     end
@@ -205,7 +205,7 @@ function trend_tests = local_collectAllLevelTrendTests(results, n_back_list)
             tbl = res.all_level_trend_tests;
         else
             try
-                tbl = computeUnbinnedAllLevelTrendTests(res, n_back);
+                tbl = computeSerialDependenceAllLevelTrendTests(res, n_back);
             catch
                 tbl = table();
             end
@@ -229,7 +229,7 @@ function simple_tests = local_collectSimpleSlopeTrendTests(results, n_back_list)
             tbl = res.simple_slope_trend_tests;
         else
             try
-                tbl = computeUnbinnedSimpleSlopeTrendTests(res, n_back);
+                tbl = computeSerialDependenceSimpleSlopeTrendTests(res, n_back);
             catch
                 tbl = table();
             end
@@ -306,12 +306,12 @@ end
 
 function sd = local_getDerivedSd(sd_noise, key, res)
     if isfield(res, 'summary_table') && ~isempty(res.summary_table)
-        sd = deriveSdStructFromUnbinnedResult(res);
+        sd = deriveSdStructFromSerialDependenceResult(res);
     elseif isfield(sd_noise, 'derived') && isfield(sd_noise.derived, key) && ...
             isfield(sd_noise.derived.(key), 'sd')
         sd = sd_noise.derived.(key).sd;
     else
-        sd = deriveSdStructFromUnbinnedResult(res);
+        sd = deriveSdStructFromSerialDependenceResult(res);
     end
 end
 
@@ -331,12 +331,12 @@ function local_renderSuperSubjectResult(sd_noise, key, res, opts, n_back, result
         if isfield(res, 'summary_table_ci_diagnostics') && ~isempty(res.summary_table_ci_diagnostics)
             writetable(res.summary_table_ci_diagnostics, fullfile(super_dir, 'summary_table_ci_diagnostics.csv'));
         end
-        writeUnbinnedR2Summary(super_dir, res.summary_table);
-        plotUnbinnedR2CellScatter(super_dir, res.summary_table, opts.ps, n_back);
+        writeSerialDependenceR2Summary(super_dir, res.summary_table);
+        plotSerialDependenceR2CellScatter(super_dir, res.summary_table, opts.ps, n_back);
         subject_cell_fits = local_subjectCellFits(res);
         if ~isempty(subject_cell_fits) && height(subject_cell_fits) > 0
             writetable(subject_cell_fits, fullfile(super_dir, 'subject_cell_fits.csv'));
-            plotUnbinnedPooledSubjectPointSummaries(super_dir, res.summary_table, ...
+            plotSerialDependencePooledSubjectPointSummaries(super_dir, res.summary_table, ...
                 subject_cell_fits, opts.contrast_labels, opts.precision_labels, opts.ps);
         end
     end
@@ -379,8 +379,10 @@ function local_renderSuperSubjectResult(sd_noise, key, res, opts, n_back, result
         'bootstrap_unit', local_bootstrapUnit(res), ...
         'folded_delta_theta', is_folded);
 
-    plotUnbinnedSdScatterSummaries(super_dir, res.summary_table, ...
+    plotSerialDependenceScatterSummaries(super_dir, res.summary_table, ...
         opts.contrast_labels, opts.precision_labels, opts.ps, res.ci_prctile, res.ci_method);
+    plotSerialDependenceLevelSummaries(super_dir, res.summary_table, ...
+        opts.contrast_labels, opts.precision_labels, opts.ps, res.ci_prctile, res.ci_method, n_back);
 
     try
         tests_i = computeTargetedDoGHypothesisTests(res, n_back);

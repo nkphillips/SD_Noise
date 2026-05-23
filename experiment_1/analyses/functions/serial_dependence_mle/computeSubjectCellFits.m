@@ -16,7 +16,7 @@ function T = computeSubjectCellFits(tbl_trials, fit_opts, subj_labels, varargin)
         subj_labels = arrayfun(@(i) sprintf('S%02d', i), 1:n_subj, 'UniformOutput', false);
     end
 
-    defaults = unbinnedMLEFitDefaults();
+    defaults = serialDependenceMLEFitDefaults();
     lb = defaults.lb;
     ub = defaults.ub;
     if isfield(fit_opts, 'lb') && ~isempty(fit_opts.lb), lb = fit_opts.lb(:); end
@@ -51,7 +51,7 @@ function T = computeSubjectCellFits(tbl_trials, fit_opts, subj_labels, varargin)
                     w = pf(2);
                     sg = pf(3);
                     beta = pf(4);
-                    fwhm = unbinnedWtoFwhm(w);
+                    fwhm = serialDependenceWtoFwhm(w);
                     pf_col = pf(:);
                     bound_hits = (abs(pf_col - lb) ./ span < ip.Results.bound_tol) | ...
                         (abs(pf_col - ub) ./ span < ip.Results.bound_tol);

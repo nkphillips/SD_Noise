@@ -1,5 +1,5 @@
-function plotUnbinnedFwhmByNBack(fig_dir, results, n_back_list, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
-% plotUnbinnedFwhmByNBack  DoG-lobe FWHM decay across n-back.
+function plotSerialDependenceFwhmByNBack(fig_dir, results, n_back_list, contrast_lbl, precision_lbl, ps, ci_pct, ci_method)
+% plotSerialDependenceFwhmByNBack  DoG-lobe FWHM decay across n-back.
 %
 % Renders two 2 x 3 grids:
 %   1) columns are past level; within each panel, lines are current levels.
@@ -30,7 +30,7 @@ function plotUnbinnedFwhmByNBack(fig_dir, results, n_back_list, contrast_lbl, pr
         if isempty(res_i) || ~isfield(res_i, 'summary_table') || isempty(res_i.summary_table)
             continue
         end
-        pack = packUnbinnedScatterParams(res_i.summary_table);
+        pack = packSerialDependenceScatterParams(res_i.summary_table);
         fwhm(:, :, :, i_nb) = pack.fwhm;
         fwhm_lo(:, :, :, i_nb) = pack.fwhm_lo;
         fwhm_hi(:, :, :, i_nb) = pack.fwhm_hi;
@@ -77,7 +77,9 @@ function local_renderByFixedAxis(fig_dir, fwhm, fwhm_lo, fwhm_hi, n_back_list, y
 
     dodge = linspace(-0.16, 0.16, num_levels);
 
-    for cond = 1:num_conds
+    cond_order = [2 1];   % precision first, contrast second
+    for row = 1:num_conds
+        cond = cond_order(row);
         if cond == 1
             base_color = plot_opts.colors.blue;
             labels = contrast_lbl;
@@ -132,13 +134,13 @@ function local_renderByFixedAxis(fig_dir, fwhm, fwhm_lo, fwhm_hi, n_back_list, y
 
             title(ax, sprintf('%s: %s %s', row_lbl, fixed_axis, labels{fixed_level}), ...
                 'FontSize', plot_opts.axes_tick_font_size, 'Interpreter', 'none');
-            if cond == num_conds
+            if row == num_conds
                 xlabel(ax, 'n-back', 'FontSize', plot_opts.axes_label_font_size);
             else
                 set(ax, 'XTickLabel', []);
             end
             if fixed_level == 1
-                ylabel(ax, 'Width FWHM (deg)', 'FontSize', plot_opts.axes_label_font_size);
+                ylabel(ax, 'FWHM (deg)', 'FontSize', plot_opts.axes_label_font_size);
             end
             if fixed_level == num_levels
                 legend(ax, 'Location', 'best', 'Interpreter', 'none', 'FontSize', 9);

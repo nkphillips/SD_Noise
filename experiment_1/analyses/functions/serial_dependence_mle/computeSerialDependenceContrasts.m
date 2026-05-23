@@ -1,5 +1,5 @@
-function ct = computeUnbinnedContrasts(results, contrast_specs)
-% computeUnbinnedContrasts  Bootstrap CIs on linear-combination contrasts of the
+function ct = computeSerialDependenceContrasts(results, contrast_specs)
+% computeSerialDependenceContrasts  Bootstrap CIs on linear-combination contrasts of the
 % per-cell bootstrap parameters from runSerialDependenceMLEBootstrap.
 %
 % Inputs:
@@ -37,7 +37,7 @@ function ct = computeUnbinnedContrasts(results, contrast_specs)
 % IMPORTANT: the corrections use the FULL TABLE as the family. If you want to
 % correct within a smaller family (e.g., only main effects of prev), subset the
 % table first and recompute the corrections manually using the helpers below
-% (or call computeUnbinnedContrasts on a subset of contrast_specs).
+% (or call computeSerialDependenceContrasts on a subset of contrast_specs).
 %
 % A replicate contributes to a contrast only if all cells with non-zero weight
 % in that contrast were admitted for that parameter.
@@ -49,7 +49,7 @@ end
 use_bca = strcmp(ci_method, 'bca');
 
 if use_bca && (~isfield(results, 'jackknife') || ~isfield(results.jackknife, 'params'))
-    error('computeUnbinnedContrasts:noJackknife', ...
+    error('computeSerialDependenceContrasts:noJackknife', ...
         'BCa requires results.jackknife.params; rerun bootstrap with compute_jackknife = true.');
 end
 

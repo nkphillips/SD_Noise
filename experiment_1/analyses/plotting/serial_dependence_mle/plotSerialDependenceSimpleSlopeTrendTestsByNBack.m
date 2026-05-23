@@ -1,5 +1,5 @@
-function out = plotUnbinnedSimpleSlopeTrendTestsByNBack(fig_dir, simple_tests, ps, ci_method, contrast_lbl, precision_lbl)
-% plotUnbinnedSimpleSlopeTrendTestsByNBack  Forest plots for subplot-level slopes.
+function out = plotSerialDependenceSimpleSlopeTrendTestsByNBack(fig_dir, simple_tests, ps, ci_method, contrast_lbl, precision_lbl)
+% plotSerialDependenceSimpleSlopeTrendTestsByNBack  Forest plots for subplot-level slopes.
 
     if nargin < 4 || isempty(ci_method)
         ci_method = local_tableCIMethod(simple_tests);
@@ -91,7 +91,7 @@ function out_pdf = local_render(fig_dir, T, parameter, fixed_axis, title_str, x_
     close(fig);
 end
 
-function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels, color, x_lims, fixed_axis, plot_opts)
+function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels, color, x_lims, ~, plot_opts)
     hold(ax, 'on');
     xline(ax, 0, 'k-', 'HandleVisibility', 'off');
     y = 1:numel(fixed_levels);
@@ -108,10 +108,10 @@ function local_plotPanel(ax, T, n_back, manipulation, fixed_levels, level_labels
         hi = row.bca_hi(1);
         shade = 0.45 + 0.22 * i_level;
         c = min(color .* shade, 1);
-        if strcmp(fixed_axis, 'current_level')
-            marker_face = [1 1 1];   % slope by past level
-        else
+        if local_isSignificant(row)
             marker_face = c;
+        else
+            marker_face = [1 1 1];
         end
         if isfinite(lo) && isfinite(hi)
             plot(ax, [lo, hi], [y(i_level), y(i_level)], '-', ...
@@ -179,6 +179,16 @@ function s = local_sigLabel(row)
         if ~isempty(strtrim(val))
             s = ['p=' val];
         end
+    end
+end
+
+function tf = local_isSignificant(row)
+    tf = false;
+    if ismember('p_fdr_bh_label', row.Properties.VariableNames)
+        tf = tf || contains(char(row.p_fdr_bh_label(1)), '*');
+    end
+    if ismember('p_bca_label', row.Properties.VariableNames)
+        tf = tf || contains(char(row.p_bca_label(1)), '*');
     end
 end
 

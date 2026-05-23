@@ -254,7 +254,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
     num_conds = 18;
 
     % -------- Default bounds (must match fitConditionMLE defaults) --------
-    defaults = unbinnedMLEFitDefaults();
+    defaults = serialDependenceMLEFitDefaults();
     lb_default = defaults.lb;
     ub_default = defaults.ub;
 
@@ -436,13 +436,13 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
         w_vals = squeeze(params_boot(:, c, 2));
         w_adm = squeeze(param_admitted(:, c, 2));
         w_vals = w_vals(w_adm);
-        fwhm_vals = unbinnedWtoFwhm(w_vals);
+        fwhm_vals = serialDependenceWtoFwhm(w_vals);
 
         ci_perc.fwhm_lo(c) = percentileFinite(fwhm_vals, ci_pct(1));
         ci_perc.fwhm_hi(c) = percentileFinite(fwhm_vals, ci_pct(2));
 
         if isfinite(pp(c, 2)) && pp(c, 2) > 0
-            fwhm_pt = unbinnedWtoFwhm(pp(c, 2));
+            fwhm_pt = serialDependenceWtoFwhm(pp(c, 2));
         else
             fwhm_pt = NaN;
         end
@@ -450,7 +450,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
         if isfield(jk, 'at_bound') && discard_at_bound
             jk_w = jk_w(~squeeze(jk.at_bound(:, c, 2)));
         end
-        jk_fwhm = unbinnedWtoFwhm(jk_w);
+        jk_fwhm = serialDependenceWtoFwhm(jk_w);
         [a1, a2, z0, a_acc] = bcaQuantiles(fwhm_vals, jk_fwhm, fwhm_pt, alpha_lvl);
         [ci_bca.fwhm_lo(c), ci_bca.fwhm_hi(c)] = orderedPercentileCI(fwhm_vals, 100 * a1, 100 * a2);
         ci_bca.fwhm_z0(c) = z0;
@@ -546,7 +546,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
         end
     end
 
-    fwhm_point = unbinnedWtoFwhm(pp(:, 2));
+    fwhm_point = serialDependenceWtoFwhm(pp(:, 2));
 
     % -------- Summary table (active CI lo/hi for plot-script consumption) --------
     summary_table = table( ...
@@ -641,8 +641,8 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
     results.ci_active = active;
     results.close_far_sigma = close_far_sigma;
     results.summary_table = summary_table;
-    results.summary_table_ci_diagnostics = buildUnbinnedCIDiagnostics(results);
-    results.r2_summary = writeUnbinnedR2Summary([], summary_table);
+    results.summary_table_ci_diagnostics = buildSerialDependenceCIDiagnostics(results);
+    results.r2_summary = writeSerialDependenceR2Summary([], summary_table);
 
     % -------- Per-subject per-cell fits for pooled + subject-point summaries --------
     results.subject_cell_fits = table();
@@ -651,7 +651,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
             results.subject_cell_fits = computeSubjectCellFits(tbl_trials, fit_opts, ip.Results.subj_labels);
             if ip.Results.make_figures
                 writetable(results.subject_cell_fits, fullfile(super_subj_dir, 'subject_cell_fits.csv'));
-                plotUnbinnedPooledSubjectPointSummaries(super_subj_dir, summary_table, ...
+                plotSerialDependencePooledSubjectPointSummaries(super_subj_dir, summary_table, ...
                     results.subject_cell_fits, ip.Results.contrast_labels, ip.Results.precision_labels, ...
                     plotSettings());
             end
@@ -669,7 +669,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
         writetable(summary_table, summary_csv_path);
         writetable(results.summary_table_ci_diagnostics, fullfile(super_subj_dir, 'summary_table_ci_diagnostics.csv'));
         writetable(results.r2_summary, fullfile(super_subj_dir, 'r2_summary.csv'));
-        plotUnbinnedR2CellScatter(super_subj_dir, summary_table, plotSettings(), ip.Results.n_back);
+        plotSerialDependenceR2CellScatter(super_subj_dir, summary_table, plotSettings(), ip.Results.n_back);
         if isfield(close_far_sigma, 'summary_table') && ~isempty(close_far_sigma.summary_table)
             writetable(close_far_sigma.summary_table, fullfile(super_subj_dir, 'close_far_sigma_summary.csv'));
         end
@@ -685,7 +685,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
             cspecs = ip.Results.contrast_specs;
         end
         try
-            results.contrast_table = computeUnbinnedContrasts(results, cspecs);
+            results.contrast_table = computeSerialDependenceContrasts(results, cspecs);
             % Save CSV alongside the super-subject figures (it's a super-subject output)
             csv_path = fullfile(super_subj_dir, sprintf('contrasts_%s.csv', ci_method));
             try
@@ -708,7 +708,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
 
     % -------- All-level 3 x 3 trend tests for A and FWHM --------
     try
-        results.all_level_trend_tests = computeUnbinnedAllLevelTrendTests(results, ip.Results.n_back);
+        results.all_level_trend_tests = computeSerialDependenceAllLevelTrendTests(results, ip.Results.n_back);
         if ~isempty(results.all_level_trend_tests) && height(results.all_level_trend_tests) > 0
             writetable(results.all_level_trend_tests, fullfile(super_subj_dir, 'all_level_trend_tests.csv'));
         end
@@ -720,7 +720,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
 
     % -------- Simple slopes within each 3-point subplot line --------
     try
-        results.simple_slope_trend_tests = computeUnbinnedSimpleSlopeTrendTests(results, ip.Results.n_back);
+        results.simple_slope_trend_tests = computeSerialDependenceSimpleSlopeTrendTests(results, ip.Results.n_back);
         if ~isempty(results.simple_slope_trend_tests) && height(results.simple_slope_trend_tests) > 0
             writetable(results.simple_slope_trend_tests, fullfile(super_subj_dir, 'simple_slope_trend_tests.csv'));
         end
@@ -786,7 +786,7 @@ function results = runSerialDependenceMLEBootstrap(tbl_trials, varargin)
             'bootstrap_unit', bootstrap_unit, ...
             'folded_delta_theta', ip.Results.folded_delta_theta);
 
-        plotUnbinnedSdScatterSummaries(super_subj_dir, summary_table, ...
+        plotSerialDependenceScatterSummaries(super_subj_dir, summary_table, ...
             ip.Results.contrast_labels, ip.Results.precision_labels, ps, ci_pct, ci_method);
 
         if isfield(close_far_sigma, 'summary_table') && ~isempty(close_far_sigma.summary_table)
@@ -845,7 +845,7 @@ function jk = runSubjectJackknife(tbl_trials, subj_list, grid, fit_opts, use_par
         for c = 1:num_conds
             wk = jk.params(k, c, 2);
             if isfinite(wk) && wk > 0
-                jk.fwhm(k, c) = unbinnedWtoFwhm(wk);
+                jk.fwhm(k, c) = serialDependenceWtoFwhm(wk);
             end
         end
     end
