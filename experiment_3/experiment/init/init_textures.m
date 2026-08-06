@@ -1,0 +1,163 @@
+%%% init_textures
+
+%{
+
+Written by Luis D. Ramirez
+UCSD
+lur003@ucsd.edu
+
+%}
+
+function stimuli = init_textures(p, dirs, w, toggles)
+
+tic
+
+%% Toggles
+
+if toggles.training
+    textures_filename = ['SD_Noise_Exp3_Training_textures_' p.display_setup '.mat'];
+elseif toggles.calibration
+    textures_filename = ['SD_Noise_Exp3_Calibration_Lvl' num2str(p.num_levels) '_textures_' p.display_setup '.mat'];
+elseif toggles.level_type ==1 
+    textures_filename = ['SD_Noise_Exp3_Fixed_Lvl' num2str(p.num_levels) '_textures_' p.display_setup '.mat'];
+else
+    textures_filename = ['SD_Noise_Exp3_S' p.subj_ID 'Calibrated_Lvl' num2str(p.num_levels) '_textures_' p.display_setup '.mat'];
+end
+
+textures_path = [dirs.texture_dir '/' textures_filename];
+
+% Build a signature of the stimulus parameters that affect texture content.
+% If any of these change, cached textures are stale and must be regenerated.
+stim_sig = struct( ...
+    'training',                   toggles.training, ...
+    'calibration',                toggles.calibration, ...
+    'contrast',                   p.contrast, ...
+    'orientation_bp_filter_width',p.orientation_bp_filter_width, ...
+    'sf_bp_filter_cutoffs',       p.sf_bp_filter_cutoffs, ...
+    'num_noise_samples',          p.num_noise_samples, ...
+    'num_levels',                 p.num_levels, ...
+    'height_px',                  p.height_px, ...
+    'width_px',                   p.width_px, ...
+    'aperture_radius_px',         p.aperture_radius_px, ...
+    'display_setup',              p.display_setup);
+
+if exist(textures_path, 'file')
+    cached = load(textures_path, 'stim_sig');
+    if isfield(cached, 'stim_sig') && isequaln(cached.stim_sig, stim_sig)
+        stimuli.generate_textures = 0;
+        stimuli.save_textures = 0;
+    else
+        disp('Cached textures are stale (parameters changed). Regenerating...');
+        stimuli.generate_textures = 1;
+        stimuli.save_textures = 1;
+    end
+else
+    stimuli.generate_textures = 1;
+    stimuli.save_textures = 1;
+end
+
+%% Aperture
+% alpha level for aperture:
+% 0 = completely transparent (the texture of the aperture is invisible)
+% 255 = completely opaque (the texture of the aperture dominates)
+
+aperture = create_circular_aperture(p.aperture_width_px, p.aperture_height_px, p.aperture_radius_px); % texture size, radius of circle
+% figure, subplot(1,2,1), imshow(aperture)
+
+aperture = imgaussfilt(aperture, 0.1 * w.ppd);
+% subplot(1,2,2), imshow(aperture)
+aperture_texture(:,:,1) = ones(size(aperture)) * w.gray;
+aperture_texture(:,:,2) = aperture * 255;
+
+stimuli.aperture_texture = aperture_texture;
+
+% figure, imshow(aperture_texture(:,:,2), [0 255])
+
+%% Generate textures
+
+if stimuli.generate_textures
+
+    disp('Generating stimuli...')
+
+    % Preallocate textures
+    noise_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+    stimuli.test_textures = nan(p.height_px, p.width_px, length(p.contrast), length(p.orientation_bp_filter_width), p.num_noise_samples);
+    stimuli.mask_textures = nan(p.height_px, p.width_px, length(p.contrast), p.num_noise_samples);
+
+    for i = 1:size(noise_textures, 3) % Contrasts
+        for j = 1:size(noise_textures, 4) % Orientation filter widths
+            for k = 1:size(noise_textures, 5) % Samples
+
+                % Ignore certain combos
+                % We need all contrasts (i) at the easiest filter width (j=2)
+                % We need all filter widths (j) at the easiest contrast (i=2)
+                % So if we're not at the easiest filter width AND we're not at the easiest contrast, skip.
+
+                if toggles.training
+                    % In training, there is only 1 level for contrast and filter width,
+                    % so we just generate the single combination.
+                    if i > 1 || j > 1
+                        continue
+                    end
+                elseif toggles.calibration
+                    % In calibration, the easiest filter width is index 1 (2 degrees),
+                    % and easiest contrast is index p.num_levels (90% contrast)
+                    if i < length(p.contrast) && j > 1
+                        continue
+                    end
+                
+                else
+                    % In main experiment, the easiest contrast is index p.num_levels (85% performance).
+                    % The easiest filter width is index 1 (narrowest filter, sorted ascending).
+                    if i ~= p.num_levels && j ~= 1
+                        continue
+                    end
+                end
+
+                % Create base noise (used as a mask)
+                base_noise = create_noise_texture(p.height_px, p.width_px);
+                base_noise = bandpassFilterImg(base_noise, [0, 180], [0.5 6], w.ppd * 0.1, w.f_Nyquist);
+                base_noise = centerTextureContrast(base_noise, p.contrast(i), w.gray);
+
+                % masks should be generated using the easiest baseline filter width (j=1, narrowest filter, sorted ascending)
+                if j == 1
+                    stimuli.mask_textures(:,:,i,k) = base_noise;
+                end
+
+                % Make orientation- and spatial frequency-bandpass filtered noise
+                noise_texture = bandpassFilterImg(base_noise, [round(0 - p.orientation_bp_filter_width(j)/2), floor(0 + p.orientation_bp_filter_width(j)/2)], p.sf_bp_filter_cutoffs, w.ppd * 0.1, w.f_Nyquist);
+                noise_texture = centerTextureContrast(noise_texture, p.contrast(i), w.gray);
+
+                stimuli.test_textures(:,:,i,j,k) = noise_texture; % Convert to visible pixel values and scale by contrast
+
+            end
+        end
+    end
+
+    %% Save textures
+
+    if stimuli.save_textures
+        save(textures_path, 'stimuli', 'stim_sig', '-v7.3');
+    end
+
+else
+
+    load(textures_path, 'stimuli');
+
+end
+
+%% Probe line
+
+probe_line = ones(p.probe_length) * w.gray;
+
+start_col = round(p.probe_length/2) - floor(p.probe_thickness/2);
+end_col = round(p.probe_length/2) + floor(p.probe_thickness/2);
+probe_line(:, start_col:end_col) = 0;
+
+stimuli.probe_line = probe_line;
+
+%%
+
+disp(['Elapsed time: ' num2str(toc) ' s'])
+
+end
