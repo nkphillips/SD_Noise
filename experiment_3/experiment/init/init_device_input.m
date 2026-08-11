@@ -15,7 +15,7 @@ switch toggles.which_setup
     case 1 % If using 3329B
         p.device_string = 'Dell Dell USB Keyboard';
     case 2 % If using 3329C
-        p.device_string = 'xwayland-keyboard:15';
+        p.device_string = 'LiteOn Lenovo Traditional USB Keyboard';
     case 3 % If using 3329D
         p.device_string = 'Dell Dell USB Keyboard';
     case 4 % If using S32D850
