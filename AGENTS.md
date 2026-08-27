@@ -142,11 +142,10 @@ installed.
   and `reports/` are cached or generated artifacts. Preserve existing artifacts
   and their provenance; write to the pipeline's dated or otherwise designated
   output location rather than silently replacing historical results.
-- Unsuffixed tracked files are the canonical source files. Untracked filenames
-  ending in ` 2.m` or ` 2.py` currently coexist with parts of Experiment 3 and
-  the Experiment 1 analysis. Treat them as noncanonical duplicate artifacts:
-  do not execute, edit, delete, or merge them without an explicit comparison
-  and user request.
+- Unsuffixed tracked files are the canonical source files. If untracked
+  filenames ending in ` 2.m` or ` 2.py` reappear, treat them as possible
+  iCloud conflict copies: do not execute, edit, delete, or merge them without
+  an explicit comparison and user request.
 
 Do not copy a fix between experiments mechanically. Read the corresponding
 entry point, initialization chain, immediate callers, save schema, and analysis
