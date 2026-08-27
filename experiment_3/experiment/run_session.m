@@ -19,7 +19,7 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-toggles.which_setup = 0; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
+toggles.which_setup = 2; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
 toggles.show_debug_output = 1; % Display trial information and diagnostic messages in the Command Window 
 toggles.half_screen = 1; 
 toggles.simulate_response = 0;
@@ -28,6 +28,7 @@ toggles.calibration = 0;
 toggles.level_type = 1; % 1 = fixed , 0 = calibrated 
 toggles.simulation_mode = 0;
 toggles.demo_run = 0;
+
 
 % Sync Test
 if ~any(toggles.which_setup == 1:3)
@@ -48,7 +49,7 @@ end
 
 %% Set directories
 
-p.subj_ID = '999';
+p.subj_ID = '888';
 
 dirs.project_dir = '../'; addpath(dirs.project_dir); % Set the project directory to the parent folder and add to MATLAB's search path
 dirs.script_dir = pwd; % Store current path of experiment
