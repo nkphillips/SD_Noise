@@ -9,6 +9,7 @@
 *.pdf
 *.txt
 *.md
+!/AGENTS.md
 *.csv
 *.csv
 *.csv
