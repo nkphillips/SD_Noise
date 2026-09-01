@@ -8,16 +8,16 @@ clc;
 
 %% Toggles
 
-toggles.parallelization = 1;
-toggles.sd_objective = 'sse'; % minimize 'nll' or 'sse' for serial dependence estimation
-toggles.show_debug_output = 1;
-toggles.save_estimates = 1;
-toggles.bootstrap_super = 1; % enable bootstrap CIs for super-subject
-toggles.bootstrap_sd = 1; % enable bootstrap CIs for serial dependence (computed pre-plot)
+toggles.parallelization = 1; % 1 = use multiple CPU workers to speed up analyses; 0 = run calculations sequentially
+toggles.sd_objective = 'sse'; % SD model-fitting method: minimize 'nll' or 'sse' for serial dependence estimation
+toggles.show_debug_output = 1; % enables progress and diagnostic messages.
+toggles.save_estimates = 1; % saves calculated estimates to disk.
+toggles.bootstrap_super = 0; % enable bootstrap CIs for super-subject
+toggles.bootstrap_sd = 0; % enable bootstrap CIs for serial dependence (computed pre-plot)
 
 %% Setup parallelization
 
-p.num_workers = 9;
+p.num_workers = 3;
 p.num_chunks = p.num_workers - 1;
 
 if toggles.parallelization
@@ -77,20 +77,20 @@ end
 
 %% Hard-coded vars
 
-which_setup = 'Macbook';
+which_setup = '3329B_ASUS';
 analysis_date = datestr(now, 'mm.dd.yyyy'); % automatically pull current date from system
 
-p.subj_IDs = {'999'}; % {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'};
+p.subj_IDs = {'001'}; % {'001', '002' '003', '004' '006', '007', '008', '009', '010' '011', '013', '014', '015'};
 p.feature_name = {'Contrast' 'Filter Width'};
 
 % Define contrast and filter_width values for axis labels
-p.contrast = {'Level 1', 'Level 2', 'Level 3'}; % Adjust based on subject
-p.filter_width = {'Level 1', 'Level 2', 'Level 3'}; % Adjust based on subject
+p.contrast = {'Level 1', 'Level 2'}; % Adjust based on subject
+p.filter_width = {'Level 1', 'Level 2'}; % Adjust based on subject
 
 num.subjs = length(p.subj_IDs);
 num.features = length(p.feature_name);
 num.blocks = 6;
-num.levels = 3;
+num.levels = 2;
 num.blocks_per_feature = num.blocks/num.features;
 num.feature_combos = num.features * num.levels;
 
@@ -387,7 +387,8 @@ for i_n_back = 1:length(n_back_conditions)
         disp(['Tasks processed: ' num2str(task_count) ' estimations']);
         disp(['Data windows: ' num2str(num.delta_theta_windows) ' delta theta windows']);
         disp(['Conditions: ' num2str(num.features) ' (Contrast, Filter Width)']);
-        disp(['Level combinations: ' num2str(num.levels * num.levels) ' (3×3)']);
+        disp(['Level combinations: ' num2str(num.levels * num.levels) ...
+      ' (' num2str(num.levels) '×' num2str(num.levels) ')']);
 
         if toggles.parallelization
             disp('Processing mode: Parallel');
@@ -461,7 +462,7 @@ for i_n_back = 1:length(n_back_conditions)
                         task_data.probe_offsets = zeros(size(x_dt)); % unused in SSE
                         task_data.responses = y_mu;                   % observed mu
                         task_data.delta_thetas = x_dt;                % window centers
-                        task_data.feature_info = [prev_lvl, curr_lvl, feature];
+                        task_data.condition_info  = [prev_lvl, curr_lvl, feature];
 
                         sd_task_list{end+1} = task_data;
                         sd_task_indices = [sd_task_indices; prev_lvl, curr_lvl, feature];
@@ -480,7 +481,7 @@ for i_n_back = 1:length(n_back_conditions)
                         task_data.probe_offsets = probe_offsets;
                         task_data.responses = responses;
                         task_data.delta_thetas = delta_thetas;
-                        task_data.feature_info = [prev_lvl, curr_lvl, feature];
+                        task_data.condition_info = [prev_lvl, curr_lvl, feature];
 
                         sd_task_list{end+1} = task_data;
                         sd_task_indices = [sd_task_indices; prev_lvl, curr_lvl, feature];
@@ -566,7 +567,8 @@ for i_n_back = 1:length(n_back_conditions)
         disp(['Time: ~' num2str(round(sd_duration/60, 1)) ' minutes']);
         disp(['Tasks processed: ' num2str(sd_count) ' conditions']);
         disp(['Conditions: ' num2str(num.features) ' (Contrast, Filter Width)']);
-        disp(['Level combinations: ' num2str(num.levels * num.levels) ' (3×3)']);
+        disp(['Level combinations: ' num2str(num.levels * num.levels) ...
+      ' (' num2str(num.levels) '×' num2str(num.levels) ')']);
         if strcmp(p.sd_objective, 'sse')
             disp('Optimization metric: SSE (Sum of Squared Errors)');
         else
