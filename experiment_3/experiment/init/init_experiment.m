@@ -43,7 +43,7 @@ p.num_features = numel(p.feature_name);
 %% FUNCTION
 
 init_timing
-[best_N,best_blocks] = recommend_experiment_design(t, p);
+[best_N, best_blocks] = recommend_experiment_design(t, p);
 
 %%
 
@@ -62,7 +62,7 @@ p.num_blocks_per_feature = p.num_blocks / p.num_features;
 p.feature_order = repmat(1:p.num_features, 1, p.num_blocks_per_feature);
 p.feature_order = Shuffle(p.feature_order);
 
- first_block = nan(1, p.num_features);
+first_block = nan(1, p.num_features);
 for feature = 1:p.num_features
     first_block(feature) = find(p.feature_order == feature, 1, 'first');
 end
@@ -107,7 +107,7 @@ end
 
 p.num_trials = p.num_trials_per_block * p.num_blocks;
 
-%% 
+%%
 
 t.iti_dur = t.iti_min + (t.iti_max - t.iti_min) .* rand(p.num_trials-1, 1);
 t.block_dur_est = round(((t.trial_dur_est + mean(t.iti_dur(1:p.num_trials_per_block)))  * p.num_trials_per_block) / 60, 2);

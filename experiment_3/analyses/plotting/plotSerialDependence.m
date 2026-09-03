@@ -117,17 +117,17 @@ for cond = 1:num_conds
     % Use actual contrast/filter_width values for tick labels
     if cond == 1
         % Contrast condition
-        set(gca, 'XTick', 1:3, 'XTickLabel', p.contrast);
-        set(gca, 'YTick', 1:3, 'YTickLabel', p.contrast);
+        set(gca, 'XTick', 1:size(cond_data, 1), 'XTickLabel', p.contrast);
+        set(gca, 'YTick', 1:size(cond_data, 1), 'YTickLabel', p.contrast);
     else
         % Filter Width condition
-        set(gca, 'XTick', 1:3, 'XTickLabel', p.filter_width);
-        set(gca, 'YTick', 1:3, 'YTickLabel', p.filter_width);
+        set(gca, 'XTick', 1:size(cond_data, 1), 'XTickLabel', p.filter_width);
+        set(gca, 'YTick', 1:size(cond_data, 1), 'YTickLabel', p.filter_width);
     end
 
     % Add value annotations
-    for i = 1:3
-        for j = 1:3
+for i = 1:size(cond_data, 1)
+    for j = 1:size(cond_data, 2)
             text(j, i, sprintf('%.2f', cond_data(i,j)), ...
                 'HorizontalAlignment', 'center', ...
                 'VerticalAlignment', 'middle', ...
@@ -173,7 +173,8 @@ for cond = 1:num_conds
         legend_vals = p.filter_width;
     end
 
-    marker_colors = repmat(base_color, size(param_data,1),1) .* [1 0.70 0.25]';
+marker_colors = repmat(base_color, size(param_data,1), 1) .* ...
+    linspace(1, 0.25, size(param_data,1))';
 
     % Get local y min and max
     local_min = min(cond_data(:));
@@ -203,7 +204,7 @@ for cond = 1:num_conds
     % Plot data
     subplot(1, num_conds, cond)
 
-    x = 1:3;
+    x = 1:size(cond_data, 1);
     y = fliplr(cond_data)';
     hold on
 
@@ -235,10 +236,10 @@ for cond = 1:num_conds
 
     if cond == 1
         % Contrast condition
-        set(gca, 'XTick', 1:3, 'XTickLabel', fliplr(p.contrast));
+        set(gca, 'XTick', 1:size(cond_data, 1), 'XTickLabel', fliplr(p.contrast));
     else
         % Filter Width condition
-        set(gca, 'XTick', 1:3, 'XTickLabel', fliplr(p.filter_width));
+        set(gca, 'XTick', 1:size(cond_data, 1), 'XTickLabel', fliplr(p.filter_width));
     end
 
     xlabel('Current level')
