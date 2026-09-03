@@ -24,7 +24,8 @@ p.disp_on = 1;
 p.half_screen = 1;
 p.simulate_response = 0;
 p.training = 0;
-p.calibration = 1;
+p.calibration = 0;
+p.level_type = 1; % 1 = fixed , 0 = calibrated
 p.simulation_mode = 0;
 
 % Sync Test
