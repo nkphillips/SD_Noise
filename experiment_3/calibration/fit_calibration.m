@@ -1,5 +1,5 @@
 % fit_calibration.m
-% Extracts 3 subject-specific levels from calibration data.
+% Extracts 2 subject-specific levels from calibration data.
 
 clear all; close all; clc;
 
@@ -12,7 +12,7 @@ ps = plotSettings();
 
 %% 1. Set subject IDs and directories
 % You can add multiple subject IDs to this cell array
-subj_IDs = {'000'};
+subj_IDs = {'001'};
 
 data_base_dir = '../data';
 
@@ -22,9 +22,15 @@ for s = 1:length(subj_IDs)
 
     disp(['Processing calibration for Subject ' subj_ID '...']);
 
-    % Load all calibration runs for this subject
-    file_pattern = fullfile(data_dir, ['SD_Noise_Exp2_Calibration_S' subj_ID '_Run*.mat']);
-    files = dir(file_pattern);
+    % Load all calibration runs for this subject. Experiment 3 originally
+    % inherited the Exp2 filename prefix, so accept both naming conventions.
+    file_patterns = { ...
+        fullfile(data_dir, ['SD_Noise_Exp3_Calibration_S' subj_ID '_Run*.mat']), ...
+        fullfile(data_dir, ['SD_Noise_Exp2_Calibration_S' subj_ID '_Run*.mat'])};
+    files = [];
+    for i_pattern = 1:numel(file_patterns)
+        files = [files; dir(file_patterns{i_pattern})]; %#ok<AGROW>
+    end
 
     if isempty(files)
         warning('No calibration data found for subject %s. Skipping...', subj_ID);
@@ -168,7 +174,7 @@ for s = 1:length(subj_IDs)
     alpha_fw = best_params_fw(1);
     beta_fw  = best_params_fw(2);
 
-    %% 4. Inverse Steps to Find 3 Levels
+    %% 4. Inverse Steps to Find 2 Levels
     %
     % We analytically invert the Weibull to find the stimulus value that
     % produces each target accuracy. The inverse Weibull is:
@@ -180,7 +186,7 @@ for s = 1:length(subj_IDs)
     % For filter width, x_target is in precision units, so we convert:
     %   fw_target = 1 / x_target
 
-    target_levels = [0.65, 0.75, 0.85]; % [0.65, 0.75, 0.85]
+    target_levels = [0.65, 0.85];
 
     % Intermediate quantity K (same formula for both features)
     K = (target_levels - gamma) ./ (1 - gamma - lambda);
@@ -216,14 +222,14 @@ for s = 1:length(subj_IDs)
 
     % The result naturally comes out DESCENDING (highest precision = narrowest
     % filter comes first for the hardest target). Sort ascending so that
-    % index 1 = narrowest (easiest), index 3 = widest (hardest).
+    % index 1 = narrowest (easiest), final index = widest (hardest).
     calib_filter = sort(calib_filter, 'ascend');
 
     % Re-calculate clamped precision targets so the plot markers stay on the bounds
     % and correspond to the newly sorted calib_filter indices
     precision_targets = 1 ./ calib_filter;
 
-    % The target_levels [0.65, 0.75, 0.85] map to descending filter widths,
+    % The target levels map to descending filter widths,
     % so after sorting we flip the labels for plotting.
     filter_target_levels = flip(target_levels);
 
@@ -266,7 +272,7 @@ for s = 1:length(subj_IDs)
     x_fit_c = logspace(log10(min_x_c*0.7), log10(max_x_c*1.3), 100);
     plot(x_fit_c, weibull_prob(x_fit_c, alpha_c, beta_c), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     xl_c = xlim;
-    for i = 1:3
+    for i = 1:numel(target_levels)
         plot([xl_c(1) calib_contrast(i)], [target_levels(i) target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
         plot([calib_contrast(i) calib_contrast(i)], [0.0 target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
         plot(calib_contrast(i), target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
@@ -292,7 +298,7 @@ for s = 1:length(subj_IDs)
     x_fit_prec = logspace(log10(min_x_prec*0.7), log10(max_x_prec*1.3), 100);
     plot(x_fit_prec, weibull_prob(x_fit_prec, alpha_fw, beta_fw), '-', 'Color', ps.colors.red, 'LineWidth', 2);
     xl = xlim;
-    for i = 1:3
+    for i = 1:numel(target_levels)
         prec_i = precision_targets(i);
         plot([xl(1) prec_i], [filter_target_levels(i) filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
         plot([prec_i prec_i], [0.0 filter_target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');

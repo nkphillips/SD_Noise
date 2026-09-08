@@ -19,14 +19,14 @@ rng(t.my_rng_seed);
 
 %% Toggles
 
-toggles.which_setup = 2; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
+toggles.which_setup = 0; % 0 = MacBook, 1 = 3329B_ASUS, 2 = 3329C_ASUS, 3 = 3329D_ASUS, 4 = S32D850
 toggles.show_debug_output = 1; % Display trial information and diagnostic messages in the Command Window 
 toggles.half_screen = 1; 
-toggles.simulate_response = 0;
+toggles.simulate_response = 1;
 toggles.training = 0;
-toggles.calibration = 0;
-toggles.level_type = 1; % 1 = fixed , 0 = calibrated 
-toggles.simulation_mode = 0;
+toggles.calibration = 1;
+toggles.level_type = 0; % 1 = fixed , 0 = calibrated 
+toggles.simulation_mode = 1;
 toggles.demo_run = 0;
 
 

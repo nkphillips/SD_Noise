@@ -43,7 +43,9 @@ p.num_features = numel(p.feature_name);
 %% FUNCTION
 
 init_timing
-[best_N, best_blocks] = recommend_experiment_design(t, p);
+if ~toggles.training && ~toggles.calibration
+    [best_N, best_blocks] = recommend_experiment_design(t, p);
+end
 
 %%
 
