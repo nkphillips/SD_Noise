@@ -75,7 +75,7 @@ p.num_noise_samples = 20;
 
 %% Define probe
 
-p.probe_offsets = round(linspace(0,15,7));
+p.probe_offsets = round(linspace(1,15,7));
 
 p.probe_length = round(2 * w.ppd);
 if ~mod(p.probe_length, 2), p.probe_length = p.probe_length + 1; end

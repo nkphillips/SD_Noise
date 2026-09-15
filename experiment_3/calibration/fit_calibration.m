@@ -22,15 +22,9 @@ for s = 1:length(subj_IDs)
 
     disp(['Processing calibration for Subject ' subj_ID '...']);
 
-    % Load all calibration runs for this subject. Experiment 3 originally
-    % inherited the Exp2 filename prefix, so accept both naming conventions.
-    file_patterns = { ...
-        fullfile(data_dir, ['SD_Noise_Exp3_Calibration_S' subj_ID '_Run*.mat']), ...
-        fullfile(data_dir, ['SD_Noise_Exp2_Calibration_S' subj_ID '_Run*.mat'])};
-    files = [];
-    for i_pattern = 1:numel(file_patterns)
-        files = [files; dir(file_patterns{i_pattern})]; %#ok<AGROW>
-    end
+    % Load all calibration runs for this subject
+    file_pattern = fullfile(data_dir, ['SD_Noise_Exp3_Calibration_S' subj_ID '_Run*.mat']);
+    files = dir(file_pattern);
 
     if isempty(files)
         warning('No calibration data found for subject %s. Skipping...', subj_ID);
@@ -186,7 +180,7 @@ for s = 1:length(subj_IDs)
     % For filter width, x_target is in precision units, so we convert:
     %   fw_target = 1 / x_target
 
-    target_levels = [0.65, 0.85];
+    target_levels = [0.65, 0.85]; % [0.65, 0.85]
 
     % Intermediate quantity K (same formula for both features)
     K = (target_levels - gamma) ./ (1 - gamma - lambda);
@@ -222,14 +216,14 @@ for s = 1:length(subj_IDs)
 
     % The result naturally comes out DESCENDING (highest precision = narrowest
     % filter comes first for the hardest target). Sort ascending so that
-    % index 1 = narrowest (easiest), final index = widest (hardest).
+    % index 1 = narrowest (easiest), index 2 = widest (hardest).
     calib_filter = sort(calib_filter, 'ascend');
 
     % Re-calculate clamped precision targets so the plot markers stay on the bounds
     % and correspond to the newly sorted calib_filter indices
     precision_targets = 1 ./ calib_filter;
 
-    % The target levels map to descending filter widths,
+    % The target_levels [0.65, 0.85] map to descending filter widths,
     % so after sorting we flip the labels for plotting.
     filter_target_levels = flip(target_levels);
 
@@ -277,16 +271,17 @@ for s = 1:length(subj_IDs)
         plot([calib_contrast(i) calib_contrast(i)], [0.0 target_levels(i)], '--', 'Color', ps.colors.blue, 'HandleVisibility', 'off');
         plot(calib_contrast(i), target_levels(i), '*', 'Color', ps.colors.blue, 'MarkerSize', 8);
     end
-    set(gca, 'XScale', 'log');
     xlim([min_x_c*0.7 max_x_c*1.3]);
     ylim([0.0 1.0]);
-    xticks([0.1 0.2 0.4 0.6 0.8 1.0]);
-    xticklabels({'0.1', '0.2', '0.4', '0.6', '0.8', '1.0'});
+    x_ticks = round(linspace(0.1,1,4),2);
+    xticks(x_ticks);
+    xticklabels(num2cell(x_ticks));
     xlabel('Contrast', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type); ylabel('Proportion Correct', 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     title(sprintf('Weibull Fit (\\alpha=%.2f, \\beta=%.2f, R^2=%.3f)', alpha_c, beta_c, r2_c), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     legend('Data', 'Fit', 'Location', 'best', 'FontSize', ps.axes_tick_font_size);
-    set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
+    set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'XScale', 'log', 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
+    set(gca, 'XMinorTick', 'off'); % Hide extra minor tick marks on the log-scaled x-axis
 
     % Plot Filter Width (on the transformed precision = 1/fw axis, log-scaled)
     subplot(1,2,2);
@@ -309,7 +304,7 @@ for s = 1:length(subj_IDs)
     ylim([0.0 1.0]);
 
     % Dynamically generate xticks for precision based on the plotted range
-    possible_fws = [180, 140, 100, 80, 60, 40, 20, 10, 5, 2];
+    possible_fws = [180, 40, 10, 2];
     valid_fws = possible_fws(1./possible_fws >= min_x_prec*0.7 & 1./possible_fws <= max_x_prec*1.3);
 
     % If for some reason none fell perfectly in range, grab the min and max bounds
@@ -327,6 +322,7 @@ for s = 1:length(subj_IDs)
         tick_labels{i} = ['1/' num2str(valid_fws(i))];
     end
 
+
     xticks(prec_ticks);
     xticklabels(tick_labels);
 
@@ -334,6 +330,7 @@ for s = 1:length(subj_IDs)
     title(sprintf('Weibull Fit (\\alpha=%.4f, \\beta=%.2f, R^2=%.2f)', alpha_fw, beta_fw, r2_fw), 'FontSize', ps.axes_label_font_size, 'FontName', ps.font_type);
     set(gca, 'TickDir', 'out', 'TickLength', [ps.tick_length, ps.tick_length], 'FontSize', ps.axes_tick_font_size, 'FontName', ps.font_type, 'LineWidth', ps.line_width);
     box off; axis square;
+    set(gca, 'XMinorTick', 'off'); % Hide extra minor tick marks on the log-scaled x-axis
 
     drawnow; % ensure figures are rendered before continuing the loop
 

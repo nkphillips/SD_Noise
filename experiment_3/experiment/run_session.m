@@ -90,11 +90,11 @@ exit_session = 0; % default: 0
 %% Session loop
 
 if toggles.training
-    dirs.save_filename_template = ['SD_Noise_Exp2_Training_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+    dirs.save_filename_template = ['SD_Noise_Exp3_Training_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
 elseif toggles.calibration
-    dirs.save_filename_template = ['SD_Noise_Exp2_Calibration_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+    dirs.save_filename_template = ['SD_Noise_Exp3_Calibration_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
 else
-    dirs.save_filename_template = ['SD_Noise_Exp2_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
+    dirs.save_filename_template = ['SD_Noise_Exp3_S' p.subj_ID '_Run*_' p.display_setup '.mat'];
 end
 
 while ~exit_session

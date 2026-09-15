@@ -60,9 +60,14 @@ end
 
 disp('')
 for feature = 1:p.num_features
+    curr_blocks = p.feature_order == feature;
+    curr_ans = behav_data.correct(:,curr_blocks);
     for lvl = 1:p.num_levels
-        curr_trials = behav_data.correct(p.trial_events(:,3) == lvl, p.feature_order == feature);
-        behav_data.performance(lvl, feature) = mean(curr_trials(:));
+        curr_trials = squeeze(p.trial_events(:,3,:) == lvl);
+        curr_block_trials = curr_trials(:,curr_blocks);
+        curr_block_ans = curr_ans(curr_block_trials);
+        behav_data.performance(lvl, feature) = mean(curr_block_ans);
+        behav_data.sem(lvl, feature) = std(curr_block_ans,0,1)/sqrt(length(curr_block_ans));
     end
 end
 disp(['Performance: ' num2str(round(100*mean(behav_data.performance(:)))) '%']);
