@@ -23,3 +23,5 @@ experiment_1/analyses/unbinned_mle_cluster_bootstrap/figures/20260507_193247/2_b
 *.html
 *.csv
 *.log
+*.mp4
+experiment_1/movies/render_block_movies.py
